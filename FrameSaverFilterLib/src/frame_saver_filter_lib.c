@@ -5,7 +5,7 @@
  * Purpose:     implements the API for the Frame_Saver_Filter_Library (aka FSL)
  * 
  * History:     1. 2016-10-14   JBendor     Created
- *              2. 2016-10-16   JBendor     Updated 
+ *              2. 2016-10-25   JBendor     Updated 
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -21,7 +21,7 @@ static guint s_GST_ver_major, s_GST_ver_minor, s_GST_ver_micro, s_GST_ver_nano;
 
 static char s_FSL_Version[200] = { 0 };
 
-extern int tee_to_two_example(int argc, char *argv[]);
+extern int frame_saver_plugin_tester(int argc, char *argv[]);
 
 
 //=======================================================================================
@@ -72,7 +72,7 @@ int fsl_main_test(int argc, char *argv[])
 
     printf( fsl_get_version() );
 
-    printf( "tee_2_two_test_result = (0x%X) \n", tee_to_two_example(argc, argv) );
+    printf( "frame_saver_plugin_tester_result = (0x%X) \n", frame_saver_plugin_tester(argc, argv) );
 
     printf( "fsl_main_test() ended \n\n" );
 

@@ -53,10 +53,6 @@
 
     #define THREAD_EXIT(v)      return( (THREAD_RETVAL) (v) )
 
-    #ifndef snprintf
-        #define snprintf        _snprintf
-    #endif
-
     #ifndef S_IWRITE
         #define S_IWRITE  _S_IWRITE
         #define S_IREAD   _S_IREAD
@@ -121,7 +117,7 @@
     #include <limits.h>
     #include <dirent.h>
     #include <unistd.h>
-    #include <xlocale.h>
+    //#include <xlocale.h>
     #include <pthread.h>
     #include <time.h>
     #include <sys/timeb.h>
