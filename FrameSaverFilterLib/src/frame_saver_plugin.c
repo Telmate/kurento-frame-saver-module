@@ -31,7 +31,7 @@
 #ifdef _WIN32
     #include <direct.h>
     #define GET_CWD(buf,lng)    _getcwd((buf),(lng))
-    #define PATH_DELIMITER      '\\'
+    #define PATH_DELIMITER      '\\' 
 #endif
 
 #ifdef _LINUX
@@ -54,23 +54,22 @@ extern int save_image_frame_as_PNG_file(const char * aPathPtr,
 
 static const guint64    NANOS_PER_MILLISEC  = 1000L * 1000L;
 static const guint32    NUM_APPSINK_BUFFERS = 2;
-static const gint       CAPS_FRAME_WDT      = 400;
-static const gint       CAPS_FRAME_HGT      = 200;
-static const gint       CAPS_FRAME_BPP      = 24;
-static const char     * CAPS_VIDEO_FMT      = "rgb"; 
 
-static const char * PIPELINE_NAME   = "MY_PIPE";
-static const char * VID_SOURCE_NAME = "VID_SRC";
-static const char * VID_SINK_1_NAME = "VID_SNK1";
-static const char * VID_SINK_2_NAME = "VID_SNK2";
-static const char * VID_CVT_NAME 	= "VID_CVT";
-static const char * VID_TEE_NAME 	= "TEE2TWO";
-static const char * QUEUE_1_NAME 	= "T_QUE_1";
-static const char * QUEUE_2_NAME 	= "T_QUE_2";
+static const char * PIPELINE_NAME       = "THE_PIPE";
+static const char * VID_SINK_1_NAME     = "VID_SNK1";
+static const char * VID_SINK_2_NAME     = "VID_SNK2";
+static const char * APP_SINK_2_NAME     = "APP_SNK2";
+static const char * VID_SOURCE_NAME     = "VID_SRC";
+static const char * VID_CVT_NAME        = "VID_CVT";
+static const char * VID_TEE_NAME        = "TEE2TWO";
+static const char * QUEUE_1_NAME        = "T_QUE_1";
+static const char * QUEUE_2_NAME        = "T_QUE_2";
+static const char * SRC_CAPS_FILTER_NAME= "SRC_CAPS_FILTER";
+static const char * SNK_CAPS_FILTER_NAME= "SNK_CAPS_FILTER";
 
 #ifdef _WIN32
 	static const char * VID_SRC_ELEMENT = "videotestsrc";       // other: "ksvideosrc"
-	static const char * VID_SNK_ELEMENT = "autovideosink";      // other: "directdrawsink"
+	static const char * VID_SNK_ELEMENT = "autovideosink";      // other: "d3dvideosink"
 #endif
 
 #ifdef _LINUX
@@ -91,6 +90,8 @@ typedef struct
                 * vid_source_ptr,
                 * video_sink1_ptr,
                 * video_sink2_ptr,
+                * src_caps_filter,
+                * snk_caps_filter,
                 * cvt_element_ptr,
                 * tee_element_ptr,
                 * Q_1_element_ptr,
@@ -119,7 +120,8 @@ typedef enum
     e_SPLICER_STATE_NONE = 0, 
     e_SPLICER_STATE_BUSY = 1,
     e_SPLICER_STATE_DONE = 2,
-    e_SPLICER_STATE_FAIL = 3
+    e_SPLICER_STATE_USED = 3,
+    e_SPLICER_STATE_FAIL = 4
 
 } SPLICER_STATE_e;
 
@@ -391,11 +393,30 @@ static GstFlowReturn do_appsink_callback_for_new_data(GstAppSink * aAppSinkPtr, 
 }
 
 
+static GstPadProbeReturn do_appsink_inp_pad_probe_callback(GstPad          * aPadPtr, 
+                                                           GstPadProbeInfo * aInfoPtr, 
+                                                           gpointer          aContextPtr)
+{
+    GstEvent  * event_data_ptr = GST_PAD_PROBE_INFO_DATA(aInfoPtr);
+
+    GstEventType  e_event_type = GST_EVENT_TYPE(event_data_ptr);
+
+    if (e_event_type != GST_EVENT_EOS)
+    {
+        return GST_PAD_PROBE_PASS;
+    }
+
+    GST_DEBUG_OBJECT(aPadPtr, "the 'appsink-inp-pad' is now EOS !!! ");
+
+    return GST_PAD_PROBE_OK;
+}
+
+
 static int do_setup_appsink(GstAppSink * aAppSinkPtr)
 {
-    myPlugin.appsink_callbacks.eos          = NULL;
-    myPlugin.appsink_callbacks.new_preroll  = NULL;
-    myPlugin.appsink_callbacks.new_sample   = do_appsink_callback_for_new_data;
+    myPlugin.appsink_callbacks.eos         = NULL;
+    myPlugin.appsink_callbacks.new_preroll = NULL;
+    myPlugin.appsink_callbacks.new_sample  = do_appsink_callback_for_new_data;
 
     gst_app_sink_set_callbacks(GST_APP_SINK(aAppSinkPtr), 
                                &myPlugin.appsink_callbacks, 
@@ -404,36 +425,21 @@ static int do_setup_appsink(GstAppSink * aAppSinkPtr)
 
     gst_app_sink_set_drop(aAppSinkPtr, TRUE);
 
-    gst_app_sink_set_max_buffers(aAppSinkPtr, NUM_APPSINK_BUFFERS);
-
     gst_app_sink_set_emit_signals(aAppSinkPtr, TRUE);
 
-    return 1;
-}
+    gst_app_sink_set_max_buffers(aAppSinkPtr, NUM_APPSINK_BUFFERS);
+
+    GstPad * ptr_inp_pad = gst_element_get_static_pad(GST_ELEMENT(aAppSinkPtr), "sink");
+
+    // install consumer-inp-pad-probe for EOS event
+    gulong probe_id = gst_pad_add_probe(ptr_inp_pad,
+                                        GST_PAD_PROBE_TYPE_BLOCK | GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
+                                        do_appsink_inp_pad_probe_callback,
+                                        &myPlugin,
+                                        NULL);
 
 
-static GstPadProbeReturn do_consumer_out_pad_probe_callback(GstPad          * aPadPtr, 
-                                                            GstPadProbeInfo * aInfoPtr, 
-                                                            gpointer          aContextPtr)
-{
-    FlowSplicer_t * splicer_ptr = aContextPtr;
-
-    GstEvent  * event_data_ptr = GST_PAD_PROBE_INFO_DATA(aInfoPtr);
-
-    GstEventType  e_event_type = GST_EVENT_TYPE(event_data_ptr);
-     
-    if (e_event_type != GST_EVENT_EOS)
-    {
-        return GST_PAD_PROBE_PASS;
-    }
-
-    GST_DEBUG_OBJECT(aPadPtr, "the 'consumer-OUT-pad is now EOS !!! ");
-
-    gst_pad_remove_probe(aPadPtr, GST_PAD_PROBE_INFO_ID(aInfoPtr));
-
-    splicer_ptr->status = e_SPLICER_STATE_DONE;    // now linkages can be changes
-
-    return GST_PAD_PROBE_DROP;
+    return (probe_id ? 1 : 1);
 }
 
 
@@ -452,32 +458,23 @@ static GstPadProbeReturn do_consumer_inp_pad_probe_callback(GstPad          * aP
         return GST_PAD_PROBE_PASS;
     }
 
-    GST_DEBUG_OBJECT(aPadPtr, "the 'consumer-INP-pad is now EOS !!! ");
+    GST_DEBUG_OBJECT(aPadPtr, "the 'consumer-INP-pad' is now EOS !!! ");
 
     gst_pad_remove_probe(aPadPtr, GST_PAD_PROBE_INFO_ID(aInfoPtr));
 
     GstPad * ptr_out_pad = gst_element_get_static_pad(splicer_ptr->ptr_into_element, 
                                                       splicer_ptr->consumer_out_pad_name);
 
-    if (ptr_out_pad == NULL)
+    if (ptr_out_pad != NULL)
     {
-        splicer_ptr->status = e_SPLICER_STATE_DONE;    // now linkages can be changes
-    }
-    else
-    {
-        // install consumer-out-pad-probe for EOS event
-        gst_pad_add_probe(ptr_out_pad,
-                          GST_PAD_PROBE_TYPE_BLOCK | GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
-                          do_consumer_out_pad_probe_callback,
-                          aContextPtr,
-                          NULL);
-
-        // send EOS onto the consumer OUT pad, so probe will get called when 
-        // the EOS event causes blockage of all data flowing to next element
+        // send EOS onto the consumer OUT pad
         gst_pad_send_event( ptr_out_pad, gst_event_new_eos() );
 
         gst_object_unref(ptr_out_pad);
     }
+
+    // now we can insert the TEE and change links
+    splicer_ptr->status = e_SPLICER_STATE_DONE;
 
     return GST_PAD_PROBE_DROP;
 }
@@ -506,20 +503,18 @@ static GstPadProbeReturn do_producer_pad_probe_callback(GstPad          * aPadPt
                       aContextPtr,
                       NULL);
 
-    // send EOS onto the consumer INP pad, so probe will get called when 
-    // the EOS event causes full depletion of the internal data of 'into'
+    // send EOS onto the consumer INP pad
     gst_pad_send_event( ptr_inp_pad, gst_event_new_eos() );
 
     gst_object_unref(ptr_inp_pad);
 
-    return GST_PAD_PROBE_DROP;
+    return GST_PAD_PROBE_OK;
 }
 
 
 static int do_unlink_two_linked_elements()
 {
-    #define DEFAULT_EFFECTS  "identity,exclusion,navigationtest,agingtv,videoflip,vertigotv,gaussianblur,shagadelictv,edgetv"
-    #define DESIRED_EFFECTS  DEFAULT_EFFECTS      // (comma-separated list of element names)
+    #define DESIRED_EFFECTS  "videoflip, edgetv" // TODO --- maybe
 
     static gchar * Options_Effects_Ptr = NULL;
 
@@ -529,6 +524,7 @@ static int do_unlink_two_linked_elements()
         { NULL }
     };
 
+    mySplicer.status = e_SPLICER_STATE_FAIL;
 
     mySplicer.ptr_from_element = gst_bin_get_by_name(GST_BIN(myPlugin.pipeline_ptr), 
                                                      mySplicer.producer_element_name);
@@ -540,8 +536,7 @@ static int do_unlink_two_linked_elements()
     if ( (mySplicer.ptr_from_element == NULL) || (mySplicer.ptr_from_element == NULL) )
     {
         g_critical("pipeline missing one or both elements to be spliced by TEE \n");        
-        mySplicer.status = e_SPLICER_STATE_FAIL;
-        return -2;
+        return -1;
     }
 
     // a source pad produces data consumed by a sink pad of the next downstream element
@@ -563,20 +558,7 @@ static int do_unlink_two_linked_elements()
     if ( (mySplicer.ptr_from_pad == NULL) || (mySplicer.ptr_into_pad == NULL) )
     {
         g_critical("desired pads missing in the elements to be spliced by TEE \n");        
-        mySplicer.status = e_SPLICER_STATE_FAIL;
-        return -3;
-    }
-
-    GstState  pipeline_state = GST_STATE_PLAYING;
-
-    gst_element_get_state(myPlugin.pipeline_ptr, &pipeline_state, NULL, 0);
-
-    // unlinking is not needed when the pipeline state is ***NOT*** PLAYING
-    if (pipeline_state != GST_STATE_PLAYING)
-    {
-        mySplicer.status = e_SPLICER_STATE_DONE;
-        mySplicer.ptr_snaps_plugin = NULL;
-        return 1;
+        return -2;
     }
 
     // get desired effects/elements for probes --- TODO maybe someday
@@ -627,7 +609,7 @@ static int do_unlink_two_linked_elements()
     // get the first queued effect --- possibly none
     mySplicer.ptr_current_effect = g_queue_pop_head( &mySplicer.effects_queue );
 
-    // apply probe to 'producer' pad --- stop data production by "from" element
+    // apply probe to 'producer' pad --- stop data flow into consumer element
     gst_pad_add_probe(mySplicer.ptr_from_pad, 
                       GST_PAD_PROBE_TYPE_BLOCK_DOWNSTREAM, 
                       do_producer_pad_probe_callback, 
@@ -692,7 +674,7 @@ static int do_link_TEE_request_pads()
 }
 
 
-static int do_put_TEE_in_pipeline()
+static int do_insert_TEE_into_pipeline()
 {
     // possibly --- our TEE is already in the pipeline --- nothing more to do
     if ( gst_element_get_parent(myPlugin.tee_element_ptr) != NULL )
@@ -700,88 +682,90 @@ static int do_put_TEE_in_pipeline()
         return 1;
     }
 
-    GstClockTime timestamp_ns = gst_clock_get_time(gst_system_clock_obtain());
+    GstState  pipeline_state = GST_STATE_NULL;
 
-    // wait for depletion of data between and inside the elements to be spliced
-    while (do_unlink_two_linked_elements() == 0)
+    gst_element_get_state(myPlugin.pipeline_ptr, &pipeline_state, NULL, 0);
+
+    // dynamic unlinking is needed when the pipeline is PLAYING
+    if (pipeline_state != GST_STATE_NULL)
     {
-        ;   // wait --- it's not forever
-    }
-
-    GstClockTime elapsed_1_ns = gst_clock_get_time(gst_system_clock_obtain()) - timestamp_ns;
-
-    while (mySplicer.status == e_SPLICER_STATE_BUSY)
-    {
-        ;   // wait --- it's not forever
-    }
-
-    GstClockTime elapsed_2_ns = gst_clock_get_time(gst_system_clock_obtain()) - timestamp_ns;
-
-    if (mySplicer.status != e_SPLICER_STATE_DONE)
-    {
-        return -1;
-    }
-
-    // put the necessary elements in pipeline --- elements are not linked yet
-    gst_bin_add_many(GST_BIN(myPlugin.pipeline_ptr),
-                     myPlugin.cvt_element_ptr,
-                     myPlugin.tee_element_ptr,
-                     myPlugin.Q_1_element_ptr,
-                     myPlugin.Q_2_element_ptr,
-                     myPlugin.video_sink2_ptr,
-                     NULL);
-
-    // link elements: video-convert to TEE
-    if (FALSE == gst_element_link_many(myPlugin.cvt_element_ptr, 
-                                       myPlugin.tee_element_ptr, 
-                                       NULL))
-    {
-        g_critical("Unable to link filtered: CVT --> TEE\n");       
-        return -2;
-    }
-
-    // link elements: queue-2 to sink-2 using sinker-caps
-    if (FALSE == gst_element_link_filtered(myPlugin.Q_2_element_ptr, 
-                                           myPlugin.video_sink2_ptr, 
-                                           myPlugin.sinker_caps_ptr))
-    {
-        g_critical("Unable to link elements: Q2 --> SINK2  using sinker-caps \n"); 
-        return -3;
-    }    
-
-    // link elements: queue-1 to video-sink-1 using source-caps
-    if (FALSE == gst_element_link_filtered(myPlugin.Q_1_element_ptr, 
-                                           myPlugin.video_sink1_ptr, 
-                                           myPlugin.source_caps_ptr))
-    {
-        g_critical("Unable to link elements: Q1 --> SINK1  using source-caps \n"); 
-        return -4;
-    }
-
-    // link elements: video-source to video-convert
-    if (FALSE == gst_element_link_many(myPlugin.vid_source_ptr, 
-                                       myPlugin.cvt_element_ptr, 
-                                       NULL))
-    {
-        g_critical("Unable to link filtered: SRC --> CVT \n");       
-        return -5;
-    }
-        
-    if (do_link_TEE_request_pads() <= 0)
-    {
-        return -6;
-    }
-
-    // possibly --- setup the app-sink callback to handle newly arriving frames
-    if (myPlugin.one_snap_ms > 0)
-    {
-        if (do_setup_appsink((GstAppSink*) myPlugin.video_sink2_ptr) <= 0)
+        // possibly --- start new unlinking procedure
+        if ((mySplicer.status == e_SPLICER_STATE_NONE) ||
+            (mySplicer.status == e_SPLICER_STATE_USED) )
         {
-            return -7;
+            do_unlink_two_linked_elements();
+        }
+
+        // possibly --- wait for end of unlinking procedure
+        if (mySplicer.status == e_SPLICER_STATE_BUSY)
+        {
+            return 0;
+        }
+
+        // suspend the producer and consumer elements
+        GstStateChangeReturn rv1 = gst_element_set_state(mySplicer.ptr_from_element, GST_STATE_PAUSED);
+        GstStateChangeReturn rv2 = gst_element_set_state(mySplicer.ptr_from_element, GST_STATE_PAUSED);
+        GstStateChangeReturn rv3 = gst_element_set_state(myPlugin.pipeline_ptr,      GST_STATE_PAUSED);
+
+        // possibly --- the unlinking procedure failed
+        if (mySplicer.status != e_SPLICER_STATE_DONE)
+        {
+            return ((rv1 != rv2) || (rv1 != rv3)) ? -1 : -1;  // only for DBG
         }
     }
 
-    gst_element_set_state( GST_ELEMENT(myPlugin.pipeline_ptr), GST_STATE_PLAYING );
+    mySplicer.status = e_SPLICER_STATE_USED;
+
+    // put necessary elements in pipeline --- elements are not linked yet
+    gst_bin_add_many(GST_BIN(myPlugin.pipeline_ptr),
+                     myPlugin.tee_element_ptr,
+                     myPlugin.Q_1_element_ptr,
+                     myPlugin.Q_2_element_ptr,
+                     myPlugin.snk_caps_filter,
+                     myPlugin.video_sink2_ptr,
+                     NULL);
+
+    // now we can safely unlink the pads where the TEE must be inserted
+    if (pipeline_state != GST_STATE_NULL)
+    {
+        gst_pad_unlink(mySplicer.ptr_from_pad, mySplicer.ptr_into_pad);
+    }
+    else
+    {
+        gst_element_unlink(myPlugin.vid_source_ptr, myPlugin.cvt_element_ptr);
+    }
+
+    // link elements: video-source to TEE --- T-QUE-2 flows into sink-2 via snk_caps_filter 
+    if (FALSE == gst_element_link_many(myPlugin.vid_source_ptr,
+                                       myPlugin.tee_element_ptr, 
+                                       NULL))
+    {
+        g_critical("Unable to link elements: SRC --> TEE \n");       
+        return -2;
+    }
+
+    // link elements: T-QUE-1 to CVT --- CVT flows into sink-1 via src_caps_filter
+    if (FALSE == gst_element_link_many(myPlugin.Q_1_element_ptr,
+                                       myPlugin.cvt_element_ptr, 
+                                       NULL))
+    {
+        g_critical("Unable to link elements: T-Q1 --> CVT \n"); 
+        return -3;
+    }
+
+    // link elements: queue-2 to snk_caps_filter to sink-2
+    if (FALSE == gst_element_link_filtered(myPlugin.Q_2_element_ptr,
+                                           myPlugin.video_sink2_ptr,
+                                           myPlugin.sinker_caps_ptr )) 
+    {
+        g_critical("Unable to link elements: T-Q2 --> snk_caps_filter --> SINK2 \n"); 
+        return -4;
+    }    
+
+    if (do_link_TEE_request_pads() <= 0)
+    {
+        return -5;
+    }
 
     return 1;
 }
@@ -813,20 +797,22 @@ static int do_frame_saver_plugin_make_base_pipeline()
     myPlugin.tee_element_ptr = gst_element_factory_make("tee",           VID_TEE_NAME);
     myPlugin.Q_1_element_ptr = gst_element_factory_make("queue",         QUEUE_1_NAME);
     myPlugin.Q_2_element_ptr = gst_element_factory_make("queue",         QUEUE_2_NAME);
+    myPlugin.src_caps_filter = gst_element_factory_make("capsfilter",    SRC_CAPS_FILTER_NAME);
+    myPlugin.snk_caps_filter = gst_element_factory_make("capsfilter",    SNK_CAPS_FILTER_NAME);
 
     if (myPlugin.one_snap_ms > 0)
     {
         myPlugin.video_sink1_ptr = gst_element_factory_make(VID_SNK_ELEMENT, VID_SINK_1_NAME);
-        myPlugin.video_sink2_ptr = gst_element_factory_make("appsink",       VID_SINK_2_NAME);
-        myPlugin.source_caps_ptr = gst_caps_from_string("video/x-raw, width=(int)400, height=(int)200");
+        myPlugin.video_sink2_ptr = gst_element_factory_make("appsink",       APP_SINK_2_NAME);
+        myPlugin.source_caps_ptr = gst_caps_from_string("video/x-raw, width=(int)500, height=(int)200");
         myPlugin.sinker_caps_ptr = gst_caps_from_string("video/x-raw, format=(string)RGB, bpp=(int)24");
     }
     else
     {
         myPlugin.video_sink1_ptr = gst_element_factory_make(VID_SNK_ELEMENT, VID_SINK_1_NAME);
         myPlugin.video_sink2_ptr = gst_element_factory_make(VID_SNK_ELEMENT, VID_SINK_2_NAME);
-        myPlugin.source_caps_ptr = gst_caps_from_string("video/x-raw, width=(int)400, height=(int)200");
-        myPlugin.sinker_caps_ptr = gst_caps_from_string("video/x-raw, width=(int)400, height=(int)200");
+        myPlugin.source_caps_ptr = gst_caps_from_string("video/x-raw, width=(int)500, height=(int)200");
+        myPlugin.sinker_caps_ptr = gst_caps_from_string("video/x-raw, width=(int)500, height=(int)200");
     }
 
     int flags = (myPlugin.vid_source_ptr  ? 0 : 0x001) + 
@@ -837,7 +823,10 @@ static int do_frame_saver_plugin_make_base_pipeline()
                 (myPlugin.Q_2_element_ptr ? 0 : 0x020) +
                 (myPlugin.tee_element_ptr ? 0 : 0x040) +
                 (myPlugin.source_caps_ptr ? 0 : 0x100) +
-                (myPlugin.sinker_caps_ptr ? 0 : 0x200) ;
+                (myPlugin.sinker_caps_ptr ? 0 : 0x200) +
+                (myPlugin.src_caps_filter ? 0 : 0x400) +
+                (myPlugin.snk_caps_filter ? 0 : 0x800) ;
+
 
     if (flags != 0)
     {
@@ -845,33 +834,109 @@ static int do_frame_saver_plugin_make_base_pipeline()
         return do_cleanup();
     }
 
+    g_object_set(G_OBJECT(myPlugin.src_caps_filter), "caps", myPlugin.source_caps_ptr, NULL);
+    g_object_set(G_OBJECT(myPlugin.snk_caps_filter), "caps", myPlugin.sinker_caps_ptr, NULL);
+
     gst_bin_add_many(GST_BIN(myPlugin.pipeline_ptr), 
-                     myPlugin.vid_source_ptr, 
+                     myPlugin.vid_source_ptr,
+                     myPlugin.cvt_element_ptr,
+                     myPlugin.src_caps_filter,
                      myPlugin.video_sink1_ptr,  
                      NULL);
 
-    // link elements: video-source directly to video-sink-1 using source-caps
-    if (FALSE == gst_element_link_many(myPlugin.vid_source_ptr, myPlugin.video_sink1_ptr, NULL))
+    // link elements: video-source to video-convert to src_caps_filter to video-sink-1 
+    if (FALSE == gst_element_link_many(myPlugin.vid_source_ptr,
+                                       myPlugin.cvt_element_ptr,
+                                       myPlugin.src_caps_filter,
+                                       myPlugin.video_sink1_ptr, 
+                                       NULL))
     {
-        g_critical("Failed linking elements: SRC --> SINK1   using source-caps \n");        
+        g_critical("Failed linking elements: SRC --> SRC_CAPS_FILTER --> SINK1 \n");        
         return do_cleanup();
+    }
+
+    // possibly --- setup the app-sink callback to handle newly arriving frames
+    if (myPlugin.one_snap_ms > 0)
+    {
+        do_setup_appsink( (GstAppSink*) myPlugin.video_sink2_ptr );
+    }
+
+    if (myPlugin.max_spin_ms == 0)
+    {
+        if (do_insert_TEE_into_pipeline() <= 0)
+        {
+            return do_cleanup();
+        }
     }
 
     return 1;
 }
 
+static gboolean do_frame_saver_plugin_timer_callback(gpointer aCtxPtr); // forward
 
-static gboolean do_frame_saver_plugin_timer_callback(gpointer aDataPtr)
+static gboolean do_frame_saver_plugin_idle_callback(gpointer aCtxPtr)
+{
+    GstClockTime present_ns = gst_clock_get_time (gst_system_clock_obtain());
+
+    GstClockTime  future_ns = present_ns + (NANOS_PER_MILLISEC * myPlugin.one_tick_ms);
+
+    GstClockTime elapsed_ns = present_ns - myPlugin.start_play_time_ns;
+
+    uint32_t        play_ms = (uint32_t) (elapsed_ns / NANOS_PER_MILLISEC);
+
+    gboolean  is_TEE_needed = (myPlugin.spin_state_ends_ns < future_ns);
+
+    gboolean  is_TEE_linked = (gst_element_get_parent(myPlugin.tee_element_ptr) != NULL);
+
+    if ( is_TEE_needed && (! is_TEE_linked) )
+    {
+        if ((mySplicer.status == e_SPLICER_STATE_NONE) || (mySplicer.status == e_SPLICER_STATE_USED) )
+        {
+            printf("frame_saver_plugin --- elapsed: %u %s ", play_ms, "... TEE insertion is STARTING \n");
+        }
+
+        int status = do_insert_TEE_into_pipeline();
+
+        if (status > 0)    // success --- the TEE was inserted into pipeline
+        {
+            gst_element_set_state( myPlugin.pipeline_ptr, GST_STATE_PLAYING );
+            gst_element_set_state( myPlugin.vid_source_ptr, GST_STATE_PLAYING );
+            gst_element_set_state( myPlugin.video_sink1_ptr, GST_STATE_PLAYING );
+            gst_element_set_state( myPlugin.video_sink2_ptr, GST_STATE_PLAYING );
+
+            printf("frame_saver_plugin --- elapsed: %u %s", play_ms, "... TEE insertion is COMPLETE \n");
+        }
+        else if (status < 0)    // insertion or unlinking failed --- No-Go
+        {
+            printf("frame_saver_plugin --- elapsed: %u %s ", play_ms, "... TEE insertion has FAILED \n");
+
+            gst_element_set_state( myPlugin.pipeline_ptr, GST_STATE_READY );
+
+            myPlugin.spin_state_ends_ns = myPlugin.spin_state_ends_ns + (NANOS_PER_MILLISEC * 1000);
+
+            g_timeout_add ( (guint) myPlugin.one_tick_ms, do_frame_saver_plugin_timer_callback, NULL );
+        }
+        else // (status == 0)
+        {
+            //printf("frame_saver_plugin --- elapsed: %u %s", play_ms, " ... TEE insertion is ONGOING \n");
+        }
+    }
+
+    return TRUE;
+}
+
+
+static gboolean do_frame_saver_plugin_timer_callback(gpointer aCtxPtr)
 {
     GstClockTime present_ns = gst_clock_get_time (gst_system_clock_obtain());
 
     GstClockTime elapsed_ns = present_ns - myPlugin.start_play_time_ns;
 
-    GstClockTime    play_ms = elapsed_ns / NANOS_PER_MILLISEC;
+    uint32_t        play_ms = (uint32_t) (elapsed_ns / NANOS_PER_MILLISEC);
 
     gboolean        is_idle = (myPlugin.spin_state_ends_ns > present_ns);
 
-    printf("frame_saver_plugin --- elapsed: %u %s ", (uint32_t) play_ms, (is_idle ? "... idle" : ""));
+    printf("frame_saver_plugin --- elapsed: %u %s ", play_ms, (is_idle ? "... idle" : ""));
 
     // possibly --- trigger the next frame snap
     if ( elapsed_ns >= myPlugin.next_frame_snap_ns )
@@ -888,37 +953,15 @@ static gboolean do_frame_saver_plugin_timer_callback(gpointer aDataPtr)
 
     printf("\n");
 
-    // possibly --- detect state transition from idle-spins to live-snaps
-    if (is_idle)    
-    {
-        GstClockTime future_ns = (NANOS_PER_MILLISEC * myPlugin.one_tick_ms) + present_ns;
-
-        if (myPlugin.spin_state_ends_ns <= future_ns)
-        {
-            int status = do_put_TEE_in_pipeline();
-
-            if (status == 0)    // waiting to insert TEE --- retry at next tick
-            {
-                myPlugin.spin_state_ends_ns = future_ns;
-            }
-            else if (status < 0)    // insertion or unlinking failed --- No-Go
-            {
-                myPlugin.spin_state_ends_ns = myPlugin.spin_state_ends_ns + (NANOS_PER_MILLISEC * 1000);
-
-                printf("frame_saver_plugin --- Failed Inserting TEE in pipeline \n");
-
-                gst_element_set_state( GST_ELEMENT(myPlugin.pipeline_ptr), GST_STATE_NULL );
-            }
-            else
-            {
-                gst_element_set_state( GST_ELEMENT(myPlugin.pipeline_ptr), GST_STATE_PLAYING );
-            }
-        }
-    }
-
-    if ( (myPlugin.pipeline_ptr == NULL) || (play_ms > myPlugin.max_play_ms) )
+    if ( play_ms > myPlugin.max_play_ms )
     {
         gst_element_send_event ( myPlugin.vid_source_ptr, gst_event_new_eos() );
+
+        gst_element_set_state( myPlugin.vid_source_ptr, GST_STATE_READY );
+
+        gst_element_set_state( myPlugin.pipeline_ptr, GST_STATE_NULL );
+
+        do_cleanup();
 
         return FALSE;
     }    
@@ -931,9 +974,11 @@ static void do_frame_saver_plugin_run()
 {
     myPlugin.main_loop_ptr = g_main_loop_new(NULL, FALSE);
 
-    gst_element_set_state(GST_ELEMENT(myPlugin.pipeline_ptr), GST_STATE_PLAYING);
+    g_idle_add( do_frame_saver_plugin_idle_callback, &myPlugin );
 
     g_timeout_add ( (guint) myPlugin.one_tick_ms, do_frame_saver_plugin_timer_callback, NULL );
+
+    gst_element_set_state(myPlugin.pipeline_ptr, GST_STATE_PLAYING);
 
     myPlugin.start_play_time_ns = gst_clock_get_time (gst_system_clock_obtain());
 
@@ -959,10 +1004,6 @@ static void do_frame_saver_plugin_run()
     printf("frame_saver_plugin --- active --- %s \n", myPlugin.folder_path);
 
     g_main_loop_run(myPlugin.main_loop_ptr);
-
-    gst_element_set_state( GST_ELEMENT(myPlugin.pipeline_ptr), GST_STATE_NULL );
-
-    do_cleanup();
 
     printf("frame_saver_plugin --- ended \n");
 }
@@ -1011,16 +1052,16 @@ static gboolean do_frame_saver_plugin_parse_args(int argc, char *argv[])
     gboolean is_ok = TRUE;
 
     myPlugin.one_tick_ms = 1000;
-    myPlugin.one_snap_ms = 0;
-    myPlugin.max_spin_ms = 3000;
+    myPlugin.one_snap_ms = 3000;
+    myPlugin.max_spin_ms = 4000;
     myPlugin.max_play_ms = 11000;
 
     do_frame_saver_plugin_set_work_folder(NULL);
 
     sprintf(mySplicer.producer_element_name, "%s", VID_SOURCE_NAME);
-    sprintf(mySplicer.producer_out_pad_name, "%s", "src");
+    sprintf(mySplicer.consumer_element_name, "%s", VID_CVT_NAME );
 
-    sprintf(mySplicer.consumer_element_name, "%s", VID_SINK_1_NAME);
+    sprintf(mySplicer.producer_out_pad_name, "%s", "src");
     sprintf(mySplicer.consumer_inp_pad_name, "%s", "sink");
     sprintf(mySplicer.consumer_out_pad_name, "%s", "src");
 
