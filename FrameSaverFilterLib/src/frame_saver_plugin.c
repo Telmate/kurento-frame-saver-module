@@ -3,7 +3,7 @@
  * File:        frame_saver_plugin.c
  * 
  * History:     1. 2016-10-14   JBendor     Created
- *              2. 2016-10-25   JBendor     Updated 
+ *              2. 2016-10-27   JBendor     Updated
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -30,19 +30,26 @@
 
 #ifdef _WIN32
     #include <direct.h>
-    #define GET_CWD(buf,lng)    _getcwd((buf),(lng))
+
+    #define MK_RWX_DIR(path)     mkdir( (path) )
+    #define GET_CWD(buf,lng)    _getcwd( (buf),(lng) )
     #define PATH_DELIMITER      '\\' 
 #endif
 
 #ifdef _LINUX
     #include <unistd.h>
-    #define GET_CWD(buf,lng)    getcwd((buf),(lng))
+    #include <sys/stat.h>
+
+    #define MK_RWX_DIR(path)    mkdir( (path),(S_IRWXU | S_IRWXG | S_IRWXO) )
+    #define GET_CWD(buf,lng)    getcwd( (buf),(lng) )
     #define PATH_DELIMITER      '/'
 #endif
+
 
 #if (GST_VERSION_MAJOR == 0)
     #error "GST_VERSION_MAJOR must not be 0"
 #endif
+
 
 extern int save_image_frame_as_PNG_file(const char * aPathPtr,
                                         const char * aFormatPtr,
@@ -101,12 +108,16 @@ typedef struct
     GstClockTime spin_state_ends_ns;
     GstClockTime next_frame_snap_ns;
 
-    guint   one_tick_ms,    // timer-ticks interval as milliseconds
-            one_snap_ms,    // frame-snaps interval as milliseconds
-            max_spin_ms,    // spin-state-timeout as milliseconds 
-            max_play_ms,    // play-state-timeout as milliseconds 
-            snap_signals,   // counter of pending signals to snap
-            snap_counter;   // counter of frames snapped and saved
+    guint   one_tick_ms,        // timer-ticks interval as milliseconds
+            one_snap_ms,        // frame-snaps interval as milliseconds
+            max_spin_ms,        // spin-state-timeout as milliseconds
+            max_play_ms,        // play-state-timeout as milliseconds
+            num_snap_signals,   // count of signals to snap frames
+            num_saved_frames,   // count of frames saved as files
+            num_saver_errors,   // count of frames saver's errors
+            num_appsink_frames, // count of appsink's input frames
+            num_appsink_errors; // count of appsink's input errors
+
 
     GstAppSinkCallbacks appsink_callbacks;
 
@@ -334,6 +345,8 @@ static int do_snap_and_save_image_frame(GstAppSink * aAppSinkPtr,
         return GST_FLOW_OK; // TODO --- GST_FLOW_ERROR;
     }
 
+    aStatePtr->num_saved_frames += 1;
+
     sprintf(sz_path, "%s%s_%dx%dx%d.@%04u_%03u.#%u.png", 
             aStatePtr->folder_path,
             sz_format, 
@@ -342,9 +355,14 @@ static int do_snap_and_save_image_frame(GstAppSink * aAppSinkPtr,
             bits,
             elapsed_ms / 1000,
             elapsed_ms % 1000,
-            aStatePtr->snap_counter);
+            aStatePtr->num_saved_frames);
 
     errs = save_image_frame_as_PNG_file(sz_path, sz_format, map.data, (int) map.size, stride, cols, rows);
+
+    if (errs != 0)
+    {
+        aStatePtr->num_saver_errors += 1;
+    }
 
     gst_buffer_unmap (aBufferPtr, &map);
 
@@ -366,16 +384,19 @@ static GstFlowReturn do_appsink_callback_for_new_data(GstAppSink * aAppSinkPtr, 
 
     if ( (buffer_ptr == NULL) || (ptr_state == NULL) || (caps_ptr == NULL) )
     {
+        ptr_state->num_appsink_errors += 1;
+
         gst_sample_unref(sample_ptr);
+
         return GST_FLOW_ERROR;
     }
 
+    ptr_state->num_appsink_frames += 1;
+
     if (ptr_state->one_snap_ms > 0)
     {
-        if (ptr_state->snap_signals > ptr_state->snap_counter)
+        if (ptr_state->num_snap_signals > ptr_state->num_saved_frames)
         {
-            ptr_state->snap_counter += 1;
-
             flow_result = do_snap_and_save_image_frame(aAppSinkPtr, 
                                                        buffer_ptr,
                                                        caps_ptr,
@@ -465,10 +486,10 @@ static GstPadProbeReturn do_consumer_inp_pad_probe_callback(GstPad          * aP
     GstPad * ptr_out_pad = gst_element_get_static_pad(splicer_ptr->ptr_into_element, 
                                                       splicer_ptr->consumer_out_pad_name);
 
+    // possibly --- send EOS onto the consumer OUT pad --- possibly redundant
     if (ptr_out_pad != NULL)
     {
-        // send EOS onto the consumer OUT pad
-        gst_pad_send_event( ptr_out_pad, gst_event_new_eos() );
+        // TODO--- gst_pad_send_event( ptr_out_pad, gst_event_new_eos() );
 
         gst_object_unref(ptr_out_pad);
     }
@@ -592,7 +613,7 @@ static int do_unlink_two_linked_elements()
             {
                 g_queue_push_tail( &mySplicer.effects_queue, ptr_new_effect );
 
-                g_print("Added (%s) to Unlinker-Effects-Queue \n", *ptr_new_effect);
+                g_print("Added (%s) to Unlinker-Effects-Queue \n", psz_effect_name);
             }
             else
             {
@@ -878,7 +899,7 @@ static gboolean do_frame_saver_plugin_idle_callback(gpointer aCtxPtr)
 {
     GstClockTime present_ns = gst_clock_get_time (gst_system_clock_obtain());
 
-    GstClockTime  future_ns = present_ns + (NANOS_PER_MILLISEC * myPlugin.one_tick_ms);
+    GstClockTime  future_ns = present_ns + (NANOS_PER_MILLISEC * 10);    // myPlugin.one_tick_ms);
 
     GstClockTime elapsed_ns = present_ns - myPlugin.start_play_time_ns;
 
@@ -892,7 +913,7 @@ static gboolean do_frame_saver_plugin_idle_callback(gpointer aCtxPtr)
     {
         if ((mySplicer.status == e_SPLICER_STATE_NONE) || (mySplicer.status == e_SPLICER_STATE_USED) )
         {
-            printf("frame_saver_plugin --- elapsed: %u %s ", play_ms, "... TEE insertion is STARTING \n");
+            printf("frame_saver_plugin --- elapsed: %u %s", play_ms, "... TEE insertion is STARTING \n\n");
         }
 
         int status = do_insert_TEE_into_pipeline();
@@ -904,11 +925,11 @@ static gboolean do_frame_saver_plugin_idle_callback(gpointer aCtxPtr)
             gst_element_set_state( myPlugin.video_sink1_ptr, GST_STATE_PLAYING );
             gst_element_set_state( myPlugin.video_sink2_ptr, GST_STATE_PLAYING );
 
-            printf("frame_saver_plugin --- elapsed: %u %s", play_ms, "... TEE insertion is COMPLETE \n");
+            printf("frame_saver_plugin --- elapsed: %u %s", play_ms, "... TEE insertion is COMPLETE \n\n");
         }
         else if (status < 0)    // insertion or unlinking failed --- No-Go
         {
-            printf("frame_saver_plugin --- elapsed: %u %s ", play_ms, "... TEE insertion has FAILED \n");
+            printf("frame_saver_plugin --- elapsed: %u %s ", play_ms, "... TEE insertion has FAILED \n\n");
 
             gst_element_set_state( myPlugin.pipeline_ptr, GST_STATE_READY );
 
@@ -926,6 +947,56 @@ static gboolean do_frame_saver_plugin_idle_callback(gpointer aCtxPtr)
 }
 
 
+static gboolean do_trigger_next_frame_snap(uint32_t elapsedPlaytimeMillis)
+{
+    // establish the earliest time for the next frame snap
+    myPlugin.next_frame_snap_ns += NANOS_PER_MILLISEC * myPlugin.one_snap_ms;
+
+    // increment the number of snap-signals --- and possibly create the folder
+    if ( ++myPlugin.num_snap_signals == 1 )
+    {
+        time_t now = time(NULL);
+
+        struct tm * tm_ptr = localtime(&now);
+
+        int length = (int) strlen(myPlugin.folder_path);
+
+        sprintf(myPlugin.folder_path + length,
+                "%c%s%04d%02d%02d_%02d%02d%02d%c",
+                PATH_DELIMITER,
+                "FrameSnaps_",
+                tm_ptr->tm_year + 1900,
+                tm_ptr->tm_mon + 1,
+                tm_ptr->tm_mday,
+                tm_ptr->tm_hour,
+                tm_ptr->tm_min,
+                tm_ptr->tm_sec,
+                PATH_DELIMITER);
+
+        if (MK_RWX_DIR(myPlugin.folder_path) == 0)
+        {
+            printf("frame_saver_plugin --- Created Sub-Folder (%s) \n\n", &myPlugin.folder_path[length+1]);
+        }
+        else
+        {
+            printf("frame_saver_plugin --- Failed MKDIR for (%s) \n\n", myPlugin.folder_path);
+
+            myPlugin.num_snap_signals = 0;
+        }
+    }
+
+    printf("frame_saver_plugin --- elapsed: %u ... snap=%u ... save=%u,%u ... appsink=%u,%u \n",
+           elapsedPlaytimeMillis,
+           myPlugin.num_snap_signals,
+           myPlugin.num_saver_errors,
+           myPlugin.num_saved_frames,
+           myPlugin.num_appsink_errors,
+           myPlugin.num_appsink_frames);
+
+    return TRUE;
+}
+
+
 static gboolean do_frame_saver_plugin_timer_callback(gpointer aCtxPtr)
 {
     GstClockTime present_ns = gst_clock_get_time (gst_system_clock_obtain());
@@ -934,27 +1005,13 @@ static gboolean do_frame_saver_plugin_timer_callback(gpointer aCtxPtr)
 
     uint32_t        play_ms = (uint32_t) (elapsed_ns / NANOS_PER_MILLISEC);
 
-    gboolean        is_idle = (myPlugin.spin_state_ends_ns > present_ns);
+    gboolean   is_idle_spin = (myPlugin.spin_state_ends_ns > present_ns);
 
-    printf("frame_saver_plugin --- elapsed: %u %s ", play_ms, (is_idle ? "... idle" : ""));
-
-    // possibly --- trigger the next frame snap
-    if ( elapsed_ns >= myPlugin.next_frame_snap_ns )
-    {
-        myPlugin.next_frame_snap_ns += NANOS_PER_MILLISEC * myPlugin.one_snap_ms;
-
-        if ( (myPlugin.one_snap_ms > 0) && (! is_idle) )
-        {
-            myPlugin.snap_signals += 1;
-
-            printf("... snaps=%u ... saves=%u ", myPlugin.snap_signals, myPlugin.snap_counter );
-        }
-    }
-
-    printf("\n");
-
+    // possibly --- it's time to shutdown
     if ( play_ms > myPlugin.max_play_ms )
     {
+        printf("frame_saver_plugin --- elapsed: %u ... TERMINATING \n\n", play_ms);
+
         gst_element_send_event ( myPlugin.vid_source_ptr, gst_event_new_eos() );
 
         gst_element_set_state( myPlugin.vid_source_ptr, GST_STATE_READY );
@@ -966,29 +1023,44 @@ static gboolean do_frame_saver_plugin_timer_callback(gpointer aCtxPtr)
         return FALSE;
     }    
 
+    // possibly --- the pipeline does not yet have the TEE
+    if (is_idle_spin)
+    {
+        printf("frame_saver_plugin --- elapsed: %u ... idle \n", play_ms);
+        return TRUE;
+    }
+
+    // possibly --- it's not yet time for the next frame snap
+    if ( (myPlugin.one_snap_ms < 1) || (elapsed_ns < myPlugin.next_frame_snap_ns) )
+    {
+        printf("frame_saver_plugin --- elapsed: %u \n", play_ms);
+    }
+    else
+    {
+        do_trigger_next_frame_snap(play_ms);
+    }
+
     return TRUE;
 }
 
 
 static void do_frame_saver_plugin_run()
 {
-    myPlugin.main_loop_ptr = g_main_loop_new(NULL, FALSE);
-
-    g_idle_add( do_frame_saver_plugin_idle_callback, &myPlugin );
-
-    g_timeout_add ( (guint) myPlugin.one_tick_ms, do_frame_saver_plugin_timer_callback, NULL );
-
-    gst_element_set_state(myPlugin.pipeline_ptr, GST_STATE_PLAYING);
-
     myPlugin.start_play_time_ns = gst_clock_get_time (gst_system_clock_obtain());
 
     myPlugin.spin_state_ends_ns = (NANOS_PER_MILLISEC * myPlugin.max_spin_ms) + myPlugin.start_play_time_ns;
 
     myPlugin.next_frame_snap_ns = (NANOS_PER_MILLISEC * myPlugin.one_snap_ms);
 
-    myPlugin.snap_counter = 0;
+    myPlugin.num_appsink_frames = 0;
 
-    myPlugin.snap_signals = 0;
+    myPlugin.num_appsink_errors = 0;
+
+    myPlugin.num_saver_errors   = 0;
+
+    myPlugin.num_saved_frames   = 0;
+
+    myPlugin.num_snap_signals   = 0;
 
 #ifdef xxxxxxxxxxxxxxxx_DEBUG
     if ( (strstr(myPlugin.folder_path, "WIN64.GST") != NULL) ||
@@ -1001,6 +1073,14 @@ static void do_frame_saver_plugin_run()
     }
 #endif
 
+    myPlugin.main_loop_ptr = g_main_loop_new(NULL, FALSE);
+
+    g_idle_add( do_frame_saver_plugin_idle_callback, &myPlugin );
+
+    g_timeout_add ( (guint) myPlugin.one_tick_ms, do_frame_saver_plugin_timer_callback, NULL );
+
+    gst_element_set_state(myPlugin.pipeline_ptr, GST_STATE_PLAYING);
+
     printf("frame_saver_plugin --- active --- %s \n", myPlugin.folder_path);
 
     g_main_loop_run(myPlugin.main_loop_ptr);
@@ -1012,10 +1092,6 @@ static void do_frame_saver_plugin_run()
 static int do_frame_saver_plugin_set_work_folder(const char * aFolderPathPtr)
 {
     int length = 0;
-
-    time_t now = time(NULL);
-
-    struct tm * tm_ptr = localtime(&now);
 
     if (aFolderPathPtr == NULL)
     {
@@ -1033,17 +1109,7 @@ static int do_frame_saver_plugin_set_work_folder(const char * aFolderPathPtr)
         return ~length;     // error: need space for names of folder and files
     }
 
-    length += sprintf(myPlugin.folder_path + length, "%c%04d%02d%02d_%02d%02d%02d%c", 
-                      PATH_DELIMITER,
-                      tm_ptr->tm_year + 1900, 
-                      tm_ptr->tm_mon + 1, 
-                      tm_ptr->tm_mday, 
-                      tm_ptr->tm_hour, 
-                      tm_ptr->tm_min, 
-                      tm_ptr->tm_sec,
-                      PATH_DELIMITER);
-
-    return (mkdir(myPlugin.folder_path) ? 0 : length); // returns 0 iff failed
+    return length;
 }
 
 
@@ -1067,19 +1133,6 @@ static gboolean do_frame_saver_plugin_parse_args(int argc, char *argv[])
 
     if ( (argc < 2) || (! argv) )
     {
-        printf("\n using: %s=%d %s=%d %s=%d %s=%d %s=(%s) %s=%s,%s,%s %s=%s,%s,%s  \n\n",
-               "\n tick", myPlugin.one_tick_ms,
-               "\n snap", myPlugin.one_snap_ms,
-               "\n spin", myPlugin.max_spin_ms,
-               "\n play", myPlugin.max_play_ms,
-               "\n path", myPlugin.folder_path,
-               "\n poke", PIPELINE_NAME,
-                          mySplicer.producer_element_name, 
-                          mySplicer.consumer_element_name,
-               "\n pads", mySplicer.producer_out_pad_name, 
-                          mySplicer.consumer_inp_pad_name, 
-                          mySplicer.consumer_out_pad_name);
-
         return TRUE;
     }
 
@@ -1125,14 +1178,14 @@ static gboolean do_frame_saver_plugin_parse_args(int argc, char *argv[])
             printf("minimum 'tick' time interval is 100 miliseconds \n");
             is_ok = FALSE;
         }
-        else if (myPlugin.one_tick_ms < myPlugin.max_play_ms)
+        else if (myPlugin.max_play_ms < myPlugin.one_tick_ms)
         {
             printf("minimum 'play' milliseconds is one 'tick' \n");      
             is_ok = FALSE;
         }
         else if (myPlugin.max_play_ms < myPlugin.max_spin_ms)
         {
-            printf("maximum 'spin' milliseconds is 'play' \n");      
+            printf("maximum 'spin' milliseconds is 'play' time \n");      
             is_ok = FALSE;
         }
     }
@@ -1145,19 +1198,43 @@ static gboolean do_frame_saver_plugin_parse_args(int argc, char *argv[])
 }
 
 
+static gboolean do_report_params_used()
+{
+    printf("\n using: %s=%d %s=%d %s=%d %s=%d %s=(%s) %s=%s,%s,%s %s=%s,%s,%s  \n\n",
+           "\n tick", myPlugin.one_tick_ms,
+           "\n snap", myPlugin.one_snap_ms,
+           "\n spin", myPlugin.max_spin_ms,
+           "\n play", myPlugin.max_play_ms,
+           "\n path", myPlugin.folder_path,
+           "\n poke", PIPELINE_NAME,
+                      mySplicer.producer_element_name, 
+                      mySplicer.consumer_element_name,
+           "\n pads", mySplicer.producer_out_pad_name, 
+                      mySplicer.consumer_inp_pad_name, 
+                      mySplicer.consumer_out_pad_name);
+
+    return TRUE;
+}
+
+
 int frame_saver_plugin_tester( int argc, char *argv[] )
 {
     int result = 0;
 
-    if (do_frame_saver_plugin_parse_args(argc, argv) == FALSE)
+    if (do_frame_saver_plugin_parse_args(argc, argv) != TRUE)
     {
         printf("\n");
         result = -1;
     }
+    else if (do_report_params_used() != TRUE)
+    {
+        printf("frame_saver_plugin_tester --- failed do_report_params_used \n");
+        result = -2;
+    }
     else if (do_frame_saver_plugin_make_base_pipeline() == 0)
     {
         printf("frame_saver_plugin_tester --- failed creating pipeline \n");
-        result = -2;
+        result = -3;
     }
     else
     {

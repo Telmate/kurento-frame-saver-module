@@ -20,6 +20,9 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+#ifdef _LINUX
+    #define stricmp strcasecmp
+#endif
 
 typedef struct 
 {
