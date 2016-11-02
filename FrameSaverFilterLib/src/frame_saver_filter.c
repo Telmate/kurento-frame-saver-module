@@ -5,7 +5,7 @@
  * History:     1. 2016-10-14   JBendor     Created
  *              2. 2016-10-28   JBendor     Updated
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
- *              4. 2016-11-01   JBendor     Support for custom pipelines
+ *              4. 2016-11-02   JBendor     Support for custom pipelines
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -819,13 +819,15 @@ static gboolean do_pipeline_callback_for_bus_messages(GstBus     * aBusPtr,
 //=======================================================================================
 static gint do_pipeline_insert_TEE_splicer()
 {
+    gboolean pipeline_has_TEE = (gst_element_get_parent(mySniffer.tee_element_ptr) != NULL);
+
+    GstState   pipeline_state = GST_STATE_NULL;
+
     // possibly --- our TEE is already in the pipeline --- nothing more to do
-    if ( gst_element_get_parent(mySniffer.tee_element_ptr) != NULL )
+    if ( pipeline_has_TEE )
     {
         return 1;
     }
-
-    GstState  pipeline_state = GST_STATE_NULL;
 
     gst_element_get_state(mySniffer.pipeline_ptr, &pipeline_state, NULL, 0);
 
@@ -903,7 +905,7 @@ static gint do_pipeline_insert_TEE_splicer()
 
     if ( ptr_producer_caps != NULL )
     {
-        // link elements: T-QUE-1 to CONSUMER (with original caps)
+        // link elements: T-QUE-1 to CONSUMER (with producer caps)
         if (TRUE != gst_element_link_filtered(mySniffer.Q_1_element_ptr,
                                               mySplicer.ptr_into_element,
                                               ptr_producer_caps)) 
@@ -916,7 +918,7 @@ static gint do_pipeline_insert_TEE_splicer()
     {
         gst_pad_set_event_function(mySplicer.ptr_into_pad, do_callback_for_consumer_INP_pad_events);
 
-        g_warning("linking pads with negotiating CAPS: T-QUE-1.OUT --> CONSUMER.INP \n"); 
+        g_warning("linking pads with negotiated CAPS: T-QUE-1.OUT --> CONSUMER.INP \n"); 
 
         // link elements pads: T-QUE-1.OUT to CONSUMER.INP
         if ( TRUE != gst_element_link_pads(mySniffer.Q_1_element_ptr, 
@@ -929,15 +931,28 @@ static gint do_pipeline_insert_TEE_splicer()
         }
     }
 
-
-    // link elements: T-QUE-2 to sink-2 (with sinker caps)
-    if (TRUE != gst_element_link_filtered(mySniffer.Q_2_element_ptr,
+    if ( ptr_producer_caps != NULL )
+    {
+        // link elements: T-QUE-2 to SINK2 (with producer caps)
+        if (TRUE != gst_element_link_filtered(mySniffer.Q_2_element_ptr,
+                                              mySniffer.video_sink2_ptr,
+                                              ptr_producer_caps)) 
+        {
+            g_warning("Unable to link elements: T-QUE-2 --> SINK2 (with producer caps) \n"); 
+            return -6;
+        }
+    }
+    else
+    {
+        // link elements: T-QUE-2 to SINK2 (with sinker caps)
+        if (TRUE != gst_element_link_many(mySniffer.Q_2_element_ptr,
                                           mySniffer.video_sink2_ptr,
                                           mySniffer.sinker_caps_ptr)) 
-    {
-        g_warning("Unable to link elements: T-QUE-2 --> SINK2 (with caps) \n"); 
-        return -6;
-    }    
+        {
+            g_warning("Unable to link elements: T-QUE-2 --> SINK2 (with sinker caps) \n"); 
+            return -6;
+        }
+    }
 
     return 1;
 }
@@ -1057,7 +1072,7 @@ static int do_pipeline_create()
     mySniffer.Q_1_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_1_NAME);
     mySniffer.Q_2_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_2_NAME);
     mySniffer.video_sink1_ptr = gst_element_factory_make("autovideosink", DEFAULT_VID_SINK_1_NAME);
-    mySniffer.src_caps_filter = gst_element_factory_make("capsfilter", DEFAULT_SRC_CAPS_FILTER_NAME);
+    mySniffer.src_caps_filter = gst_element_factory_make("capsfilter",    DEFAULT_SRC_CAPS_FILTER_NAME);
 
     // possibly --- create the appsink to snap and save frames
     if (mySplicer.params.one_snap_ms > 0)
@@ -1279,8 +1294,6 @@ static int do_pipeline_run_main_loop()
     mySniffer.num_saver_errors = 0;
     mySniffer.num_saved_frames = 0;
     mySniffer.num_snap_signals = 0;
-
-    gst_pipeline_set_latency (GST_PIPELINE(mySniffer.pipeline_ptr), GST_CLOCK_TIME_NONE);
 
     if (gst_element_set_state(mySniffer.pipeline_ptr, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE)
     {

@@ -5,7 +5,7 @@
 * Purpose:     saves image frames as PNG files
 * 
 * History:     1. 2016-10-17   JBendor     Created
-*              2. 2016-11-01   JBendor     Updated 
+*              2. 2016-11-02   JBendor     Updated 
 *
 * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
 *               Unauthorized copying of this file is strictly prohibited.
@@ -14,6 +14,7 @@
 
 #include <png.h>
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +22,10 @@
 #include <stdarg.h>
 
 #ifdef _LINUX
-    #define stricmp strcasecmp
+    extern int strcasecmp(const char *aStrPtr, const char * aPatPtr);
+    #define STRiCMP strcasecmp
+#else
+    #define STRiCMP stricmp
 #endif
 
 typedef struct 
@@ -40,9 +44,9 @@ typedef struct
 } RGB32_Pix_t, *RGB32_Pix_Ptr_t;
 
 
-static const int NUM_RGB24_PIXEL_BYTES = sizeof(RGB24_Pix_t); 
-static const int NUM_RGB32_PIXEL_BYTES = sizeof(RGB32_Pix_t); 
-static const int NUM_SAMPLE_BITS_R_G_B = (8); 
+#define NUM_RGB24_PIXEL_BYTES   (sizeof(RGB24_Pix_t))
+#define NUM_RGB32_PIXEL_BYTES   (sizeof(RGB32_Pix_t))
+#define NUM_SAMPLE_BITS_R_G_B   (8)
 
 typedef struct  
 {
@@ -351,7 +355,7 @@ int save_image_frame_as_PNG_file(const char * aPathPtr,
     }
 
 
-    if ( stricmp(aFormatPtr, "RGB") == 0 )
+    if ( STRiCMP(aFormatPtr, "RGB") == 0 )
     {
         int result = -1;
 
@@ -371,7 +375,7 @@ int save_image_frame_as_PNG_file(const char * aPathPtr,
         return (result ? -30 : 0);
     }
 
-    if (stricmp(aFormatPtr, "I420") == 0)   // YUV
+    if (STRiCMP(aFormatPtr, "I420") == 0)   // YUV
     {
         RGB24_Pix_t * ptr_RGB24_pixels = malloc(sizeof(RGB24_Pix_t) * num_frame_pixels);
 
