@@ -5,7 +5,7 @@
  * Purpose:     external interface (API) for Frame_Saver_Filter_Library (aka FSL)
  * 
  * History:     1. 2016-10-14   JBendor     Created    
- *              2. 2016-10-16   JBendor     Updated 
+ *              2. 2016-11-01   JBendor     Updated 
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -28,7 +28,7 @@ extern "C" {
 
 
 //=======================================================================================
-// custom elementary types
+// custom types
 //=======================================================================================
 typedef void    *fsl_handle_t;
 typedef int8_t   fsl_bool_t;
@@ -36,7 +36,7 @@ typedef int32_t  fsl_error_t;
 
 
 //=======================================================================================
-// useful macros (i.e inlines or constants)
+// useful macros
 //=======================================================================================
 #define FSL_TRUE                        (1)
 #define FSL_FALSE                       (0)

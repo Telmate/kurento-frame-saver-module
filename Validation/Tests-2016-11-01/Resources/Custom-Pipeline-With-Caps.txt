@@ -1,0 +1,18 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; every line which starts with a letter starts a parameter definition
+;;;
+;;; parameter definitions are extended iff a line ends with a backslash
+;;;
+;;; all other lines are ignored
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+pads= auto, auto, auto
+
+poke= auto, videoconvert0, VID_WINDOW
+   
+pipe= videotestsrc ! video/x-raw, width=(int)600, height=(int)300 \
+    ! videoconvert ! autovideosink name=VID_WINDOW
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;; end of file:  Custom-Pipeline-With-Caps.txt
+

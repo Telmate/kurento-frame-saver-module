@@ -1,0 +1,79 @@
+
+################################################################################
+################################################################################
+################################################################################
+
+jonny@XPS-15-JB1-LINUX ~/Desktop/TESTS $ ./FrameSaverTestApp.Release 
+
+fsl_main_test() started 
+GStreamer version is: 1.8.1.1 
+
+PARAMETERS: 
+          tick=1000 
+          snap=2000 
+          spin=4000 
+          play=9000 
+          path=(/home/jonny/Desktop/TESTS) 
+          pipe=(default-pipeline) 
+          poke=(FSL_PIPE,VID_SRC,VID_CVT) 
+          pads=(src,sink,src) 
+
+frame_saver_filter --- PLAYING 
+frame_saver_filter --- playtime=1024 ... idle-spin 
+frame_saver_filter --- playtime=2024 ... idle-spin 
+frame_saver_filter --- playtime=3024 ... idle-spin 
+frame_saver_filter --- playtime=4010 ... Starting TEE insertion 
+frame_saver_filter --- playtime=4013 ... Finished TEE insertion
+frame_saver_filter --- playtime=4015 ... New Folder (IMAGES_20161101_153557/) 
+frame_saver_filter --- playtime=4015 ... snap=1 ... save=0 ... error=0,0 ... appsink=0
+frame_saver_filter --- playtime=6015 ... snap=2 ... save=1 ... error=0,0 ... appsink=59
+frame_saver_filter --- playtime=8015 ... snap=3 ... save=2 ... error=0,0 ... appsink=119
+frame_saver_filter --- playtime=9024 ... play-ends 
+frame_saver_filter --- EXITING 
+fsl_main_test() result=(0x0) 
+fsl_main_test() ended 
+
+please press Ctrl-C ... ^C
+
+
+
+################################################################################
+################################################################################
+################################################################################
+
+jonny@XPS-15-JB1-LINUX ~/Desktop/TESTS $ ./FrameSaverTestApp.Release snap=0
+
+fsl_main_test() started 
+GStreamer version is: 1.8.1.1 
+
+PARAMETERS: 
+          tick=1000 
+          snap=0 
+          spin=4000 
+          play=9000 
+          path=(/home/jonny/Desktop/TESTS) 
+          pipe=(default-pipeline) 
+          poke=(FSL_PIPE,VID_SRC,VID_CVT) 
+          pads=(src,sink,src) 
+
+frame_saver_filter --- PLAYING 
+frame_saver_filter --- playtime=1019 ... idle-spin 
+frame_saver_filter --- playtime=2019 ... idle-spin 
+frame_saver_filter --- playtime=3019 ... idle-spin 
+frame_saver_filter --- playtime=4010 ... Starting TEE insertion 
+frame_saver_filter --- playtime=4012 ... Finished TEE insertion
+frame_saver_filter --- playtime=4028 
+frame_saver_filter --- playtime=5028 
+frame_saver_filter --- playtime=6028 
+frame_saver_filter --- playtime=7028 
+frame_saver_filter --- playtime=8028 
+frame_saver_filter --- playtime=9028 
+frame_saver_filter --- playtime=9028 ... play-ends 
+frame_saver_filter --- EXITING 
+fsl_main_test() result=(0x0) 
+fsl_main_test() ended 
+
+please press Ctrl-C ... ^C
+
+jonny@XPS-15-JB1-LINUX ~/Desktop/TESTS $ 
+

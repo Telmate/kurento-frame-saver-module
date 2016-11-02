@@ -5,7 +5,7 @@
 * Purpose:     saves image frames as PNG files
 * 
 * History:     1. 2016-10-17   JBendor     Created
-*              2. 2016-10-25   JBendor     Updated 
+*              2. 2016-11-01   JBendor     Updated 
 *
 * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
 *               Unauthorized copying of this file is strictly prohibited.

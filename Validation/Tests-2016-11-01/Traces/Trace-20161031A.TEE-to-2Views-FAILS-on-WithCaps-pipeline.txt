@@ -1,0 +1,91 @@
+
+################################################################################
+################################################################################
+################################################################################
+
+jonny@XPS-15-JB1-LINUX ~/Desktop/TESTS $ ./FrameSaverTestApp.Release snap=2000 args=./Custom-Pipeline-With-Caps.txt
+
+fsl_main_test() started 
+GStreamer version is: 1.8.1.1 
+
+PARAMETERS: 
+          tick=1000 
+          snap=2000 
+          spin=4000 
+          play=9000 
+          path=(/home/jonny/Desktop/TESTS) 
+          pipe=(custom-pipeline) 
+          poke=(FSL_PIPE,videoconvert0,VID_WINDOW) 
+          pads=(src,sink,src) 
+
+PIPELINE: videotestsrc  ! 
+......... video/x-raw, width=(int)600, height=(int)300  ! 
+......... videoconvert  ! 
+......... autovideosink name=VID_WINDOW 
+
+frame_saver_filter --- PLAYING 
+frame_saver_filter --- playtime=1020 ... idle-spin 
+frame_saver_filter --- playtime=2020 ... idle-spin 
+frame_saver_filter --- playtime=3020 ... idle-spin 
+frame_saver_filter --- playtime=4010 ... Starting TEE insertion 
+frame_saver_filter --- playtime=4037 ... Finished TEE insertion
+frame_saver_filter --- playtime=4044 ... New Folder (IMAGES_20161101_161506/) 
+frame_saver_filter --- playtime=4044 ... snap=1 ... save=0 ... error=0,0 ... appsink=0
+frame_saver_filter --- playtime=6044 ... snap=2 ... save=1 ... error=0,0 ... appsink=59
+frame_saver_filter --- playtime=8044 ... snap=3 ... save=2 ... error=0,0 ... appsink=119
+frame_saver_filter --- playtime=9020 ... play-ends 
+frame_saver_filter --- EXITING 
+fsl_main_test() result=(0x0) 
+fsl_main_test() ended 
+
+please press Ctrl-C ... ^C
+
+
+################################################################################
+################################################################################
+################################################################################
+
+jonny@XPS-15-JB1-LINUX ~/Desktop/TESTS $ ./FrameSaverTestApp.Release snap=0 args=./Custom-Pipeline-With-Caps.txt
+
+fsl_main_test() started 
+GStreamer version is: 1.8.1.1 
+
+PARAMETERS: 
+          tick=1000 
+          snap=0 
+          spin=4000 
+          play=9000 
+          path=(/home/jonny/Desktop/TESTS) 
+          pipe=(custom-pipeline) 
+          poke=(FSL_PIPE,videoconvert0,VID_WINDOW) 
+          pads=(src,sink,src) 
+
+PIPELINE: videotestsrc  ! 
+......... video/x-raw, width=(int)600, height=(int)300  ! 
+......... videoconvert  ! 
+......... autovideosink name=VID_WINDOW 
+
+frame_saver_filter --- PLAYING 
+frame_saver_filter --- playtime=1019 ... idle-spin 
+frame_saver_filter --- playtime=2019 ... idle-spin 
+frame_saver_filter --- playtime=3019 ... idle-spin 
+frame_saver_filter --- playtime=4010 ... Starting TEE insertion 
+frame_saver_filter --- playtime=4019 
+
+** (FrameSaverTestApp.Release:5974): WARNING **: Unable to link elements: T-QUE-2 --> SINK2 (with caps) 
+
+frame_saver_filter --- playtime=4042 ... Failed TEE insertion
+frame_saver_filter --- playtime=5019 ... idle-spin 
+frame_saver_filter --- playtime=6019 ... idle-spin 
+frame_saver_filter --- playtime=7019 ... idle-spin 
+frame_saver_filter --- playtime=8019 ... idle-spin 
+frame_saver_filter --- playtime=9019 ... idle-spin 
+frame_saver_filter --- playtime=9019 ... play-ends 
+frame_saver_filter --- EXITING 
+fsl_main_test() result=(0x0) 
+fsl_main_test() ended 
+
+please press Ctrl-C ... ^C
+
+jonny@XPS-15-JB1-LINUX ~/Desktop/TESTS $ 
+
