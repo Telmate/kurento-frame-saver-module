@@ -5,7 +5,7 @@
  * History:     1. 2016-10-14   JBendor     Created
  *              2. 2016-10-28   JBendor     Updated
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
- *              4. 2016-11-02   JBendor     Support for custom pipelines
+ *              4. 2016-11-04   JBendor     Support for custom pipelines
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -22,23 +22,15 @@
 
 #include "frame_saver_filter.h"
 #include "frame_saver_params.h"
+#include "save_frames_as_png.h"
 
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
 #include <gst/app/gstappsink.h>
 
-
 #if (GST_VERSION_MAJOR == 0)
     #error "GST_VERSION_MAJOR must not be 0"
 #endif
-
-extern int save_image_frame_as_PNG_file(const char * aPathPtr,
-                                        const char * aFormatPtr,
-                                        void       * aPixmapPtr,
-                                        int          aPixmapLng,
-                                        int          aStrideLng,
-                                        int          aFrameWdt, 
-                                        int          aFrameHgt);
 
 
 //=======================================================================================
@@ -57,7 +49,6 @@ typedef struct
                 * vid_sourcer_ptr,
                 * video_sink1_ptr,
                 * video_sink2_ptr,
-                * src_caps_filter,
                 * cvt_element_ptr,
                 * tee_element_ptr,
                 * Q_1_element_ptr,
@@ -140,51 +131,78 @@ static gint do_appsink_snap_frame(GstAppSink    * aAppSinkPtr,
     *
     * NOTE-2: stride of video buffers is rounded to the nearest multiple of 4.
     */
+
+    GstMapInfo map;
+
     char sz_image_format[100], 
          sz_image_path[PATH_MAX + 100];
 
-    GstMapInfo map;
+    const char * psz_caps = gst_caps_to_string(aCapsPtr);
+
+    const char * interlace = strstr(psz_caps, "interlace-mode=");
+
+    int     format_is_I420 = (strstr(psz_caps, "I420") != NULL);
 
     int  cols = 0, 
          rows = 0, 
          bits = 8,
-         errs = pipeline_params_parse_caps(gst_caps_to_string(aCapsPtr), 
+         errs = pipeline_params_parse_caps(psz_caps,
                                            sz_image_format, 
                                            &cols, 
                                            &rows, 
                                            &bits);
 
-    int stride = GST_ROUND_UP_4(cols * ((bits + 7) / 8));  // bytes in one row
+    if ( (errs != 0) || (rows < 1) || (cols < 1) )
+    {
+        return GST_FLOW_ERROR;  // invalid attributes
+    }
+
+    if ( (interlace != NULL) && (strstr(interlace, "progressive") == NULL) )
+    {
+        return GST_FLOW_ERROR;  // only "progressive" is allowed
+    }
+
+    if (TRUE != gst_buffer_map(aBufferPtr, &map, GST_MAP_READ))
+    {
+        return GST_FLOW_ERROR;
+    }
+
+    int data_lng = (int) map.size;          // total number of frame's bytes
+    int num_pixs = rows * cols;
+    int pix_size = data_lng / num_pixs;
+    int   stride = GST_ROUND_UP_4(cols * pix_size);         // bytes per row
 
     GstClockTime now = gst_clock_get_time (aStatePtr->sys_clock_ptr);
 
     guint elapsed_ms = (guint) ((now - mySniffer.start_play_time_ns) / NANOS_PER_MILLISEC);
 
-    if ( (errs != 0) || (TRUE != gst_buffer_map(aBufferPtr, &map, GST_MAP_READ)) )
-    {
-        return GST_FLOW_OK; // TODO --- GST_FLOW_ERROR;
-    }
-
     aStatePtr->num_saved_frames += 1;
+    
+    if ( strncmp(sz_image_format, "BGR", 3) == 0 )
+    {
+        convert_BGR_frame_to_RGB(map.data, pix_size * 8, stride, cols, rows);
+        sz_image_format[0] = 'R';
+        sz_image_format[0] = 'B';
+    }
 
     sprintf(sz_image_path, 
             "%s%s_%dx%dx%d.@%04u_%03u.#%u.png", 
             aStatePtr->work_folder_path,
-            sz_image_format, 
+            (format_is_I420 ? "I420_RGB" : sz_image_format), 
             cols, 
             rows,
-            bits,
+            (format_is_I420 ? 24 : bits),
             elapsed_ms / 1000,
             elapsed_ms % 1000,
             aStatePtr->num_saved_frames);
 
-    errs = save_image_frame_as_PNG_file(sz_image_path, 
-                                        sz_image_format, 
-                                        map.data, 
-                                        (int) map.size, 
-                                        stride, 
-                                        cols, 
-                                        rows);
+    errs = save_frame_as_PNG(sz_image_path, 
+                             sz_image_format, 
+                             map.data, 
+                             data_lng, 
+                             stride, 
+                             cols, 
+                             rows);
 
     if (errs != 0)
     {
@@ -193,7 +211,7 @@ static gint do_appsink_snap_frame(GstAppSink    * aAppSinkPtr,
 
     gst_buffer_unmap (aBufferPtr, &map);
 
-    return (errs == 0) ? GST_FLOW_OK : GST_FLOW_OK;  // TODO: GST_FLOW_ERROR;
+    return (errs == 0) ? GST_FLOW_OK : GST_FLOW_OK;
 }
 
 
@@ -1072,7 +1090,6 @@ static int do_pipeline_create()
     mySniffer.Q_1_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_1_NAME);
     mySniffer.Q_2_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_2_NAME);
     mySniffer.video_sink1_ptr = gst_element_factory_make("autovideosink", DEFAULT_VID_SINK_1_NAME);
-    mySniffer.src_caps_filter = gst_element_factory_make("capsfilter",    DEFAULT_SRC_CAPS_FILTER_NAME);
 
     // possibly --- create the appsink to snap and save frames
     if (mySplicer.params.one_snap_ms > 0)
@@ -1096,8 +1113,7 @@ static int do_pipeline_create()
                 (mySniffer.Q_2_element_ptr ? 0 : 0x020) +
                 (mySniffer.tee_element_ptr ? 0 : 0x040) +
                 (mySniffer.source_caps_ptr ? 0 : 0x100) +
-                (mySniffer.sinker_caps_ptr ? 0 : 0x200) +
-                (mySniffer.src_caps_filter ? 0 : 0x400) ;
+                (mySniffer.sinker_caps_ptr ? 0 : 0x200) ;
 
     if (flags != 0)
     {
@@ -1105,31 +1121,31 @@ static int do_pipeline_create()
         return 5;
     }
 
-    g_object_set(G_OBJECT(mySniffer.src_caps_filter), "caps", mySniffer.source_caps_ptr, NULL);
-
     // possibly --- configure the default pipeline
     if (! is_custom)
     {
         gst_bin_add_many(GST_BIN(mySniffer.pipeline_ptr),
                          mySniffer.vid_sourcer_ptr ,
                          mySniffer.cvt_element_ptr,
-                         mySniffer.src_caps_filter,
                          mySniffer.video_sink1_ptr,
                          NULL);
 
-        // link elements: SRC to CVT to CAPS to SINK1
-        if (TRUE != gst_element_link_many(mySniffer.vid_sourcer_ptr,
-                                          mySniffer.cvt_element_ptr, 
-                                          mySniffer.src_caps_filter,
-                                          mySniffer.video_sink1_ptr,
-                                          NULL)) 
+        // link elements: SRC to CVT
+        gboolean is_link_1_ok = gst_element_link_many(mySniffer.vid_sourcer_ptr,
+                                                      mySniffer.cvt_element_ptr, 
+                                                      NULL);
+
+        // link elements: CVT with CAPS to SINK1
+        gboolean is_link_2_ok =  gst_element_link_filtered(mySniffer.cvt_element_ptr,
+                                                           mySniffer.video_sink1_ptr,
+                                                           mySniffer.source_caps_ptr);
+
+        if ( (! is_link_1_ok) || (! is_link_2_ok) )
         {
+            g_warning("Failed linking elements: SRC --> CVT --> CAPS --> SINK1 \n");
             g_warning("Failed linking elements: SRC --> CVT --> CAPS --> SINK1 \n");
             return 6;
         }
-
-        // gst_pad_create_stream_id(gst_element_get_static_pad(mySniffer.vid_sourcer_ptr, "src"),
-        //                          mySniffer.vid_sourcer_ptr, DEFAULT_PIPELINE_NAME);
     }
 
     if (do_pipeline_validate_splicer_parameters() != TRUE)

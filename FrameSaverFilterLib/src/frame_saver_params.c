@@ -3,7 +3,7 @@
  * File:        frame_saver_params.c
  * 
  * History:     1. 2016-10-29   JBendor     Created
- *              2. 2016-11-02   JBendor     Updated
+ *              2. 2016-11-04   JBendor     Updated
  *
  * Description: implements parameters used by the Frame_Saver_Filter
  *
@@ -40,18 +40,7 @@ int realpath( const char *aPathPtr, char * aBuffPtr )
         return lng + sprintf(aBuffPtr+lng, "%s", ++aPathPtr);
     }
 
-    return lng + sprintf(aBuffPtr+lng, "%s", aPathPtr);
-}
-
-
-int strcasecmp( const char *aStrPtr, const char * aPatPtr )
-{
-    int diff = 0;
-    while ( (diff == 0) && (*aStrPtr != 0) && (*aPatPtr != 0) )
-    {
-        diff = toupper(*aStrPtr++) - toupper(*aPatPtr++);
-    }
-    return diff;
+    return lng + sprintf(aBuffPtr+lng, "%s", aPathPtr); // may need more work
 }
 
 #endif // _CYGWIN_X64

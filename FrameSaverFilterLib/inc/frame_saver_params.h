@@ -6,8 +6,8 @@
  * 
  * History:     1. 2016-10-29   JBendor     Created    
  *              2. 2016-10-29   JBendor     Updated 
-  *             3. 2016-11-01   JBendor     Support for custom pipelines
-*
+ *              3. 2016-11-04   JBendor     Support for custom pipelines
+ *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
  * ======================================================================================
@@ -17,8 +17,8 @@
 
 #define __Frame_Saver_Params_H__
 
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -42,6 +42,8 @@
     #include <sys/stat.h>
     #include <linux/limits.h>
 
+    extern char *realpath (const char * path_ptr, char * buff_ptr);
+
     #define MK_RWX_DIR(path)    mkdir( (path),(S_IRWXU | S_IRWXG | S_IRWXO) )
     #define GET_CWD(buf,lng)    getcwd( (buf),(lng) )
     #define ABS_PATH(p,b,l)     realpath( (p), (b) );
@@ -56,16 +58,14 @@
 #define  MAX_PIPELINE_CFG_LNG           (900)
 
 #define  DEFAULT_PIPELINE_NAME          "FSL_PIPE"
-#define  DEFAULT_VID_SINK_1_NAME        "VID_SNK1"
-#define  DEFAULT_VID_SINK_2_NAME        "VID_SNK2"
-#define  DEFAULT_APP_SINK_2_NAME        "APP_SNK2"
-#define  DEFAULT_VID_SOURCE_NAME        "VID_SRC"
-#define  DEFAULT_VID_CVT_NAME           "VID_CVT"
+#define  DEFAULT_VID_SINK_1_NAME        "FSL_VIEW1"
+#define  DEFAULT_VID_SINK_2_NAME        "FSL_VIEW2"
+#define  DEFAULT_APP_SINK_2_NAME        "FSL_SNAPS"
+#define  DEFAULT_VID_SOURCE_NAME        "FSL_SRC"
+#define  DEFAULT_VID_CVT_NAME           "FSL_CVT"
 #define  DEFAULT_VID_TEE_NAME           "FSL_TEE"
-#define  DEFAULT_QUEUE_1_NAME           "T_QUE_1"
-#define  DEFAULT_QUEUE_2_NAME           "T_QUE_2"
-#define  DEFAULT_SRC_CAPS_FILTER_NAME   "SRC_CAPS_FILTER"
-#define  DEFAULT_SNK_CAPS_FILTER_NAME   "SNK_CAPS_FILTER"
+#define  DEFAULT_QUEUE_1_NAME           "FSL_TQ1"
+#define  DEFAULT_QUEUE_2_NAME           "FSL_TQ2"
 
 
 //=======================================================================================

@@ -5,7 +5,7 @@
  * Purpose:     implements the API for the Frame_Saver_Filter_Library (aka FSL)
  * 
  * History:     1. 2016-10-14   JBendor     Created
- *              2. 2016-11-01   JBendor     Updated 
+ *              2. 2016-11-04   JBendor     Updated 
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -86,7 +86,7 @@ int fsl_initialize()
 //
 // performs a test on the FSL library --- returns 0
 //=======================================================================================
-int fsl_main_test(int argc, char *argv[])
+int fsl_main_test(int argc, char** argv)
 {
     printf( "%s%s", "\n", "fsl_main_test() started \n" );
 
