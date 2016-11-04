@@ -1,0 +1,23 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; every line which starts with a letter starts a parameter definition
+;;;
+;;; a parameter definition can be extended by ending it with a backslash
+;;;
+;;; all other lines are ignored
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; The follwing console command plays the video file directly to the desktop
+;;;
+;;; gst-launch-1.0 souphttpsrc location=http://xxx ! decodebin ! autovideosink 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     
+pads= auto, auto, auto
+
+poke= auto, videoconvert0, VID_WINDOW
+
+pipe= souphttpsrc location=http://clips.vorwaerts-gmbh.de/big_buck_bunny.webm \
+    ! decodebin                        \
+    ! videoconvert                     \
+    ! autovideosink name=VID_WINDOW
+
+;;;;;;;;;;;;;;;;;;; ends:  Custom-Pipeline-PLAY-MP4-HTTP.txt  ;;;;;;;;;;;;;;;;;

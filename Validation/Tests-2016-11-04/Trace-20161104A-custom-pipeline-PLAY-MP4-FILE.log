@@ -1,0 +1,99 @@
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ ls -al
+total 26628
+drwxr-xr-x 4 jonny jonny     4096 Nov  4 08:15 .
+drwxr-xr-x 7 jonny jonny     4096 Nov  4 08:15 ..
+-rwxrwxrwx 1 jonny jonny 26469936 Feb 23  2014 bunny.mp4
+-rwxr-xr-x 1 jonny jonny     8608 Nov  4 07:43 FrameSaverTestApp.Debug
+-rwxr-xr-x 1 jonny jonny     8608 Nov  4 07:42 FrameSaverTestApp.Release
+-rwxr-xr-x 1 jonny jonny   373856 Nov  4 07:43 libFrameSaverFilterLib.Debug.so
+-rwxr-xr-x 1 jonny jonny   373856 Nov  4 07:42 libFrameSaverFilterLib.Release.so
+drwxr-xr-x 2 jonny jonny     4096 Nov  4 08:06 Resources
+drwxr-xr-x 2 jonny jonny     4096 Nov  4 08:15 Traces
+
+
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ ls -al Resources/
+total 28
+drwxr-xr-x 2 jonny jonny 4096 Nov  4 08:06 .
+drwxr-xr-x 4 jonny jonny 4096 Nov  4 08:15 ..
+-rw-r--r-- 1 jonny jonny  615 Nov  3 08:13 Custom-Pipeline-FMT=RGB.txt
+-rw-r--r-- 1 jonny jonny  629 Nov  3 08:00 Custom-Pipeline-FPS=50.txt
+-rw-r--r-- 1 jonny jonny  553 Nov  3 08:00 Custom-Pipeline-No-Caps.txt
+-rw-r--r-- 1 jonny jonny  931 Nov  4 08:06 Custom-Pipeline-PLAY-MP4-FILE.txt
+-rw-r--r-- 1 jonny jonny  939 Nov  4 08:06 Custom-Pipeline-PLAY-MP4-HTTP.txt
+
+
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ ./FrameSaverTestApp.Release play=22000 args=./Resources/Custom-Pipeline-PLAY-MP4-FILE.txt
+
+fsl_main_test() started 
+GStreamer version is: 1.8.1.1 
+
+PARAMETERS: 
+          tick=1000 
+          snap=2000 
+          spin=4000 
+          play=22000 
+          path=(/home/jonny/Work/TELMATE/Validation) 
+          pipe=(custom-pipeline) 
+          poke=(FSL_PIPE,videoconvert0,VID_WINDOW) 
+          pads=(src,sink,src) 
+
+PIPELINE: filesrc location=/home/jonny/Desktop/TELMATE/Validation/bunny.mp4  ! 
+......... decodebin  ! 
+......... videoconvert  ! 
+......... autovideosink name=VID_WINDOW 
+
+frame_saver_filter --- PLAYING 
+frame_saver_filter --- playtime=1019 ... idle-spin 
+frame_saver_filter --- playtime=2019 ... idle-spin 
+frame_saver_filter --- playtime=3019 ... idle-spin 
+frame_saver_filter --- playtime=4010 ... Starting TEE insertion 
+frame_saver_filter --- playtime=4024 ... Finished TEE insertion
+frame_saver_filter --- playtime=4034 ... New Folder (IMAGES_20161104_081818/) 
+frame_saver_filter --- playtime=4034 ... snap=1 ... save=0 ... error=0,0 ... appsink=0
+frame_saver_filter --- playtime=6034 ... snap=2 ... save=1 ... error=0,0 ... appsink=47
+frame_saver_filter --- playtime=8034 ... snap=3 ... save=2 ... error=0,0 ... appsink=95
+frame_saver_filter --- playtime=10034 ... snap=4 ... save=3 ... error=0,0 ... appsink=143
+frame_saver_filter --- playtime=12034 ... snap=5 ... save=4 ... error=0,0 ... appsink=191
+frame_saver_filter --- playtime=14034 ... snap=6 ... save=5 ... error=0,0 ... appsink=239
+frame_saver_filter --- playtime=16034 ... snap=7 ... save=6 ... error=0,0 ... appsink=287
+frame_saver_filter --- playtime=18034 ... snap=8 ... save=7 ... error=0,0 ... appsink=335
+frame_saver_filter --- playtime=20034 ... snap=9 ... save=8 ... error=0,0 ... appsink=383
+frame_saver_filter --- playtime=22019 ... play-ends 
+frame_saver_filter --- EXITING 
+fsl_main_test() result=(0x0) 
+fsl_main_test() ended 
+
+please press Ctrl-C ... ^C
+
+
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ ls -al
+total 26632
+drwxr-xr-x 5 jonny jonny     4096 Nov  4 08:18 .
+drwxr-xr-x 7 jonny jonny     4096 Nov  4 08:15 ..
+-rwxrwxrwx 1 jonny jonny 26469936 Feb 23  2014 bunny.mp4
+-rwxr-xr-x 1 jonny jonny     8608 Nov  4 07:43 FrameSaverTestApp.Debug
+-rwxr-xr-x 1 jonny jonny     8608 Nov  4 07:42 FrameSaverTestApp.Release
+drwxr-xr-x 2 jonny jonny     4096 Nov  4 08:18 IMAGES_20161104_081818
+-rwxr-xr-x 1 jonny jonny   373856 Nov  4 07:43 libFrameSaverFilterLib.Debug.so
+-rwxr-xr-x 1 jonny jonny   373856 Nov  4 07:42 libFrameSaverFilterLib.Release.so
+drwxr-xr-x 2 jonny jonny     4096 Nov  4 08:06 Resources
+drwxr-xr-x 2 jonny jonny     4096 Nov  4 08:15 Traces
+
+
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ ls -al IMAGES_20161104_081818/
+total 1412
+drwxr-xr-x 2 jonny jonny   4096 Nov  4 08:18 .
+drwxr-xr-x 5 jonny jonny   4096 Nov  4 08:18 ..
+-rw-r--r-- 1 jonny jonny  95039 Nov  4 08:18 RGB_480x272x24.@0004_106.#1.png
+-rw-r--r-- 1 jonny jonny 141415 Nov  4 08:18 RGB_480x272x24.@0006_065.#2.png
+-rw-r--r-- 1 jonny jonny 163946 Nov  4 08:18 RGB_480x272x24.@0008_065.#3.png
+-rw-r--r-- 1 jonny jonny 191121 Nov  4 08:18 RGB_480x272x24.@0010_065.#4.png
+-rw-r--r-- 1 jonny jonny 251719 Nov  4 08:18 RGB_480x272x24.@0012_065.#5.png
+-rw-r--r-- 1 jonny jonny 244164 Nov  4 08:18 RGB_480x272x24.@0014_065.#6.png
+-rw-r--r-- 1 jonny jonny 101874 Nov  4 08:18 RGB_480x272x24.@0016_065.#7.png
+-rw-r--r-- 1 jonny jonny 112985 Nov  4 08:18 RGB_480x272x24.@0018_065.#8.png
+-rw-r--r-- 1 jonny jonny 117218 Nov  4 08:18 RGB_480x272x24.@0020_065.#9.png
+
+
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ 
+

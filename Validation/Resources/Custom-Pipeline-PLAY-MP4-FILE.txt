@@ -1,0 +1,23 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; every line which starts with a letter starts a parameter definition
+;;;
+;;; a parameter definition can be extended by ending it with a backslash
+;;;
+;;; all other lines are ignored
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; The follwing console command plays the video file directly to the desktop
+;;;
+;;; gst-launch-1.0 filesrc location=F:/bunny.mp4 ! decodebin ! autovideosink 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     
+pads= auto, auto, auto
+
+poke= auto, videoconvert0, VID_WINDOW
+
+pipe= filesrc location=/home/jonny/Desktop/TELMATE/Validation/bunny.mp4 \
+    ! decodebin                        \
+    ! videoconvert                     \
+    ! autovideosink name=VID_WINDOW
+
+;;;;;;;;;;;;;;;;;;; ends:  Custom-Pipeline-PLAY-MP4-FILE.txt  ;;;;;;;;;;;;;;;;;
