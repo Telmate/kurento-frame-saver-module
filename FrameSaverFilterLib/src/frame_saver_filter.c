@@ -218,7 +218,7 @@ static gint do_appsink_snap_frame(GstAppSink    * aAppSinkPtr,
     {
         convert_BGR_frame_to_RGB(map.data, pix_size * 8, stride, cols, rows);
         sz_image_format[0] = 'R';
-        sz_image_format[0] = 'B';
+        sz_image_format[2] = 'B';
     }
 
     sprintf(sz_image_path, 
