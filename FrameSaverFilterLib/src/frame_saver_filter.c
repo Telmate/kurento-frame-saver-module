@@ -6,6 +6,7 @@
  *              2. 2016-10-28   JBendor     Updated
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
  *              4. 2016-11-04   JBendor     Support for making custom pipelines
+ *              5. 2016-11-06   JBendor     Support the actual Gstreamer plugin
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -19,6 +20,8 @@
  *               Unauthorized copying of this file is strictly prohibited.
  * ======================================================================================
  */
+
+#include "wrapped_natives.h"
 
 #include "frame_saver_filter.h"
 #include "frame_saver_params.h"
@@ -74,7 +77,8 @@ typedef struct
                 * cvt_element_ptr,
                 * tee_element_ptr,
                 * Q_1_element_ptr,
-                * Q_2_element_ptr;
+                * Q_2_element_ptr,
+                * hosted_plugin_ptr;
 
     GstClock    * sys_clock_ptr;
 
@@ -1372,6 +1376,221 @@ static gboolean do_pipeline_run_main_loop()
     g_print("frame_saver_filter --- EXITING \n");
 
     return TRUE;
+}
+
+static void *  myMutexHandlePtr = NULL;
+
+static int     myPluginsCount = -1;
+
+static void *  myKnownPlugins[100];
+
+static char    myParamsString[999];
+
+#define MAX_PARAMS_STRING_LNG  ( sizeof(myParamsString) )
+
+#define MAX_NUM_KNOWN_PLUGINS  ( sizeof(myKnownPlugins) / sizeof(gpointer) )
+
+
+//=======================================================================================
+// synopsis: result = Frame_Saver_Filter_Lookup(aPluginPtr)
+//
+// returns index in array of known plugins --- returns -1 iff not in the array
+//=======================================================================================
+int Frame_Saver_Filter_Lookup(const void * aPluginPtr)
+{
+    int index = -1;
+
+    // possibly --- first time here --- initalize mutex and array
+    if (myMutexHandlePtr == NULL)
+    {
+        if (nativeCreateMutex(&myMutexHandlePtr) != 0)
+        {
+            myMutexHandlePtr = NULL;    // failed to created mutex
+        }
+
+        memset( myKnownPlugins, 0, sizeof(myKnownPlugins) );
+
+        myPluginsCount = 0;
+
+        return -1;
+    }
+
+    // array always has NULL sentinel --- it's optimized for lookup
+    while ( (myKnownPlugins[++index] != NULL) && (myKnownPlugins[index] != aPluginPtr) )
+    {
+        ; // loop to next
+    }
+
+    return (myKnownPlugins[index] == NULL) ? -1 : index;
+}
+
+
+//=======================================================================================
+// synopsis: result = Frame_Saver_Filter_Set_Params(aPluginPtr, aValuePtr, aParamsSpecPtr)
+//
+// called at by the actual plugin to change params --- returns 0 on success, else error
+//=======================================================================================
+int Frame_Saver_Filter_Set_Params(GstElement * aPluginPtr, const GValue * aValuePtr, GParamSpec * aParamsSpecPtr)
+{
+    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+
+    // possibly --- plugin is unknown
+    if (index < 0)
+    {
+        return -1;
+    }
+
+    strncpy(myParamsString, g_value_get_string(aValuePtr), MAX_PARAMS_STRING_LNG - 1);
+
+    // TODO: parse and apply parameters
+
+    return 0;
+}
+
+
+//=======================================================================================
+// synopsis: result = Frame_Saver_Filter_Get_Params(aPluginPtr, aValuePtr, aParamsSpecPtr)
+//
+// called at by the actual plugin to obtain params --- returns 0 on success, else error
+//=======================================================================================
+int Frame_Saver_Filter_Get_Params(GstElement * aPluginPtr, GValue * aValuePtr, GParamSpec * aParamsSpecPtr)
+{
+    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+
+    // possibly --- plugin is unknown
+    if (index < 0)
+    {
+        return -1;
+    }
+
+    g_value_set_string (aValuePtr, myParamsString);
+
+    return 0;
+}
+
+
+//=======================================================================================
+// synopsis: result = Frame_Saver_Filter_Transition(aPluginPtr)
+//
+// called at by the actual plugin upon state change --- returns 0 on success, else error
+//=======================================================================================
+int Frame_Saver_Filter_Transition(GstElement * aPluginPtr, GstStateChange aTransition)
+{
+    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+
+    // possibly --- plugin is unknown
+    if (index < 0)
+    {
+        return -1;
+    }
+
+    // TODO: perform state trnasition
+
+    return 0; 
+}
+
+
+//=======================================================================================
+// synopsis: result = Frame_Saver_Filter_Attach(aPluginPtr)
+//
+// should be called when plugin is created --- returns 0 on success, else error
+//=======================================================================================
+int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
+{
+    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+
+    // verify pointer validity
+    if (aPluginPtr == NULL)
+    {
+        return -1;
+    }
+
+    // possibly --- plugin is not new --- unexpected, but allowed
+    if (index >= 0)
+    {
+        return 0;
+    }
+    
+    // acquire mutex
+    if (nativeTryLockMutex(myMutexHandlePtr, 100) != 0)
+    {
+        return -2;  // failed to acquire mutex
+    }
+
+    // find the NULL sentinel 
+    for (index = 0;  myKnownPlugins[index] != NULL;  ++index)
+    {
+        ; // loop to next
+    }
+
+    // TODO: presently, allow only one plugin --- later: MAX_NUM_KNOWN_PLUGINS
+    if (mySniffer.hosted_plugin_ptr == NULL)
+    {
+        // posiblly keep pointer --- first NULL is always the array's sentinel
+        if (index < MAX_NUM_KNOWN_PLUGINS - 1)
+        {
+            ++myPluginsCount;
+
+            myKnownPlugins[index] = aPluginPtr;
+
+            mySniffer.hosted_plugin_ptr = aPluginPtr;
+        }
+    }
+
+    nativeReleaseMutex(myMutexHandlePtr);
+
+    return myKnownPlugins[index] ? 0 : -1;
+}
+
+
+//=======================================================================================
+// synopsis: result = Frame_Saver_Filter_Detach(aPluginPtr)
+//
+// should be called when plugin gets EOS --- returns 0 on success, else error
+//=======================================================================================
+int Frame_Saver_Filter_Detach(GstElement * aPluginPtr)
+{
+    if (nativeTryLockMutex(myMutexHandlePtr, 100) != 0)
+    {
+        nativeReleaseMutex(myMutexHandlePtr);
+
+        return -2;  // failed to acquire mutex
+    }
+
+    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+
+    // possibly --- plugin is unknown
+    if (index < 0)
+    {
+        return -1;
+    }
+
+    index = Frame_Saver_Filter_Lookup(aPluginPtr); 
+
+    // keep array items compacted --- the sentinel is always the first NULL
+    while (myKnownPlugins[++index] != NULL)
+    {
+        myKnownPlugins[index - 1] = myKnownPlugins[index]; 
+    }
+
+    myKnownPlugins[index] = NULL;
+
+    mySniffer.hosted_plugin_ptr = NULL;
+
+    if ( --myPluginsCount == 0 )
+    {
+        void * ptr_mutex = myMutexHandlePtr;
+
+        myMutexHandlePtr = NULL;
+
+        nativeDeleteMutex(ptr_mutex);
+    }
+    else
+    {
+        nativeReleaseMutex(myMutexHandlePtr);
+    }
+
+    return 0;
 }
 
 

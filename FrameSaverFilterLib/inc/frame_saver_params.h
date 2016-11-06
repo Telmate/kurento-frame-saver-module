@@ -7,6 +7,7 @@
  * History:     1. 2016-10-29   JBendor     Created    
  *              2. 2016-10-29   JBendor     Updated 
  *              3. 2016-11-04   JBendor     Support for custom pipelines
+ *              3. 2016-11-06   JBendor     Defined and used MKDIR_MODE
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -30,9 +31,9 @@
     #include <direct.h>
     #include <limits.h>
 
-    #define MK_RWX_DIR(path)     mkdir( (path) )
+    #define MK_RWX_DIR(path)    mkdir( (path) )
     #define GET_CWD(buf,lng)    _getcwd( (buf),(lng) )
-    #define ABS_PATH(p,b,l)     _fullpath( (b), (p), (l) );
+    #define ABS_PATH(p,b,l)     _fullpath( (b), (p), (l) )
     #define PATH_DELIMITER      '\\' 
     #define PATH_MAX            (260)
 #endif
@@ -44,9 +45,10 @@
 
     extern char *realpath (const char * path_ptr, char * buff_ptr);
 
-    #define MK_RWX_DIR(path)    mkdir( (path),(S_IRWXU | S_IRWXG | S_IRWXO) )
-    #define GET_CWD(buf,lng)    getcwd( (buf),(lng) )
-    #define ABS_PATH(p,b,l)     realpath( (p), (b) );
+    #define MKDIR_MODE          (S_IRWXU | S_IRWXG | S_IRWXO)
+    #define MK_RWX_DIR(path)    mkdir( (path), MKDIR_MODE )
+    #define GET_CWD(buf,lng)    getcwd( (buf), (lng) )
+    #define ABS_PATH(p,b,l)     realpath( (p), (b) )
     #define PATH_DELIMITER      '/'
 #endif
 

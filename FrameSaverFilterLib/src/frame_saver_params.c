@@ -3,7 +3,7 @@
  * File:        frame_saver_params.c
  * 
  * History:     1. 2016-10-29   JBendor     Created
- *              2. 2016-11-04   JBendor     Updated
+ *              2. 2016-11-06   JBendor     Updated
  *
  * Description: implements parameters used by the Frame_Saver_Filter
  *
@@ -15,15 +15,15 @@
 #include "frame_saver_params.h"
 
 
-#if defined _CYGWIN_X64
+#ifdef _CYGWIN
 
-int realpath( const char *aPathPtr, char * aBuffPtr )
+char * realpath( const char *aPathPtr, char * aBuffPtr )
 {
     int lng = (int) strlen( GET_CWD(aBuffPtr, PATH_MAX) );
 
     if (aPathPtr[0] == PATH_DELIMITER)
     {
-        return sprintf(aBuffPtr, "%s", aPathPtr);
+        sprintf(aBuffPtr, "%s", aPathPtr);  return (aBuffPtr);
     }
 
     while ((lng > 0) && (aPathPtr[0] == '.') && (aPathPtr[1] == '.') && (aPathPtr[2] == PATH_DELIMITER))
@@ -37,10 +37,12 @@ int realpath( const char *aPathPtr, char * aBuffPtr )
 
     if ((aPathPtr[0] == '.') && (aPathPtr[1] == PATH_DELIMITER))
     {
-        return lng + sprintf(aBuffPtr+lng, "%s", ++aPathPtr);
+        lng += sprintf(aBuffPtr+lng, "%s", ++aPathPtr);   return (aBuffPtr);
     }
 
-    return lng + sprintf(aBuffPtr+lng, "%s", aPathPtr); // may need more work
+    lng += sprintf(aBuffPtr+lng, "%s", aPathPtr);
+
+    return (aBuffPtr);  // may need more work
 }
 
 #endif // _CYGWIN_X64
@@ -478,9 +480,7 @@ gboolean frame_saver_params_initialize(SplicerParams_t * aParamsPtr)
     aParamsPtr->max_spin_ms = 4000;
     aParamsPtr->max_play_ms = 9000;
 
-    GET_CWD(aParamsPtr->folder_path, sizeof(aParamsPtr->folder_path));
-
-    return TRUE;
+    return (GET_CWD(aParamsPtr->folder_path, sizeof(aParamsPtr->folder_path)) != NULL);
 }
 
 
@@ -561,9 +561,9 @@ gboolean frame_saver_params_parse_many(int argc, char *argv[], SplicerParams_t *
             char  params_ascii[4000];
             char* params_array[30] = { "", NULL };
 
-            ABS_PATH( &psz_param[5], abs_path, PATH_MAX ); 
+            char* full_path = ABS_PATH( &psz_param[5], abs_path, PATH_MAX );
 
-            int  max_params = (sizeof(params_array) / sizeof(char*));
+            int  max_params = full_path ? (sizeof(params_array) / sizeof(char*)) : 0;
 
             int  num_params = do_read_params_file(abs_path, 
                                                   sizeof(params_ascii),
