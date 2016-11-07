@@ -1384,7 +1384,7 @@ static int     myPluginsCount = -1;
 
 static void *  myKnownPlugins[100];
 
-static char    myParamsString[999];
+static char    myParamsString[999];     // TODO --- support many plugins
 
 #define MAX_PARAMS_STRING_LNG  ( sizeof(myParamsString) )
 
@@ -1512,7 +1512,7 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
     }
     
     // acquire mutex
-    if (nativeTryLockMutex(myMutexHandlePtr, 100) != 0)
+    if ((! myMutexHandlePtr) || nativeTryLockMutex(myMutexHandlePtr, 100) != 0)
     {
         return -2;  // failed to acquire mutex
     }
@@ -1550,7 +1550,7 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
 //=======================================================================================
 int Frame_Saver_Filter_Detach(GstElement * aPluginPtr)
 {
-    if (nativeTryLockMutex(myMutexHandlePtr, 100) != 0)
+    if ((! myMutexHandlePtr) || nativeTryLockMutex(myMutexHandlePtr, 100) != 0)
     {
         return -2;  // failed to acquire mutex
     }
