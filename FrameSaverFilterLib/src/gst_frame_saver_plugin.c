@@ -144,13 +144,14 @@ typedef struct _GstFrameSaverPluginClass
 } GstFrameSaverPluginClass;
 
 
-G_DEFINE_TYPE(GstFrameSaverPlugin, gst_frame_saver_plugin, GST_TYPE_ELEMENT);   // declares several static functions
+// The macro expansion G_DEFINE_TYPE defines some functions and variables
+G_DEFINE_TYPE(GstFrameSaverPlugin, gst_frame_saver_plugin, GST_TYPE_ELEMENT);   
+
+extern GType gst_frame_saver_plugin_get_type (void);    // body defined by G_DEFINE_TYPE
 
 GST_DEBUG_CATEGORY_STATIC (gst_frame_saver_plugin_debug);
 
 #define GST_CAT_DEFAULT gst_frame_saver_plugin_debug
-
-extern GType gst_frame_saver_plugin_get_type (void);
 
 #define GST_TYPE_OF_FRAME_SAVER_PLUGIN            (gst_frame_saver_plugin_get_type())
 
@@ -220,7 +221,7 @@ static void gst_frame_saver_plugin_class_init (GstFrameSaverPluginClass * klass)
   {
       This_Plugin_Element_Class_ptr = GST_ELEMENT_CLASS (klass);
 
-      This_Plugin_Element_Parent_Class_ptr = GST_ELEMENT_CLASS(&This_Plugin_Element_Class_ptr->parent_class);
+      This_Plugin_Element_Parent_Class_ptr = GST_ELEMENT_CLASS(gst_frame_saver_plugin_parent_class);
 
       This_Plugin_Element_Class_ptr->change_state = gst_frame_saver_plugin_change_state;
   }
