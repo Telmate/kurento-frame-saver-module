@@ -1539,7 +1539,7 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
 
     nativeReleaseMutex(myMutexHandlePtr);
 
-    return myKnownPlugins[index] ? 0 : -1;
+    return (myKnownPlugins[index] == NULL) ? -1 : 0;
 }
 
 
@@ -1552,8 +1552,6 @@ int Frame_Saver_Filter_Detach(GstElement * aPluginPtr)
 {
     if (nativeTryLockMutex(myMutexHandlePtr, 100) != 0)
     {
-        nativeReleaseMutex(myMutexHandlePtr);
-
         return -2;  // failed to acquire mutex
     }
 
@@ -1562,6 +1560,8 @@ int Frame_Saver_Filter_Detach(GstElement * aPluginPtr)
     // possibly --- plugin is unknown
     if (index < 0)
     {
+        nativeReleaseMutex(myMutexHandlePtr);
+
         return -1;
     }
 
