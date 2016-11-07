@@ -1390,6 +1390,7 @@ static char    myParamsString[999];     // TODO --- support many plugins
 
 #define MAX_NUM_KNOWN_PLUGINS  ( sizeof(myKnownPlugins) / sizeof(gpointer) )
 
+#define LOCK_MUTEX_TIMEOUT_MS  (10)
 
 //=======================================================================================
 // synopsis: result = Frame_Saver_Filter_Lookup(aPluginPtr)
@@ -1511,8 +1512,12 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
         return 0;
     }
     
-    // acquire mutex
-    if ((! myMutexHandlePtr) || nativeTryLockMutex(myMutexHandlePtr, 100) != 0)
+    if (! myMutexHandlePtr)
+    {
+        return -3;  // mutex does not exist
+    }
+
+    if (nativeTryLockMutex(myMutexHandlePtr, LOCK_MUTEX_TIMEOUT_MS) != 0)
     {
         return -2;  // failed to acquire mutex
     }
@@ -1526,7 +1531,7 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
     // TODO: presently, allow only one plugin --- later: MAX_NUM_KNOWN_PLUGINS
     if (mySniffer.hosted_plugin_ptr == NULL)
     {
-        // posiblly keep pointer --- first NULL is always the array's sentinel
+        // possibly keep pointer --- first NULL is always the array's sentinel
         if (index < MAX_NUM_KNOWN_PLUGINS - 1)
         {
             ++myPluginsCount;
@@ -1550,7 +1555,12 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
 //=======================================================================================
 int Frame_Saver_Filter_Detach(GstElement * aPluginPtr)
 {
-    if ((! myMutexHandlePtr) || nativeTryLockMutex(myMutexHandlePtr, 100) != 0)
+    if (! myMutexHandlePtr)
+    {
+        return -3;  // mutex does not exist
+    }
+
+    if (nativeTryLockMutex(myMutexHandlePtr, LOCK_MUTEX_TIMEOUT_MS) != 0)
     {
         return -2;  // failed to acquire mutex
     }
