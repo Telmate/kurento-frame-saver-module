@@ -5,7 +5,8 @@
  * Purpose:     wrapper for platform's native functions (machine and OS)
  *
  * History:     1. 2016-11-05   JBendor     created from base
- *              2. 2016-11-06   JBendor     updated copyright 
+ *              2. 2016-11-07   JBendor     updated copyright 
+ *              3. 2016-11-07   JBendor     updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -171,9 +172,12 @@
     #define MAXINT          ((int)(MAXUINT >> 1))
 #endif
 
+// number of slots in array
+#define ARRAY_SLOTS(a)      ( sizeof(a) / sizeof(*(a)) )
+
 // well named substitutes for max and min macros    
-#define MIN_OF_TWO(a,b) ( (a) < (b) ? (a) : (b) )  
-#define MAX_OF_TWO(a,b) ( (a) > (b) ? (a) : (b) )
+#define MIN_OF_TWO(a,b)     ( (a) < (b) ? (a) : (b) )  
+#define MAX_OF_TWO(a,b)     ( (a) > (b) ? (a) : (b) )
 
 
 #ifdef  __cplusplus
@@ -209,9 +213,9 @@ int      nativeReleaseMutex ( HANDLE nativeMutexHandle );                       
 
 int      nativeTryLockMutex ( HANDLE mutexHandle, int timeoutMillies );         // returns 0 iff success
 
-char*    nativeStrDup(const char * pszText);            // Replacing "strdup" which is availale in POSIX
+char*    nativeStrDup(const char * pszText);             // Replaces "strdup" which is availale in POSIX
 
-void     nativeWaitForKeypress();           // WIN32: waits for any keypess. UNIX: waits only for Ctrl-C
+void     nativeWaitForKeypress();          // WINDOWS: waits for any key --- UNIX: waits only for Ctrl-C
 
 
 #ifdef  __cplusplus

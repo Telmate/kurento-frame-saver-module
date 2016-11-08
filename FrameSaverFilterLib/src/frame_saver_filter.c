@@ -6,7 +6,7 @@
  *              2. 2016-10-28   JBendor     Updated
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
  *              4. 2016-11-04   JBendor     Support for making custom pipelines
- *              5. 2016-11-06   JBendor     Support the actual Gstreamer plugin
+ *              5. 2016-11-07   JBendor     Support the actual Gstreamer plugin
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -39,7 +39,7 @@
 #define CAPS_FOR_VIEW_SINKER  "video/x-raw, width=(int)500, height=(int)200"
 #define CAPS_FOR_SNAP_SINKER  "video/x-raw, format=(string)RGB, bpp=(int)24"
 
-#define _USING_SINKERS_CAPS_  // undefined: links T_Q2 using PRODUCER's caps
+#define _USING_SINKERS_CAPS_  // if undefined: links T_Q2 using PRODUCER's caps
 
 
 //=======================================================================================
@@ -1134,7 +1134,7 @@ static PIPELINE_MAKER_ERROR_e do_pipeline_create()
 
     // create the pipeline's elements
     mySniffer.vid_sourcer_ptr = gst_element_factory_make("videotestsrc",  DEFAULT_VID_SOURCE_NAME);
-    mySniffer.cvt_element_ptr = gst_element_factory_make("videoconvert",  DEFAULT_VID_CVT_NAME);
+    mySniffer.cvt_element_ptr = gst_element_factory_make("videoconvert",  DEFAULT_1ST_CVT_NAME);
     mySniffer.tee_element_ptr = gst_element_factory_make("tee",           DEFAULT_VID_TEE_NAME);
     mySniffer.Q_1_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_1_NAME);
     mySniffer.Q_2_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_2_NAME);
@@ -1379,17 +1379,10 @@ static gboolean do_pipeline_run_main_loop()
 }
 
 static void *  myMutexHandlePtr = NULL;
-
+static void *  myKnownPlugins[100];
 static int     myPluginsCount = -1;
 
-static void *  myKnownPlugins[100];
-
-static char    myParamsString[999];     // TODO --- support many plugins
-
-#define MAX_PARAMS_STRING_LNG  ( sizeof(myParamsString) )
-
 #define MAX_NUM_KNOWN_PLUGINS  ( sizeof(myKnownPlugins) / sizeof(gpointer) )
-
 #define LOCK_MUTEX_TIMEOUT_MS  (10)
 
 //=======================================================================================
@@ -1433,6 +1426,8 @@ int Frame_Saver_Filter_Lookup(const void * aPluginPtr)
 //=======================================================================================
 int Frame_Saver_Filter_Set_Params(GstElement * aPluginPtr, const GValue * aValuePtr, GParamSpec * aParamsSpecPtr)
 {
+    char params_specs[MAX_PARAMS_SPECS_LNG];
+
     int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
 
     // possibly --- plugin is unknown
@@ -1441,9 +1436,33 @@ int Frame_Saver_Filter_Set_Params(GstElement * aPluginPtr, const GValue * aValue
         return -1;
     }
 
-    strncpy(myParamsString, g_value_get_string(aValuePtr), MAX_PARAMS_STRING_LNG - 1);
+    // verify that value can hold a string
+    if (G_VALUE_HOLDS_STRING(aValuePtr) != TRUE)
+    {
+        return (G_IS_PARAM_SPEC_STRING(aParamsSpecPtr) == TRUE) ? -2 : -3;
+    }
 
-    // TODO: parse and apply parameters
+    const char * psz_specs = g_value_get_string(aValuePtr);
+
+    // possibly --- invalid string
+    if (psz_specs == NULL)
+    {
+        return -4;
+    }
+
+    int specs_lng = (int) strlen(psz_specs);
+
+    // possibly invalid length
+    if (sprintf(params_specs, "%s", psz_specs) != specs_lng)
+    {
+        return -5;
+    }
+
+    // possibly --- invalid params
+    if (frame_saver_params_parse_from_text(&mySplicer.params, params_specs) != TRUE)
+    {
+        return -6;
+    }
 
     return 0;
 }
@@ -1456,6 +1475,8 @@ int Frame_Saver_Filter_Set_Params(GstElement * aPluginPtr, const GValue * aValue
 //=======================================================================================
 int Frame_Saver_Filter_Get_Params(GstElement * aPluginPtr, GValue * aValuePtr, GParamSpec * aParamsSpecPtr)
 {
+    char params_report[MAX_PARAMS_SPECS_LNG];
+
     int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
 
     // possibly --- plugin is unknown
@@ -1464,7 +1485,15 @@ int Frame_Saver_Filter_Get_Params(GstElement * aPluginPtr, GValue * aValuePtr, G
         return -1;
     }
 
-    g_value_set_string (aValuePtr, myParamsString);
+    // verify that value can hold a string
+    if (G_VALUE_HOLDS_STRING(aValuePtr) != TRUE)
+    {
+        return (G_IS_PARAM_SPEC_STRING(aParamsSpecPtr) == TRUE) ? -2 : -3;
+    }
+
+    frame_saver_params_write_to_buffer( &mySplicer.params, params_report, sizeof(params_report) );
+
+    g_value_take_string(aValuePtr, params_report);
 
     return 0;
 }
@@ -1615,12 +1644,12 @@ int frame_saver_filter_tester( int argc, char ** argv )
 
     frame_saver_params_initialize( &mySplicer.params );
 
-    if (frame_saver_params_parse_many(argc, argv, &mySplicer.params) != TRUE)
+    if (frame_saver_params_parse_from_array(&mySplicer.params, ++argv, --argc) != TRUE)
     {
         g_print("\n");
         result = 1;
     }
-    else if (frame_saver_params_report_all(&mySplicer.params, stdout) != TRUE)
+    else if (frame_saver_params_write_to_file(&mySplicer.params, stdout) != TRUE)
     {
         g_print("frame_saver_filter_tester --- failed reporting parameters used \n");
         result = 2;

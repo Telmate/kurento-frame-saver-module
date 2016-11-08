@@ -7,7 +7,8 @@
  * History:     1. 2016-10-29   JBendor     Created    
  *              2. 2016-10-29   JBendor     Updated 
  *              3. 2016-11-04   JBendor     Support for custom pipelines
- *              3. 2016-11-06   JBendor     Defined and used MKDIR_MODE
+ *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
+ *              5. 2016-11-07   JBendor     Support dynamic params update
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -58,16 +59,19 @@
 #define  MAX_PAD_NAME_LNG               (20)
 #define  MAX_ELEMENT_NAME_LNG           (30)
 #define  MAX_PIPELINE_CFG_LNG           (900)
+#define  MAX_PARAMS_SPECS_LNG           (4000)
+#define  MAX_PARAMS_ARRAY_LNG           (20)
 
 #define  DEFAULT_PIPELINE_NAME          "FSL_PIPE"
 #define  DEFAULT_VID_SINK_1_NAME        "FSL_VIEW1"
 #define  DEFAULT_VID_SINK_2_NAME        "FSL_VIEW2"
 #define  DEFAULT_APP_SINK_2_NAME        "FSL_SNAPS"
 #define  DEFAULT_VID_SOURCE_NAME        "FSL_SRC"
-#define  DEFAULT_VID_CVT_NAME           "FSL_CVT"
 #define  DEFAULT_VID_TEE_NAME           "FSL_TEE"
 #define  DEFAULT_QUEUE_1_NAME           "FSL_TQ1"
 #define  DEFAULT_QUEUE_2_NAME           "FSL_TQ2"
+#define  DEFAULT_1ST_CVT_NAME           "FSL_CVT_1"
+#define  DEFAULT_2ND_CVT_NAME           "FSL_CVT_2"
 
 
 //=======================================================================================
@@ -121,11 +125,19 @@ gboolean pipeline_params_parse_one(const char * aSpecsPtr, SplicerParams_t * aPa
 
 
 //=======================================================================================
-// synopsis: is_ok = frame_saver_params_report_all(aParamsPtr, aOutFilePtr)
+// synopsis: length = frame_saver_params_write_to_buffer(aParamsPtr, aBufferPtr, aMaxLength)
 //
-// reports the parameters for the frame_saver_filter --- returns TRUE for success
+// writes to buffer all parameters of the frame_saver_filter --- returns length of text
 //=======================================================================================
-gboolean frame_saver_params_report_all(SplicerParams_t * aParamsPtr, FILE * aOutFilePtr);
+gint frame_saver_params_write_to_buffer(SplicerParams_t * aParamsPtr, char * aBufferPtr, gint aMaxLength);
+
+
+//=======================================================================================
+// synopsis: is_ok = frame_saver_params_write_to_file(aParamsPtr, aOutFilePtr)
+//
+// writes to file all parameters of the frame_saver_filter --- returns TRUE for success
+//=======================================================================================
+gboolean frame_saver_params_write_to_file(SplicerParams_t * aParamsPtr, FILE * aOutFilePtr);
 
 
 //=======================================================================================
@@ -137,11 +149,19 @@ gboolean frame_saver_params_initialize(SplicerParams_t * aParamsPtr);
 
 
 //=======================================================================================
-// synopsis: is_ok = frame_saver_params_parse_many(argc, argv, aParamsPtr)
+// synopsis: is_ok = frame_saver_params_parse_from_array(aParamsPtr, aArgsArray, aArgsCount)
 //
 // parses parameters for the frame_saver_filter --- returns TRUE for success
 //=======================================================================================
-gboolean frame_saver_params_parse_many(int argc, char *argv[], SplicerParams_t * aParamsPtr);
+gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char *aArgsArray[], int aArgsCount);
+
+
+//=======================================================================================
+// synopsis: is_ok = frame_saver_params_parse_from_text(aParamsPtr, aTextPtr)
+//
+// parses parameters for the frame_saver_filter --- returns TRUE for success
+//=======================================================================================
+gboolean frame_saver_params_parse_from_text(SplicerParams_t * aParamsPtr, char * aTextPtr);
 
 
 #ifdef __cplusplus

@@ -4,6 +4,9 @@
  * 
  * History:     1. 2016-10-29   JBendor     Created
  *              2. 2016-11-06   JBendor     Updated
+ *              3. 2016-11-04   JBendor     Support for custom pipelines
+ *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
+ *              5. 2016-11-07   JBendor     Support dynamic params update
  *
  * Description: implements parameters used by the Frame_Saver_Filter
  *
@@ -45,7 +48,7 @@ char * realpath( const char *aPathPtr, char * aBuffPtr )
     return (aBuffPtr);  // may need more work
 }
 
-#endif // _CYGWIN_X64
+#endif // _CYGWIN
 
 
 //=======================================================================================
@@ -84,11 +87,14 @@ static int do_trim_spaces(char * aTextPtr, gboolean aKeepOne)
 
 
  //=======================================================================================
- // synopsis: count = do_tokenize_text(aTextPtr, aDelimiter, aMaxTokens, aLngArray)
+ // synopsis: count = do_find_char_occurences(aTextPtr, aDelimiter, aLngArray, aMaxTokens)
  //
  // finds occurences of a delimiter in a string --- returns number of occurences
  //=======================================================================================
-static int do_tokenize_text(const char * aTextPtr, char aDelimiter, int aMaxTokens, int* aLngArray)
+static int do_find_char_occurences(const char * aTextPtr, 
+                                   char         aDelimiter, 
+                                   int          aLngArray[], 
+                                   int          aMaxTokens)
 {
     const char * prior_ptr = aTextPtr - 1;
     int          token_lng = aTextPtr ? 1 : -1;
@@ -105,9 +111,59 @@ static int do_tokenize_text(const char * aTextPtr, char aDelimiter, int aMaxToke
         prior_ptr = token_ptr;
     }
 
-    return (token_idx + 1);
+    if (++token_idx < aMaxTokens)
+    {
+        aLngArray[token_idx] = -1;  // sentinel
+    }
+
+    return token_idx;
 }
 
+
+//=======================================================================================
+// synopsis: count = do_tokenize_text(aTextPtr, aDelimiter, aMaxTokens, aTokensArray)
+//
+// splits a string into tokens using the designated delimiter
+//=======================================================================================
+static int do_tokenize_text(char * aTextPtr,
+                            char   aDelimiter,
+                            char * aTokensArray[],
+                            int    aMaxTokens)
+{
+    char * prior_ptr = aTextPtr;
+    int    token_idx = -1;
+
+    while ( (prior_ptr != NULL) && (token_idx < aMaxTokens) )
+    {
+        while (*prior_ptr == aDelimiter)
+        {
+            ++prior_ptr;
+        }
+
+        if (*prior_ptr == 0)
+        {
+            break;
+        }
+
+        char * token_ptr = strchr(prior_ptr, aDelimiter);
+
+        aTokensArray[++token_idx] = prior_ptr;
+
+        if (token_ptr != NULL)
+        {
+            *token_ptr++ =0;
+        }
+
+        prior_ptr = token_ptr;
+    }
+
+    if (++token_idx < aMaxTokens)
+    {
+        aTokensArray[token_idx] = NULL;     // sentinel
+    }
+
+    return token_idx;
+}
 
 //=======================================================================================
 // synopsis: count = do_read_params_file(aAbdPathPtr, aBufferLng, aBufferPtr, aMaxParams, aParamsArray)
@@ -279,7 +335,7 @@ gboolean pipeline_params_parse_one(const char * aSpecsPtr, SplicerParams_t * aPa
     {
         int lengths[4] = { 0, 0, 0, 0 };
 
-        int num_tokens = do_tokenize_text(&aSpecsPtr[5], ',', 4, lengths);
+        int num_tokens = do_find_char_occurences(&aSpecsPtr[5], ',', lengths, 4);
 
         is_ok = (num_tokens == 3) && 
                 (lengths[0] >= 1) && (lengths[0] <= MAX_ELEMENT_NAME_LNG) &&
@@ -318,7 +374,7 @@ gboolean pipeline_params_parse_one(const char * aSpecsPtr, SplicerParams_t * aPa
     {
         int lengths[4] = { 0, 0, 0, 0 };
 
-        int num_tokens = do_tokenize_text(&aSpecsPtr[5], ',', 4, lengths);
+        int num_tokens = do_find_char_occurences(&aSpecsPtr[5], ',', lengths, 4);
 
         is_ok = (num_tokens == 3) && 
                 (lengths[0] >= 1) && (lengths[0] <= MAX_PAD_NAME_LNG) &&
@@ -372,17 +428,29 @@ gboolean pipeline_params_parse_one(const char * aSpecsPtr, SplicerParams_t * aPa
 
 
 //=======================================================================================
-// synopsis: is_ok = frame_saver_params_report_all(aParamsPtr, aOutFilePtr)
+// synopsis: length = frame_saver_params_write_to_buffer(aParamsPtr, aBufferPtr, aMaxLength)
 //
-// reports the parameters for the frame_saver_filter --- returns TRUE for success
+// writes to buffer all parameters of the frame_saver_filter --- returns length of text
 //=======================================================================================
-gboolean frame_saver_params_report_all(SplicerParams_t * aParamsPtr, FILE * aOutFilePtr)
+gint frame_saver_params_write_to_buffer(SplicerParams_t * aParamsPtr, char * aBufferPtr, gint aMaxLength)
 {
+    #define FMT ("%s %s=%d %s=%d %s=%d %s=%d %s=(%s) %s=(%s) %s=(%s,%s,%s) %s=(%s,%s,%s) \n\n")
+
     char * bangs_ptr = strchr(aParamsPtr->pipeline_spec, '!');
+
+    const char * psz_pipeline_type = "default-pipeline";
 
     if (bangs_ptr == NULL)
     {
         sprintf(aParamsPtr->pipeline_spec, "%s", "auto");
+    }
+    else if (aParamsPtr->pipeline_spec[0] == '!')
+    {
+        psz_pipeline_type = "parent-pipeline";
+    }
+    else
+    {
+        psz_pipeline_type = "custom-pipeline";
     }
 
     if ((*aParamsPtr->pipeline_name == 0) || 
@@ -400,7 +468,7 @@ gboolean frame_saver_params_report_all(SplicerParams_t * aParamsPtr, FILE * aOut
     if ((*aParamsPtr->consumer_name == 0) || 
         (strcmp(aParamsPtr->consumer_name, "auto") == 0))
     {
-        sprintf(aParamsPtr->consumer_name, "%s", DEFAULT_VID_CVT_NAME);
+        sprintf(aParamsPtr->consumer_name, "%s", DEFAULT_1ST_CVT_NAME);
     }
 
     if ((*aParamsPtr->producer_out_pad_name == 0) || 
@@ -421,20 +489,22 @@ gboolean frame_saver_params_report_all(SplicerParams_t * aParamsPtr, FILE * aOut
         sprintf(aParamsPtr->consumer_out_pad_name, "%s", "src");
     }
 
-    fprintf(aOutFilePtr,
-            "\nPARAMETERS: %s=%d %s=%d %s=%d %s=%d %s=(%s) %s=(%s) %s=(%s,%s,%s) %s=(%s,%s,%s) \n\n",
-            "\n          tick", aParamsPtr->one_tick_ms,
-            "\n          snap", aParamsPtr->one_snap_ms,
-            "\n          spin", aParamsPtr->max_spin_ms,
-            "\n          play", aParamsPtr->max_play_ms,
-            "\n          path", aParamsPtr->folder_path,
-            "\n          pipe", bangs_ptr ? "custom-pipeline" : "default-pipeline",
-            "\n          poke", aParamsPtr->pipeline_name,
-                                aParamsPtr->producer_name, 
-                                aParamsPtr->consumer_name,
-            "\n          pads", aParamsPtr->producer_out_pad_name, 
-                                aParamsPtr->consumer_inp_pad_name, 
-                                aParamsPtr->consumer_out_pad_name);
+    int max_lng = aMaxLength - 1;
+
+    int txt_lng = snprintf(aBufferPtr, max_lng,  FMT,  
+                           "\nPARAMETERS:",
+                           "\n          tick", aParamsPtr->one_tick_ms,
+                           "\n          snap", aParamsPtr->one_snap_ms,
+                           "\n          spin", aParamsPtr->max_spin_ms,
+                           "\n          play", aParamsPtr->max_play_ms,
+                           "\n          path", aParamsPtr->folder_path,
+                           "\n          pipe", psz_pipeline_type,
+                           "\n          poke", aParamsPtr->pipeline_name,
+                                               aParamsPtr->producer_name, 
+                                               aParamsPtr->consumer_name,
+                           "\n          pads", aParamsPtr->producer_out_pad_name, 
+                                               aParamsPtr->consumer_inp_pad_name, 
+                                               aParamsPtr->consumer_out_pad_name);
 
     if (bangs_ptr != NULL)
     {
@@ -445,7 +515,8 @@ gboolean frame_saver_params_report_all(SplicerParams_t * aParamsPtr, FILE * aOut
         bangs_ptr = strchr(specs_ptr, '!');
 
         *bangs_ptr = 0;
-        fprintf(aOutFilePtr, "PIPELINE: %s ! \n", specs_ptr);
+        max_lng = aMaxLength - txt_lng;
+        txt_lng += snprintf(aBufferPtr + txt_lng, max_lng, "PIPELINE: %s ! \n", specs_ptr);
 
         for ( ; ; )
         {
@@ -454,15 +525,32 @@ gboolean frame_saver_params_report_all(SplicerParams_t * aParamsPtr, FILE * aOut
             if (bangs_ptr != NULL)
             {
                 *bangs_ptr = 0;
-                fprintf(aOutFilePtr, ".........%s ! \n", specs_ptr);            
+                max_lng = aMaxLength - txt_lng;
+                txt_lng += snprintf(aBufferPtr + txt_lng, max_lng, ".........%s ! \n", specs_ptr);            
                 continue;
             }
             break;
         }
 
-        fprintf(aOutFilePtr, ".........%s \n\n", specs_ptr);
+        txt_lng += snprintf(aBufferPtr + txt_lng, max_lng, ".........%s \n\n", specs_ptr);
     }
-    return TRUE;
+
+    return txt_lng;
+}
+
+
+//=======================================================================================
+// synopsis: is_ok = frame_saver_params_write_to_file(aParamsPtr, aOutFilePtr)
+//
+// writes to file all parameters of the frame_saver_filter --- returns TRUE for success
+//=======================================================================================
+gboolean frame_saver_params_write_to_file(SplicerParams_t * aParamsPtr, FILE * aOutFilePtr)
+{
+    char report[MAX_PARAMS_SPECS_LNG];
+
+    int length = frame_saver_params_write_to_buffer( aParamsPtr, report, sizeof(report) );
+
+    return ( (length > 0) && (fprintf(aOutFilePtr, "%s", report) > 0) );
 }
 
 
@@ -485,27 +573,28 @@ gboolean frame_saver_params_initialize(SplicerParams_t * aParamsPtr)
 
 
 //=======================================================================================
-// synopsis: is_ok = frame_saver_params_parse_many(argc, argv, aParamsPtr)
+// synopsis: is_ok = frame_saver_params_parse_from_array(aParamsPtr, aArgsArray, aArgsCount)
 //
 // parses parameters for the frame_saver_filter --- returns TRUE for success
 //=======================================================================================
-gboolean frame_saver_params_parse_many(int argc, char *argv[], SplicerParams_t * aParamsPtr)
+gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char *aArgsArray[], int aArgsCount)
 {
     gboolean is_ok = TRUE;
 
-    if (argc < 0)
+    if ( (aArgsCount < 0) || (aArgsArray == NULL) )
     {
         return FALSE;
     }
 
-    if ( (argc < 2) || (! argv) )
+    if ( (aArgsCount == 1) && (strncmp(aArgsArray[0], "PLUGIN ", 7) == 0) )
     {
-        return TRUE;
+        is_ok = frame_saver_params_parse_from_text(aParamsPtr, aArgsArray[0] + 7);
+        return is_ok;
     }
 
-    while ( is_ok && (--argc > 0) )
+    while ( is_ok && (--aArgsCount >= 0) )
     {
-        const char * psz_param = argv[argc];
+        const char * psz_param = aArgsArray[aArgsCount];
 
         if ( (psz_param == NULL) || (*psz_param == 0) )
         {
@@ -559,28 +648,28 @@ gboolean frame_saver_params_parse_many(int argc, char *argv[], SplicerParams_t *
         {
             char  abs_path[PATH_MAX]; 
             char  params_ascii[4000];
-            char* params_array[30] = { "", NULL };
+            char* params_array[MAX_PARAMS_ARRAY_LNG];
 
             char* full_path = ABS_PATH( &psz_param[5], abs_path, PATH_MAX );
 
-            int  max_params = full_path ? (sizeof(params_array) / sizeof(char*)) : 0;
+            int  max_params = full_path ? MAX_PARAMS_ARRAY_LNG : 0;
 
             int  num_params = do_read_params_file(abs_path, 
                                                   sizeof(params_ascii),
                                                   params_ascii,
-                                                  max_params - 1,
-                                                  params_array + 1);
+                                                  --max_params,
+                                                  params_array);
 
             // recursive call
             is_ok = (num_params > 0) &&
-                    frame_saver_params_parse_many(num_params+1, params_array, aParamsPtr);
+                    frame_saver_params_parse_from_array(aParamsPtr, params_array, num_params);
 
             continue;
         }
 
-        g_print("WARNING:  Unknown Arg #%d: (%s) \n", argc, argv[argc]);
+        g_print("WARNING:  Unknown Arg_%d: (%s) \n", aArgsCount, aArgsArray[aArgsCount]);
 
-    } // ends while ( is_ok && (--argc > 0) )
+    } // ends while ( is_ok && (--aArgsCount >= 0) )
 
     if (is_ok)
     {
@@ -602,8 +691,25 @@ gboolean frame_saver_params_parse_many(int argc, char *argv[], SplicerParams_t *
     }
     else
     {
-        g_print("ERROR: Invalid Arg #%d: (%s) \n", argc, argv[argc]);
+        g_print("ERROR: Invalid Arg_%d: (%s) \n", aArgsCount, aArgsArray[aArgsCount]);
     }
+
+    return is_ok;
+}
+
+
+//=======================================================================================
+// synopsis: is_ok = frame_saver_params_parse_from_text(aParamsPtr, aTextPtr)
+//
+// parses parameters for the frame_saver_filter --- returns TRUE for success
+//=======================================================================================
+gboolean frame_saver_params_parse_from_text(SplicerParams_t * aParamsPtr, char * aTextPtr)
+{
+    char * params[MAX_PARAMS_ARRAY_LNG + 1];
+
+    int num_params = do_tokenize_text(aTextPtr, ' ', params, MAX_PARAMS_ARRAY_LNG);
+
+    gboolean is_ok = frame_saver_params_parse_from_array(aParamsPtr, params, num_params);
 
     return is_ok;
 }

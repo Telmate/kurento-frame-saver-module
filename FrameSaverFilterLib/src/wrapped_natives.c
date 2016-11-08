@@ -6,6 +6,7 @@
  *
  * History:     1. 2016-11-05   JBendor     created from base
  *              2. 2016-11-06   JBendor     updated copyright 
+ *              3. 2016-11-07   JBendor     updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -31,24 +32,24 @@ uint64_t nativeGetSysTimeMillies()
 //=======================================================================================
 // nativeGetRandomNum() --- uses (~maxValue) as new seed when (maxValue < 0)
 //=======================================================================================
-short nativeGetRandomNum( short maxValue )
+int16_t nativeGetRandomNum( int16_t maxValue )
 {
-    static short g_max_rand_num = (short) (RAND_MAX & 0x7FFF);
-    static short g_new_rand_num = 0;
+    static int16_t g_max_rand_num = (int16_t) (RAND_MAX & 0x7FFF);
+    static int16_t g_new_rand_num = 0;
 
     if (maxValue < 0)
     {
         srand ( (unsigned int) ~maxValue );    // use-new-seed
     }
 
-    g_new_rand_num = (short) (rand() & 0x7FFF);
+    g_new_rand_num = (int16_t) (rand() & 0x7FFF);
 
     if (maxValue == 0)
     {
-        return (short) g_new_rand_num;
+        return (int16_t) g_new_rand_num;
     }
 
-    return (short) ( ( ((int) g_new_rand_num) * ((int) maxValue) ) / ((int) g_max_rand_num) );
+    return (int16_t) ( ( ((int) g_new_rand_num) * ((int) maxValue) ) / ((int) g_max_rand_num) );
 }
 
 
