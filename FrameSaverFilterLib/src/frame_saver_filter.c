@@ -395,19 +395,21 @@ static gboolean do_appsink_trigger_next_frame_snap(uint32_t elapsedPlaytimeMilli
             mySniffer.num_appsink_frames);
 
     gboolean is_more_snaps_ok = TRUE;
-    
-    if (mySplicer.params.max_num_snaps_saved <= mySniffer.num_saved_frames)
+
+    if ((mySplicer.params.max_num_snaps_saved > 0) &&
+        (mySplicer.params.max_num_snaps_saved <= mySniffer.num_saved_frames))
     {
-        g_print("frame_saver_filter --- Reached Limit ... %s=(%u) \n", 
+        g_print("frame_saver_filter --- Reached-Limit ... %s=(%u) \n", 
                 "#Saved",
                 mySplicer.params.max_num_snaps_saved);
 
         is_more_snaps_ok = FALSE;
     }
 
-    if (mySplicer.params.max_num_failed_snap <= mySniffer.num_saver_errors)
+    if ((mySplicer.params.max_num_failed_snap) &&
+        (mySplicer.params.max_num_failed_snap <= mySniffer.num_saver_errors))
     {
-        g_print("frame_saver_filter --- Reached Limit ... %s=(%u) \n", 
+        g_print("frame_saver_filter --- Reached-Limit ... %s=(%u) \n", 
                 "#Fails",
                 mySplicer.params.max_num_failed_snap);
 
@@ -1256,9 +1258,11 @@ static gboolean do_pipeline_callback_for_idle_time(gpointer aCtxPtr)
         {
             gboolean more_ok = do_appsink_trigger_next_frame_snap(playtime_ms);
 
-            // possibly --- disable snaps by setting the wait time very large
+            // possibly --- disable snaps --- effectively "infinit" wait time
             if (! more_ok)
             {
+                mySniffer.num_snap_signals = mySniffer.num_saved_frames;
+
                 mySniffer.frame_snap_wait_ns += NANOS_PER_DAY;
             }
         }
