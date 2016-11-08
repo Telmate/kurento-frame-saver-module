@@ -12,25 +12,20 @@
  * ======================================================================================
  */
 
-#ifndef _HAVE_PLUGIN_CONFIG_
-    #ifndef VERSION
-        #define VERSION "1.0.0"
-    #endif
-    #ifndef PACKAGE
-        #define PACKAGE "frame_saver_plugin_package"     
-    #endif
-#else 
+#ifdef _HAVE_PLUGIN_CONFIG_H_
     #include "plugin_config.h"
+#else 
+    #define VERSION "1.0.0"
+    #define PACKAGE "frame_saver_plugin_package"
 #endif
 
-#ifdef _CYGWIN     // prevent CYGWIN's compiler warnings
-    int cygwin_static_assert(int is_true)  {   return is_true;}
-    #ifdef G_STATIC_ASSERT
-        #undef G_STATIC_ASSERT
-    #endif
+
+#ifdef _CYGWIN
+    int cygwin_static_assert(int is_true)  { return is_true; }
     #define G_STATIC_ASSERT(condition)  cygwin_static_assert( (condition) )
-    #define __GI_SCANNER__
+    #define __GI_SCANNER__           // prevent CYGWIN's compiler warnings
 #endif
+
 
 #include <stdio.h>
 #include <gst/gst.h>
