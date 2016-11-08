@@ -8,7 +8,7 @@
  *              2. 2016-10-29   JBendor     Updated 
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
- *              5. 2016-11-07   JBendor     Support dynamic params update
+ *              5. 2016-11-08   JBendor     Support dynamic params update
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -54,7 +54,12 @@
 #endif
 
 
-#define  NANOS_PER_MILLISEC             ((guint64) (1000 * 1000))
+#define  NANOS_PER_MILLISEC             ((guint64) (1000L * 1000L))
+#define  NANOS_PER_SECOND               (NANOS_PER_MILLISEC * 1000)
+#define  NANOS_PER_MINUTE               (NANOS_PER_SECOND * 60)
+#define  NANOS_PER_HOUR                 (NANOS_PER_MINUTE * 60)
+#define  NANOS_PER_DAY                  (NANOS_PER_HOUR * 24)
+
 #define  MIN_TICKS_MILLISEC             (100)
 #define  MAX_PAD_NAME_LNG               (20)
 #define  MAX_ELEMENT_NAME_LNG           (30)
@@ -79,10 +84,13 @@
 //=======================================================================================
 typedef struct
 {
-    guint   one_tick_ms,    // timer-ticks interval as milliseconds
-            one_snap_ms,    // frame-snaps interval as milliseconds
-            max_spin_ms,    // spin-state-timeout as milliseconds
-            max_play_ms;    // play-state-timeout as milliseconds
+    guint   one_tick_ms,            // timer-ticks interval as milliseconds
+            one_snap_ms,            // frame-snaps interval as milliseconds
+            max_spin_ms,            // spin-state-timeout as milliseconds
+            max_play_ms;            // play-state-timeout as milliseconds
+
+    guint   max_num_snaps_saved,    // maximum number of saves --- 0=unlimited
+            max_num_failed_snap;    // maximum number of fails --- 0=unlimited
 
     gchar   folder_path[PATH_MAX + 1];
 

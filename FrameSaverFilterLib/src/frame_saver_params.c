@@ -6,7 +6,7 @@
  *              2. 2016-11-06   JBendor     Updated
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
- *              5. 2016-11-07   JBendor     Support dynamic params update
+ *              5. 2016-11-08   JBendor     Support dynamic params update
  *
  * Description: implements parameters used by the Frame_Saver_Filter
  *
@@ -320,7 +320,7 @@ gint pipeline_params_parse_caps(const char * aCapsPtr,
 //=======================================================================================
 // synopsis: is_ok = pipeline_params_parse_one(aSpecsPtr, aParamsPtr)
 //
-// parses one pipeline parameter for the frame_saver_filter --- returns TRUE for success
+// parses one parameter for the frame_saver_filter --- returns TRUE for success
 //=======================================================================================
 gboolean pipeline_params_parse_one(const char * aSpecsPtr, SplicerParams_t * aParamsPtr)
 {
@@ -329,6 +329,54 @@ gboolean pipeline_params_parse_one(const char * aSpecsPtr, SplicerParams_t * aPa
     if (! is_ok)
     {
         return FALSE;
+    }
+
+    if ( strncmp(aSpecsPtr, "snap=", 5) == 0 )
+    {
+        int lengths[4] = { 0, 0, 0, 0 };
+
+        int num_tokens = do_find_char_occurences(&aSpecsPtr[5], ',', lengths, 4);
+
+        const char *token_ptr = &aSpecsPtr[5];
+
+        const char *token_end = token_ptr + lengths[0] + 1;
+
+        is_ok = (num_tokens > 0) && (num_tokens < 4);
+
+        if (is_ok)
+        {
+            while (*token_ptr == ' ') 
+            { 
+                ++token_ptr; 
+            }
+            is_ok = (sscanf(token_ptr, "%u", &aParamsPtr->one_snap_ms) == 1);
+        }
+
+        token_ptr =  token_end;
+        token_end += lengths[1] + 1;
+
+        if (is_ok && (num_tokens > 1))
+        {
+            while (*token_ptr == ' ') 
+            { 
+                ++token_ptr; 
+            }
+            is_ok = (sscanf(token_ptr, "%u", &aParamsPtr->max_num_snaps_saved) == 1);
+        }
+
+        token_ptr =  token_end;
+        token_end += lengths[1] + 1;
+
+        if (is_ok && (num_tokens > 2))
+        {
+            while (*token_ptr == ' ') 
+            { 
+                ++token_ptr; 
+            }
+            is_ok = (sscanf(token_ptr, "%u", &aParamsPtr->max_num_failed_snap) == 1);
+        }
+
+        return is_ok;
     }
 
     if ( strncmp(aSpecsPtr, "poke=", 5) == 0 )
@@ -434,7 +482,7 @@ gboolean pipeline_params_parse_one(const char * aSpecsPtr, SplicerParams_t * aPa
 //=======================================================================================
 gint frame_saver_params_write_to_buffer(SplicerParams_t * aParamsPtr, char * aBufferPtr, gint aMaxLength)
 {
-    #define FMT ("%s %s=%d %s=%d %s=%d %s=%d %s=(%s) %s=(%s) %s=(%s,%s,%s) %s=(%s,%s,%s) \n\n")
+    #define FMT ("%s %s=%u %s=(%u,%u,%u) %s=%u %s=%u %s=(%s) %s=(%s) %s=(%s,%s,%s) %s=(%s,%s,%s) \n\n")
 
     char * bangs_ptr = strchr(aParamsPtr->pipeline_spec, '!');
 
@@ -495,6 +543,8 @@ gint frame_saver_params_write_to_buffer(SplicerParams_t * aParamsPtr, char * aBu
                            "\nPARAMETERS:",
                            "\n          tick", aParamsPtr->one_tick_ms,
                            "\n          snap", aParamsPtr->one_snap_ms,
+                                               aParamsPtr->max_num_snaps_saved,
+                                               aParamsPtr->max_num_failed_snap,
                            "\n          spin", aParamsPtr->max_spin_ms,
                            "\n          play", aParamsPtr->max_play_ms,
                            "\n          path", aParamsPtr->folder_path,
@@ -505,7 +555,6 @@ gint frame_saver_params_write_to_buffer(SplicerParams_t * aParamsPtr, char * aBu
                            "\n          pads", aParamsPtr->producer_out_pad_name, 
                                                aParamsPtr->consumer_inp_pad_name, 
                                                aParamsPtr->consumer_out_pad_name);
-
     if (bangs_ptr != NULL)
     {
         char pipe_specs[sizeof(aParamsPtr->pipeline_spec)];
@@ -601,27 +650,27 @@ gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char 
             continue;
         }
 
-        if ( strncmp(psz_param, "tick=", 5) == 0 )
-        {
-            is_ok = (sscanf(&psz_param[5], "%d", &aParamsPtr->one_tick_ms) == 1) && (aParamsPtr->one_tick_ms >= 0);
-            continue;
-        }
-
         if ( strncmp(psz_param, "snap=", 5) == 0 )
         {
-            is_ok = (sscanf(&psz_param[5], "%d", &aParamsPtr->one_snap_ms) == 1) && (aParamsPtr->one_snap_ms >= 0);
+            is_ok = pipeline_params_parse_one(psz_param, aParamsPtr);
             continue;
         }
 
         if ( strncmp(psz_param, "spin=", 5) == 0 )
         {
-            is_ok = (sscanf(&psz_param[5], "%d", &aParamsPtr->max_spin_ms) == 1) && (aParamsPtr->max_spin_ms >= 0);
+            is_ok = (sscanf(&psz_param[5], "%u", &aParamsPtr->max_spin_ms) == 1);
+            continue;
+        }
+
+        if ( strncmp(psz_param, "tick=", 5) == 0 )
+        {
+            is_ok = (sscanf(&psz_param[5], "%u", &aParamsPtr->one_tick_ms) == 1);
             continue;
         }
 
         if ( strncmp(psz_param, "play=", 5) == 0 )
         {
-            is_ok = (sscanf(&psz_param[5], "%d", &aParamsPtr->max_play_ms) == 1) && (aParamsPtr->max_play_ms >= 0);
+            is_ok = (sscanf(&psz_param[5], "%u", &aParamsPtr->max_play_ms) == 1);
             continue;
         }
 

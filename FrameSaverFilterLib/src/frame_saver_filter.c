@@ -6,7 +6,7 @@
  *              2. 2016-10-28   JBendor     Updated
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
  *              4. 2016-11-04   JBendor     Support for making custom pipelines
- *              5. 2016-11-07   JBendor     Support the actual Gstreamer plugin
+ *              5. 2016-11-08   JBendor     Support the actual Gstreamer plugin
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -332,7 +332,7 @@ static GstPadProbeReturn do_appsink_callback_probe_inp_pad(GstPad          * aPa
 //=======================================================================================
 // synopsis: is_ok = do_appsink_trigger_next_frame_snap(elapsedPlaytimeMillis)
 //
-// triggers frame snaps --- returns TRUE on success
+// triggers frame snaps --- returns TRUE iff more snaps are allowed
 //=======================================================================================
 static gboolean do_appsink_trigger_next_frame_snap(uint32_t elapsedPlaytimeMillis)
 {
@@ -394,7 +394,27 @@ static gboolean do_appsink_trigger_next_frame_snap(uint32_t elapsedPlaytimeMilli
             mySniffer.num_appsink_errors,
             mySniffer.num_appsink_frames);
 
-    return TRUE;
+    gboolean is_more_snaps_ok = TRUE;
+    
+    if (mySplicer.params.max_num_snaps_saved <= mySniffer.num_saved_frames)
+    {
+        g_print("frame_saver_filter --- Reached Limit ... %s=(%u) \n", 
+                "#Saved",
+                mySplicer.params.max_num_snaps_saved);
+
+        is_more_snaps_ok = FALSE;
+    }
+
+    if (mySplicer.params.max_num_failed_snap <= mySniffer.num_saver_errors)
+    {
+        g_print("frame_saver_filter --- Reached Limit ... %s=(%u) \n", 
+                "#Fails",
+                mySplicer.params.max_num_failed_snap);
+
+        is_more_snaps_ok = FALSE;
+    }
+
+    return is_more_snaps_ok;
 }
 
 //=======================================================================================
@@ -1234,7 +1254,13 @@ static gboolean do_pipeline_callback_for_idle_time(gpointer aCtxPtr)
     {
         if (elapsed_ns > mySniffer.frame_snap_wait_ns)
         {
-            do_appsink_trigger_next_frame_snap(playtime_ms);
+            gboolean more_ok = do_appsink_trigger_next_frame_snap(playtime_ms);
+
+            // possibly --- disable snaps by setting the wait time very large
+            if (! more_ok)
+            {
+                mySniffer.frame_snap_wait_ns += NANOS_PER_DAY;
+            }
         }
 
         return TRUE;
@@ -1337,7 +1363,6 @@ static gboolean do_pipeline_run_main_loop()
     GstClockTime some_nanos = (NANOS_PER_MILLISEC * MIN_TICKS_MILLISEC) / 10;
     GstClockTime play_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_play_ms) + some_nanos;
     GstClockTime spin_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_spin_ms) + some_nanos;
-    GstClockTime tick_nanos = (NANOS_PER_MILLISEC * mySplicer.params.one_tick_ms);
     GstClockTime now_nanos;
 
     strcpy(mySniffer.work_folder_path, mySplicer.params.folder_path);
@@ -1350,7 +1375,7 @@ static gboolean do_pipeline_run_main_loop()
 
     mySniffer.start_play_time_ns = now_nanos;
     mySniffer.spin_state_ends_ns = (mySplicer.params.max_spin_ms < 1) ? 0 : spin_nanos + now_nanos;
-    mySniffer.frame_snap_wait_ns = (mySplicer.params.one_snap_ms > 0) ? 0 : play_nanos * tick_nanos;
+    mySniffer.frame_snap_wait_ns = (mySplicer.params.one_snap_ms > 0) ? 0 : play_nanos + NANOS_PER_DAY;
 
     mySniffer.num_appsink_frames = 0;
     mySniffer.num_appsink_errors = 0;
