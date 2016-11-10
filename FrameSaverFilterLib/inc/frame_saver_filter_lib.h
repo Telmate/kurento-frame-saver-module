@@ -16,11 +16,16 @@
 
 #define __Frame_Saver_Filter_Lib_H__
 
-#if defined _USRDLL && defined _MSC_VER
-    #define API_LINKAGE  __declspec(dllexport)
+#ifdef _MSC_VER
+    #ifdef _USRDLL
+        #define API_LINKAGE  __declspec(dllexport)
+    #else
+        #define API_LINKAGE  __declspec(dllimport)
+    #endif
 #else
-    #define API_LINKAGE  __declspec(dllimport)
+    #define API_LINKAGE
 #endif
+
 
 
 #include <stdio.h>
