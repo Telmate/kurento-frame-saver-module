@@ -6,7 +6,7 @@
  *              2. 2016-10-28   JBendor     Updated
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
  *              4. 2016-11-04   JBendor     Support for making custom pipelines
- *              5. 2016-11-09   JBendor     Support the actual Gstreamer plugin
+ *              5. 2016-11-10   JBendor     Support the actual Gstreamer plugin
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -69,8 +69,7 @@ typedef enum
     e_FAILED_FETCH_PIPELINE_BUS = 4,
     e_FAILED_MAKE_WORK_ELEMENTS = 5,
     e_FAILED_LINK_MINI_PIPELINE = 6,
-    e_ERROR_PIPELINE_TEE_PARAMS = 7,
-    e_ERROR_PIPELINE_TEE_INSERT = 8
+    e_ERROR_PIPELINE_TEE_PARAMS = 7
 
 } PIPELINE_MAKER_ERROR_e;
 
@@ -95,7 +94,7 @@ typedef struct
                 * tee_element_ptr,
                 * Q_1_element_ptr,
                 * Q_2_element_ptr,
-                * hosted_plugin_ptr;
+                * a_plugin_ptr;
 
     GstClock    * sys_clock_ptr;
 
@@ -921,7 +920,7 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
 
     gboolean is_TEE_in_pipe = (gst_element_get_parent(mySniffer.tee_element_ptr) != NULL);
 
-    gboolean is_CVT_in_pipe = (gst_element_get_parent(mySniffer.cvt_element_ptr) != NULL);
+    gboolean is_CVT_in_pipe = (Q2_cvt_ptr != NULL) && (gst_element_get_parent(Q2_cvt_ptr) != NULL);
 
     gboolean   is_linked_ok = FALSE;
 
@@ -1132,155 +1131,6 @@ gboolean do_pipeline_validate_splicer_parameters()
 
 
 //=======================================================================================
-// synopsis: result = do_pipeline_create()
-//
-// creates the pipeline --- return 0 on success, else error
-//=======================================================================================
-static PIPELINE_MAKER_ERROR_e do_pipeline_create()
-{
-    gboolean is_custom = (strchr(mySplicer.params.pipeline_spec, '!') != NULL);
-
-    gst_init(NULL, NULL);
-
-    if ( is_custom )
-    {
-        GError * error_ptr = NULL;
-
-        mySniffer.pipeline_ptr = gst_parse_launch(mySplicer.params.pipeline_spec, &error_ptr);
-
-        if (error_ptr != NULL)
-        {
-            g_warning("Failed creating custom pipeline --- (%s) \n", error_ptr->message);
-            return e_PIPELINE_PARSER_HAS_ERROR;
-        }
-
-        if (gst_object_set_name(GST_OBJECT(mySniffer.pipeline_ptr), mySplicer.params.pipeline_name) != TRUE)
-        {
-            g_warning("Failed naming custom pipeline (%s) \n", mySplicer.params.pipeline_name);
-            return e_FAILED_MAKE_PIPELINE_NAME;
-        }
-    }
-    else
-    {
-        mySniffer.pipeline_ptr = gst_pipeline_new(mySplicer.params.pipeline_name);
-
-        if (! mySniffer.pipeline_ptr)
-        {
-            g_warning("Failed creating pipeline named (%s) \n", mySplicer.params.pipeline_name);
-            return e_FAILED_MAKE_MINI_PIPELINE;
-        }
-    }
-
-    if (gst_element_set_state(mySniffer.pipeline_ptr, GST_STATE_NULL) != GST_STATE_CHANGE_SUCCESS)
-    {
-        g_warning("Failed setting new pipeline state to NULL \n");
-        return e_FAILED_SET_PIPELINE_STATE;
-    }
-
-    mySniffer.bus_ptr = gst_pipeline_get_bus(GST_PIPELINE(mySniffer.pipeline_ptr));
-
-    if (! mySniffer.bus_ptr)
-    {
-        g_warning("Failed obtaining the pipeline's bus \n");
-        return e_FAILED_FETCH_PIPELINE_BUS;
-    }
-
-    gst_bus_add_watch(mySniffer.bus_ptr, do_pipeline_callback_for_bus_messages, NULL);
-    gst_object_unref(mySniffer.bus_ptr);
-    mySniffer.bus_ptr = NULL;
-
-    // create the pipeline's elements
-    mySniffer.vid_sourcer_ptr = gst_element_factory_make("videotestsrc",  DEFAULT_VID_SOURCE_NAME);
-    mySniffer.cvt_element_ptr = gst_element_factory_make("videoconvert",  DEFAULT_1ST_CVT_NAME);
-    mySniffer.tee_element_ptr = gst_element_factory_make("tee",           DEFAULT_VID_TEE_NAME);
-    mySniffer.Q_1_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_1_NAME);
-    mySniffer.Q_2_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_2_NAME);
-    mySniffer.video_sink1_ptr = gst_element_factory_make("autovideosink", DEFAULT_VID_SINK_1_NAME);
-    mySniffer.png_encoder_ptr = gst_element_factory_make("pngenc",        DEFAULT_PNG_ENC_NAME);
-    mySniffer.file_writer_ptr = gst_element_factory_make("multifilesink", DEFAULT_FILES_WRITER_NAME);
-
-    // possibly --- create the appsink to snap and save frames
-    if (mySplicer.params.one_snap_ms > 0)
-    {
-        mySniffer.source_caps_ptr = gst_caps_from_string(CAPS_FOR_AUTO_SOURCE);
-        mySniffer.sinker_caps_ptr = gst_caps_from_string(CAPS_FOR_SNAP_SINKER);
-        mySniffer.video_sink2_ptr = do_appsink_create(DEFAULT_APP_SINK_2_NAME, 3);
-    }
-    else
-    {
-        mySniffer.source_caps_ptr = gst_caps_from_string(CAPS_FOR_AUTO_SOURCE);
-        mySniffer.sinker_caps_ptr = gst_caps_from_string(CAPS_FOR_VIEW_SINKER);
-        mySniffer.video_sink2_ptr = gst_element_factory_make("autovideosink", DEFAULT_VID_SINK_2_NAME);
-    }
-
-    int flags = (mySniffer.vid_sourcer_ptr ? 0 : 0x001) +   // only used for default pipeline
-                (mySniffer.video_sink1_ptr ? 0 : 0x002) +   // only used for default pipeline
-                (mySniffer.video_sink2_ptr ? 0 : 0x004) +
-                (mySniffer.cvt_element_ptr ? 0 : 0x008) +
-                (mySniffer.Q_1_element_ptr ? 0 : 0x010) +
-                (mySniffer.Q_2_element_ptr ? 0 : 0x020) +
-                (mySniffer.tee_element_ptr ? 0 : 0x040) +
-                (mySniffer.source_caps_ptr ? 0 : 0x100) +
-                (mySniffer.sinker_caps_ptr ? 0 : 0x200) +
-                (mySniffer.png_encoder_ptr ? 0 : 0x400) +
-                (mySniffer.file_writer_ptr ? 0 : 0x800);
-
-    if (flags != 0)
-    {
-        g_warning("Failed creating some pipeline elements (flags=0x%0X) \n", flags);
-        return e_FAILED_MAKE_WORK_ELEMENTS;
-    }
-
-    g_object_set (G_OBJECT(mySniffer.png_encoder_ptr), "snapshot", FALSE, NULL);
-
-    g_object_set (G_OBJECT(mySniffer.png_encoder_ptr), "compression-level", 9, NULL);
-
-    // possibly --- configure the default pipeline
-    if (! is_custom)
-    {
-        gst_bin_add_many(GST_BIN(mySniffer.pipeline_ptr),
-                         mySniffer.vid_sourcer_ptr ,
-                         mySniffer.cvt_element_ptr,
-                         mySniffer.video_sink1_ptr,
-                         NULL);
-
-        // link elements: SRC to CVT
-        gboolean is_link_1_ok = gst_element_link_many(mySniffer.vid_sourcer_ptr,
-                                                      mySniffer.cvt_element_ptr, 
-                                                      NULL);
-
-        // link elements: CVT with CAPS to SINK1
-        gboolean is_link_2_ok =  gst_element_link_filtered(mySniffer.cvt_element_ptr,
-                                                           mySniffer.video_sink1_ptr,
-                                                           mySniffer.source_caps_ptr);
-
-        if ( (! is_link_1_ok) || (! is_link_2_ok) )
-        {
-            g_warning("Failed linking elements: SRC --> CVT --> CAPS --> SINK1 \n");
-            return e_FAILED_LINK_MINI_PIPELINE;
-        }
-    }
-
-    if (do_pipeline_validate_splicer_parameters() != TRUE)
-    {
-        g_print("invalid parameters for splicing the pipeline (TEE insertion) \n");
-        return e_ERROR_PIPELINE_TEE_PARAMS;
-    }
-
-    // possibly --- insert the TEE now, before pipeline start playing
-    if (mySplicer.params.max_wait_ms <= 0)
-    {
-        if (do_pipeline_insert_TEE_splicer() != e_TEE_INSERT_ENDED)
-        {
-            return e_ERROR_PIPELINE_TEE_INSERT;
-        }
-    }
-
-    return e_PIPELINE_MAKER_ERROR_NONE;
-}
-
-
-//=======================================================================================
 // synopsis: is_ok = do_pipeline_callback_for_idle_time()
 //
 // callback when the pipeline's main-loop-thread is idle --- return TRUE always
@@ -1406,7 +1256,7 @@ static gboolean do_pipeline_callback_for_timer_tick(gpointer aCtxPtr)
 // prepares to run the main loop the pipeline --- return TRUE on success, else error
 //=======================================================================================
 static gboolean do_pipeline_prepare_to_play()
-{    
+{
     GstClockTime some_nanos = (NANOS_PER_MILLISEC * MIN_TICKS_MILLISEC) / 10;
     GstClockTime play_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_play_ms) + some_nanos;
     GstClockTime wait_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_wait_ms) + some_nanos;
@@ -1444,6 +1294,15 @@ static gboolean do_pipeline_main_loop()
 {
     do_pipeline_prepare_to_play();
 
+    // possibly --- insert the TEE now, before pipeline start playing
+    if (mySplicer.params.max_wait_ms <= 0)
+    {
+        if (do_pipeline_insert_TEE_splicer() != e_TEE_INSERT_ENDED)
+        {
+            return FALSE;
+        }
+    }
+
     if (gst_element_set_state(mySniffer.pipeline_ptr, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE)
     {
         g_warning("Failed setting pipeline state to PLAYING \n");
@@ -1462,6 +1321,190 @@ static gboolean do_pipeline_main_loop()
 
     return TRUE;
 }
+
+
+//=======================================================================================
+// synopsis: result = do_pipeline_create_splicer_elements()
+//
+// creates the pipeline's spicer elements --- return 0 on success, else error
+//=======================================================================================
+static PIPELINE_MAKER_ERROR_e do_pipeline_create_splicer_elements()
+{
+    // possibly --- elements already exist
+    if (mySniffer.tee_element_ptr != NULL)
+    {
+        return e_PIPELINE_MAKER_ERROR_NONE;
+    }
+
+    if (do_pipeline_validate_splicer_parameters() != TRUE)
+    {
+        g_print("invalid parameters for splicing the pipeline (TEE insertion) \n");
+        return e_ERROR_PIPELINE_TEE_PARAMS;
+    }
+
+    // create the splicer's elements
+    mySniffer.tee_element_ptr = gst_element_factory_make("tee",           DEFAULT_VID_TEE_NAME);
+    mySniffer.Q_1_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_1_NAME);
+    mySniffer.Q_2_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_2_NAME);
+    mySniffer.png_encoder_ptr = gst_element_factory_make("pngenc",        DEFAULT_PNG_ENC_NAME);
+    mySniffer.file_writer_ptr = gst_element_factory_make("multifilesink", DEFAULT_FILES_WRITER_NAME);
+
+    // possibly --- create the appsink to snap and save frames
+    if (mySplicer.params.one_snap_ms > 0)
+    {
+        mySniffer.sinker_caps_ptr = gst_caps_from_string(CAPS_FOR_SNAP_SINKER);
+        mySniffer.video_sink2_ptr = do_appsink_create(DEFAULT_APP_SINK_2_NAME, 3);
+    }
+    else
+    {
+        mySniffer.sinker_caps_ptr = gst_caps_from_string(CAPS_FOR_VIEW_SINKER);
+        mySniffer.video_sink2_ptr = gst_element_factory_make("autovideosink", DEFAULT_VID_SINK_2_NAME);
+    }
+
+    int flags = (mySniffer.video_sink2_ptr ? 0 : 0x010) +
+                (mySniffer.Q_1_element_ptr ? 0 : 0x020) +
+                (mySniffer.Q_2_element_ptr ? 0 : 0x040) +
+                (mySniffer.tee_element_ptr ? 0 : 0x080) +
+                (mySniffer.sinker_caps_ptr ? 0 : 0x100) +
+                (mySniffer.png_encoder_ptr ? 0 : 0x200) +
+                (mySniffer.file_writer_ptr ? 0 : 0x400);
+
+    if (flags != 0)
+    {
+        g_warning("Failed creating some elements for splicing (flags=0x%0X) \n", flags);
+        return e_FAILED_MAKE_WORK_ELEMENTS;
+    }
+
+    g_object_set (G_OBJECT(mySniffer.png_encoder_ptr), "snapshot", FALSE, NULL);
+
+    g_object_set (G_OBJECT(mySniffer.png_encoder_ptr), "compression-level", 9, NULL);
+
+    return e_PIPELINE_MAKER_ERROR_NONE;
+}
+
+
+//=======================================================================================
+// synopsis: result = do_pipeline_create_default_elements()
+//
+// creates elements for default pipeline --- return 0 on success, else error
+//=======================================================================================
+static PIPELINE_MAKER_ERROR_e do_pipeline_create_default_elements()
+{
+    // create the elements of the default pipeline
+    mySniffer.vid_sourcer_ptr = gst_element_factory_make("videotestsrc",  DEFAULT_VID_SOURCE_NAME);
+    mySniffer.cvt_element_ptr = gst_element_factory_make("videoconvert",  DEFAULT_1ST_CVT_NAME);
+    mySniffer.video_sink1_ptr = gst_element_factory_make("autovideosink", DEFAULT_VID_SINK_1_NAME);
+    mySniffer.source_caps_ptr = gst_caps_from_string(CAPS_FOR_AUTO_SOURCE);
+
+    int flags = (mySniffer.vid_sourcer_ptr ? 0 : 0x001) +   // only used for default pipeline
+                (mySniffer.video_sink1_ptr ? 0 : 0x002) +   // only used for default pipeline
+                (mySniffer.cvt_element_ptr ? 0 : 0x004) +
+                (mySniffer.source_caps_ptr ? 0 : 0x008) ;
+
+    if (flags != 0)
+    {
+        g_warning("Failed creating basic pipeline elements (flags=0x%0X) \n", flags);
+        return e_FAILED_MAKE_WORK_ELEMENTS;
+    }
+
+    gst_bin_add_many(GST_BIN(mySniffer.pipeline_ptr),
+                     mySniffer.vid_sourcer_ptr ,
+                     mySniffer.cvt_element_ptr,
+                     mySniffer.video_sink1_ptr,
+                     NULL);
+
+    // link elements: SRC to CVT
+    gboolean is_link_1_ok = gst_element_link_many(mySniffer.vid_sourcer_ptr,
+                                                  mySniffer.cvt_element_ptr, 
+                                                  NULL);
+
+    // link elements: CVT with CAPS to SINK1
+    gboolean is_link_2_ok =  gst_element_link_filtered(mySniffer.cvt_element_ptr,
+                                                       mySniffer.video_sink1_ptr,
+                                                       mySniffer.source_caps_ptr);
+
+    if ( (! is_link_1_ok) || (! is_link_2_ok) )
+    {
+        g_warning("Failed linking basic elements: SRC --> CVT --> CAPS --> SINK1 \n");
+        return e_FAILED_LINK_MINI_PIPELINE;
+    }
+
+    return e_PIPELINE_MAKER_ERROR_NONE;
+}
+
+
+//=======================================================================================
+// synopsis: result = do_pipeline_create_instance()
+//
+// creates the pipeline --- return 0 on success, else error
+//=======================================================================================
+static PIPELINE_MAKER_ERROR_e do_pipeline_create_instance()
+{
+    PIPELINE_MAKER_ERROR_e e_result = e_PIPELINE_MAKER_ERROR_NONE;
+
+    gboolean is_custom = (strchr(mySplicer.params.pipeline_spec, '!') != NULL);
+
+    if ( is_custom )
+    {
+        GError * error_ptr = NULL;
+
+        mySniffer.pipeline_ptr = gst_parse_launch(mySplicer.params.pipeline_spec, &error_ptr);
+
+        if (error_ptr != NULL)
+        {
+            g_warning("Failed creating custom pipeline --- (%s) \n", error_ptr->message);
+            return e_PIPELINE_PARSER_HAS_ERROR;
+        }
+
+        if (gst_object_set_name(GST_OBJECT(mySniffer.pipeline_ptr), mySplicer.params.pipeline_name) != TRUE)
+        {
+            g_warning("Failed naming custom pipeline (%s) \n", mySplicer.params.pipeline_name);
+            return e_FAILED_MAKE_PIPELINE_NAME;
+        }
+    }
+    else
+    {
+        mySniffer.pipeline_ptr = gst_pipeline_new(mySplicer.params.pipeline_name);
+
+        if (! mySniffer.pipeline_ptr)
+        {
+            g_warning("Failed creating pipeline named (%s) \n", mySplicer.params.pipeline_name);
+            return e_FAILED_MAKE_MINI_PIPELINE;
+        }
+    }
+
+    if (gst_element_set_state(mySniffer.pipeline_ptr, GST_STATE_NULL) != GST_STATE_CHANGE_SUCCESS)
+    {
+        g_warning("Failed setting new pipeline state to NULL \n");
+        return e_FAILED_SET_PIPELINE_STATE;
+    }
+
+    mySniffer.bus_ptr = gst_pipeline_get_bus(GST_PIPELINE(mySniffer.pipeline_ptr));
+
+    if (! mySniffer.bus_ptr)
+    {
+        g_warning("Failed obtaining the pipeline's bus \n");
+        return e_FAILED_FETCH_PIPELINE_BUS;
+    }
+
+    gst_bus_add_watch(mySniffer.bus_ptr, do_pipeline_callback_for_bus_messages, NULL);
+    gst_object_unref(mySniffer.bus_ptr);
+    mySniffer.bus_ptr = NULL;
+
+    // possibly --- configure the default pipeline
+    if (! is_custom)
+    {
+        e_result = do_pipeline_create_default_elements();
+    }
+
+    if (e_result == e_PIPELINE_MAKER_ERROR_NONE)
+    {
+        e_result = do_pipeline_create_splicer_elements();
+    }
+
+    return e_result;
+}
+
 
 static void *  myMutexHandlePtr = NULL;
 static void *  myKnownPlugins[100];
@@ -1543,20 +1586,24 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
     }
 
     // TODO: presently, allow only one plugin --- later: MAX_NUM_KNOWN_PLUGINS
-    if (mySniffer.hosted_plugin_ptr == NULL)
+    if (mySniffer.a_plugin_ptr == NULL)
     {
         // possibly keep pointer --- first NULL is always the array's sentinel
         if (index < MAX_NUM_KNOWN_PLUGINS - 1)
         {
-            ++myPluginsCount;
+            if (do_pipeline_create_splicer_elements() == e_PIPELINE_MAKER_ERROR_NONE)
+            {
+                ++myPluginsCount;
 
-            myKnownPlugins[index] = aPluginPtr;
+                myKnownPlugins[index] = aPluginPtr;
 
-            mySniffer.hosted_plugin_ptr = aPluginPtr;
-            
-            mySniffer.pipeline_ptr = (GstElement*) gst_element_get_parent(aPluginPtr);
-            
-            do_pipeline_prepare_to_play();
+                mySniffer.a_plugin_ptr = aPluginPtr;
+
+                mySniffer.pipeline_ptr = (GstElement*) gst_element_get_parent(aPluginPtr);
+
+                do_pipeline_prepare_to_play();
+            }
+
         }
     }
 
@@ -1603,7 +1650,7 @@ int Frame_Saver_Filter_Detach(GstElement * aPluginPtr)
 
     myKnownPlugins[index] = NULL;
 
-    mySniffer.hosted_plugin_ptr = NULL;
+    mySniffer.a_plugin_ptr = NULL;
 
     if ( --myPluginsCount == 0 )
     {
@@ -1700,6 +1747,8 @@ int frame_saver_filter_tester( int argc, char ** argv )
 {
     int result = 0;
 
+    gst_init(NULL, NULL);
+
     frame_saver_params_initialize( &mySplicer.params );
 
     if (frame_saver_params_parse_from_array(&mySplicer.params, ++argv, --argc) != TRUE)
@@ -1714,7 +1763,7 @@ int frame_saver_filter_tester( int argc, char ** argv )
     }
     else
     {
-        result = (int) do_pipeline_create();  // 0 is success
+        result = (int) do_pipeline_create_instance();  // 0 is success
 
         if (result != 0)
         {
