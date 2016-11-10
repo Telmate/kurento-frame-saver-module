@@ -1554,7 +1554,7 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
 
             mySniffer.hosted_plugin_ptr = aPluginPtr;
             
-            mySniffer.pipeline_ptr = gst_element_get_parent(aPluginPtr);
+            mySniffer.pipeline_ptr = (GstElement*) gst_element_get_parent(aPluginPtr);
             
             do_pipeline_prepare_to_play();
         }
