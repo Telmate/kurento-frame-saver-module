@@ -5,7 +5,7 @@
  * Purpose:     implements the API for the Frame_Saver_Filter_Library (aka FSL)
  * 
  * History:     1. 2016-10-14   JBendor     Created
- *              2. 2016-11-04   JBendor     Updated 
+ *              2. 2016-11-09   JBendor     Updated 
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -52,7 +52,7 @@ static void do_wait_for_keypress()
 //
 // gets version info about Gstreamer and FSL
 //=======================================================================================
-const char * fsl_get_version()
+API_LINKAGE const char * fsl_get_version()
 {
     return s_FSL_Version;
 }
@@ -63,7 +63,7 @@ const char * fsl_get_version()
 //
 // initializes the library --- returns 0 on success, else error
 //=======================================================================================
-int fsl_initialize()
+API_LINKAGE int fsl_initialize()
 {
     gst_init(NULL, NULL);
 
@@ -86,7 +86,7 @@ int fsl_initialize()
 //
 // performs a test on the FSL library --- returns 0
 //=======================================================================================
-int fsl_main_test(int argc, char** argv)
+API_LINKAGE int fsl_main_test(int argc, char** argv)
 {
     printf( "%s%s", "\n", "fsl_main_test() started \n" );
 

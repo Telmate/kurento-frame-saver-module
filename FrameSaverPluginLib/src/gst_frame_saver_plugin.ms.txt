@@ -1,0 +1,21 @@
+#include <gst/gst.h>
+
+
+#define ALLOW___G_DEFINE_TYPE___TO_FREEZE_VISUAL_STUDIO_ON_EXIT_
+
+
+#ifdef  ALLOW___G_DEFINE_TYPE___TO_FREEZE_VISUAL_STUDIO_ON_EXIT_
+
+    G_DEFINE_TYPE(GstFrameSaverPlugin, gst_frame_saver_plugin, GST_TYPE_ELEMENT);
+
+#else
+   
+    static gpointer gst_frame_saver_plugin_get_instance_private = NULL;
+
+    static gpointer gst_frame_saver_plugin_parent_class = NULL;
+    
+    static GType gst_frame_saver_plugin_dummey_type = (GType) 0;
+    
+    GType gst_frame_saver_plugin_get_type(void) { return gst_frame_saver_plugin_dummey_type; }
+
+#endif

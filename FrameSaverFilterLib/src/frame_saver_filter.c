@@ -6,7 +6,7 @@
  *              2. 2016-10-28   JBendor     Updated
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
  *              4. 2016-11-04   JBendor     Support for making custom pipelines
- *              5. 2016-11-08   JBendor     Support the actual Gstreamer plugin
+ *              5. 2016-11-09   JBendor     Support the actual Gstreamer plugin
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -28,18 +28,32 @@
 #include "save_frames_as_png.h"
 
 #include <gst/gst.h>
-#include <gst/app/gstappsrc.h>
+//#include <gst/app/gstappsrc.h>
 #include <gst/app/gstappsink.h>
 
 #if (GST_VERSION_MAJOR == 0)
     #error "GST_VERSION_MAJOR must not be 0"
 #endif
 
+
+#ifdef _APPSINK_PLUGIN_IS_OLD_
+
+void gst_app_sink_set_callbacks(GstAppSink* as, GstAppSinkCallbacks* cbs, gpointer ud, GDestroyNotify pn) { return; }
+
+void gst_app_sink_set_emit_signals(GstAppSink *appsink, gboolean emit) { return; }
+
+void gst_app_sink_set_max_buffers(GstAppSink *appsink, guint max) { return; }
+
+void gst_app_sink_set_drop(GstAppSink *appsink, gboolean drop) { return; }
+
+GstSample* gst_app_sink_pull_sample(GstAppSink *appsink) { return NULL; }
+
+#endif  // _APPSINK_PLUGIN_IS_OLD_
+
+
 #define CAPS_FOR_AUTO_SOURCE  "video/x-raw, width=(int)500, height=(int)200"
 #define CAPS_FOR_VIEW_SINKER  "video/x-raw, width=(int)500, height=(int)200"
 #define CAPS_FOR_SNAP_SINKER  "video/x-raw, format=(string)RGB, bpp=(int)24"
-
-#define _USING_SINKERS_CAPS_  // if undefined: links T_Q2 using PRODUCER's caps
 
 
 //=======================================================================================
@@ -61,6 +75,7 @@ typedef enum
 } PIPELINE_MAKER_ERROR_e;
 
 
+
 typedef struct
 {
     GMainLoop   * main_loop_ptr;        // Main-Event-Loop --- manages all events
@@ -74,6 +89,8 @@ typedef struct
                 * vid_sourcer_ptr,
                 * video_sink1_ptr,
                 * video_sink2_ptr,
+                * png_encoder_ptr,
+                * file_writer_ptr,
                 * cvt_element_ptr,
                 * tee_element_ptr,
                 * Q_1_element_ptr,
@@ -83,7 +100,7 @@ typedef struct
     GstClock    * sys_clock_ptr;
 
     GstClockTime start_play_time_ns;    // timestamp of pipeline startup
-    GstClockTime spin_state_ends_ns;    // timestamp for a TEE insertion
+    GstClockTime wait_state_ends_ns;    // timestamp for a TEE insertion
     GstClockTime frame_snap_wait_ns;    // wait time for next frame snap
 
     guint   num_snap_signals,           // count of signals to snap frames
@@ -108,7 +125,8 @@ typedef enum
     e_FAIL_TEE_IN_PADS = 4,
     e_FAIL_TEE_UP_LINK = 5,
     e_FAIL_TEE_Q1_LINK = 6,
-    e_FAIL_TEE_Q2_LINK = 7
+    e_FAIL_TEE_Q2_LINK = 7,
+    e_FAIL_TEE_TO_FILE = 8
 
 } e_TEE_INSERT_STATE_e;
 
@@ -157,14 +175,14 @@ static FlowSplicer_t    mySplicer = { e_SPLICER_STATE_NONE, G_QUEUE_INIT };
 
 
 //=======================================================================================
-// synopsis: result = do_appsink_snap_frame(aAppSinkPtr, aBufferPtr, aCapsPtr, aStatePtr)
+// synopsis: result = do_snap_and_save_frame(aAppSinkPtr, aBufferPtr, aCapsPtr, aStatePtr)
 //
 // snaps and saves a frame --- returns GST_FLOW_OK on success, else GST_FLOW_ERROR
 //=======================================================================================
-static gint do_appsink_snap_frame(GstAppSink    * aAppSinkPtr, 
-                                  GstBuffer     * aBufferPtr,
-                                  GstCaps       * aCapsPtr,
-                                  FlowSniffer_t * aStatePtr)
+static gint do_snap_and_save_frame(GstAppSink    * aAppSinkPtr,
+                                   GstBuffer     * aBufferPtr,
+                                   GstCaps       * aCapsPtr,
+                                   FlowSniffer_t * aStatePtr)
 {
     /* 
     * NOTE-1: frame height can depend on the pixel-aspect-ratio of the source.
@@ -236,20 +254,28 @@ static gint do_appsink_snap_frame(GstAppSink    * aAppSinkPtr,
             elapsed_ms % 1000,
             aStatePtr->num_saved_frames);
 
-    errs = save_frame_as_PNG(sz_image_path, 
-                             sz_image_format, 
-                             map.data, 
-                             data_lng, 
-                             stride, 
-                             cols, 
-                             rows);
+#ifdef _USING_PNG_LIBRARY_
+
+    errs = save_frame_as_PNG(sz_image_path, sz_image_format, map.data, data_lng, stride, cols, rows);
+
+    gst_buffer_unmap (aBufferPtr, &map);
 
     if (errs != 0)
     {
         aStatePtr->num_saver_errors += 1;
     }
 
+#else
+
+    g_object_set(G_OBJECT(mySniffer.file_writer_ptr), "location", sz_image_path, NULL);
+
     gst_buffer_unmap (aBufferPtr, &map);
+
+    GstPad * ptr_png_input_pad = gst_element_get_static_pad(GST_ELEMENT(mySniffer.png_encoder_ptr), "sink");
+
+    gst_pad_push(ptr_png_input_pad, aBufferPtr);
+
+#endif
 
     return (errs == 0) ? GST_FLOW_OK : GST_FLOW_OK;
 }
@@ -288,17 +314,10 @@ static GstFlowReturn do_appsink_callback_for_new_frame(GstAppSink * aAppSinkPtr,
     {
         if (ptr_state->num_snap_signals > ptr_state->num_saved_frames)
         {
-            flow_result = do_appsink_snap_frame(aAppSinkPtr, 
-                                                       buffer_ptr,
-                                                       caps_ptr,
-                                                       ptr_state);
+            flow_result = do_snap_and_save_frame(aAppSinkPtr, buffer_ptr, caps_ptr, ptr_state);
         }
 
         gst_sample_unref(sample_ptr);
-    }
-    else
-    {
-        ; // TODO --- gst_app_src_push_buffer(GST_APP_SRC(ptr_my_state->vid_sourcer_ptr), buffer_ptr);
     }
 
     return flow_result;
@@ -419,6 +438,7 @@ static gboolean do_appsink_trigger_next_frame_snap(uint32_t elapsedPlaytimeMilli
     return is_more_snaps_ok;
 }
 
+
 //=======================================================================================
 // synopsis: appsink_ptr = do_appsink_create(aNamePtr, aNumBuffers)
 //
@@ -432,8 +452,8 @@ static GstElement* do_appsink_create(const char * aNamePtr, int aNumBuffers)
     mySniffer.appsink_callbacks.new_preroll = NULL;
     mySniffer.appsink_callbacks.new_sample  = do_appsink_callback_for_new_frame;
 
-    gst_app_sink_set_callbacks(GST_APP_SINK(appsink_ptr), 
-                               &mySniffer.appsink_callbacks, 
+    gst_app_sink_set_callbacks(GST_APP_SINK(appsink_ptr),
+                               &mySniffer.appsink_callbacks,
                                &mySniffer, // pointer_to_context_of_the_callback
                                NULL);      // pointer_to_destroy_notify_callback
 
@@ -1023,7 +1043,7 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
 
     gst_bin_add(GST_BIN(mySniffer.pipeline_ptr), Q2_cvt_ptr);
 
-#ifdef _USING_SINKERS_CAPS_
+#ifdef _USING_SINKER_CAPS_
     ptr_linker_caps = mySniffer.sinker_caps_ptr;
 #endif
 
@@ -1041,6 +1061,21 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
     {
         g_warning("Unable to link elements: T-QUE-2 --> SINK2 \n"); 
         return e_FAIL_TEE_Q2_LINK;
+    }
+
+    // possibly --- link png-encoder --> multifilesink
+    if (mySplicer.params.one_snap_ms > 0)
+    {
+    #ifndef _USING_PNG_LIBRARY_
+        is_linked_ok = gst_element_link_many(mySniffer.png_encoder_ptr,
+                                             mySniffer.file_writer_ptr,
+                                             NULL);
+        if (! is_linked_ok)
+        {
+            g_warning("Unable to link elements: frame-pusher --> png-encoder -> multi-file-sink \n");
+            return e_FAIL_TEE_TO_FILE;
+        }
+    #endif // _USING_PNG_LIBRARY_
     }
 
     return e_TEE_INSERT_ENDED;
@@ -1161,6 +1196,8 @@ static PIPELINE_MAKER_ERROR_e do_pipeline_create()
     mySniffer.Q_1_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_1_NAME);
     mySniffer.Q_2_element_ptr = gst_element_factory_make("queue",         DEFAULT_QUEUE_2_NAME);
     mySniffer.video_sink1_ptr = gst_element_factory_make("autovideosink", DEFAULT_VID_SINK_1_NAME);
+    mySniffer.png_encoder_ptr = gst_element_factory_make("pngenc",        DEFAULT_PNG_ENC_NAME);
+    mySniffer.file_writer_ptr = gst_element_factory_make("multifilesink", DEFAULT_FILES_WRITER_NAME);
 
     // possibly --- create the appsink to snap and save frames
     if (mySplicer.params.one_snap_ms > 0)
@@ -1177,20 +1214,26 @@ static PIPELINE_MAKER_ERROR_e do_pipeline_create()
     }
 
     int flags = (mySniffer.vid_sourcer_ptr ? 0 : 0x001) +   // only used for default pipeline
-                (mySniffer.video_sink1_ptr ? 0 : 0x002) +   // only used for default pipeline 
+                (mySniffer.video_sink1_ptr ? 0 : 0x002) +   // only used for default pipeline
                 (mySniffer.video_sink2_ptr ? 0 : 0x004) +
                 (mySniffer.cvt_element_ptr ? 0 : 0x008) +
                 (mySniffer.Q_1_element_ptr ? 0 : 0x010) +
                 (mySniffer.Q_2_element_ptr ? 0 : 0x020) +
                 (mySniffer.tee_element_ptr ? 0 : 0x040) +
                 (mySniffer.source_caps_ptr ? 0 : 0x100) +
-                (mySniffer.sinker_caps_ptr ? 0 : 0x200) ;
+                (mySniffer.sinker_caps_ptr ? 0 : 0x200) +
+                (mySniffer.png_encoder_ptr ? 0 : 0x400) +
+                (mySniffer.file_writer_ptr ? 0 : 0x800);
 
     if (flags != 0)
     {
         g_warning("Failed creating some pipeline elements (flags=0x%0X) \n", flags);
         return e_FAILED_MAKE_WORK_ELEMENTS;
     }
+
+    g_object_set (G_OBJECT(mySniffer.png_encoder_ptr), "snapshot", FALSE, NULL);
+
+    g_object_set (G_OBJECT(mySniffer.png_encoder_ptr), "compression-level", 9, NULL);
 
     // possibly --- configure the default pipeline
     if (! is_custom)
@@ -1225,7 +1268,7 @@ static PIPELINE_MAKER_ERROR_e do_pipeline_create()
     }
 
     // possibly --- insert the TEE now, before pipeline start playing
-    if (mySplicer.params.max_spin_ms <= 0)
+    if (mySplicer.params.max_wait_ms <= 0)
     {
         if (do_pipeline_insert_TEE_splicer() != e_TEE_INSERT_ENDED)
         {
@@ -1252,7 +1295,7 @@ static gboolean do_pipeline_callback_for_idle_time(gpointer aCtxPtr)
 
 
     // possibly --- TEE was inserted or is not wanted
-    if (mySniffer.spin_state_ends_ns == 0)
+    if (mySniffer.wait_state_ends_ns == 0)
     {
         if (elapsed_ns > mySniffer.frame_snap_wait_ns)
         {
@@ -1271,7 +1314,7 @@ static gboolean do_pipeline_callback_for_idle_time(gpointer aCtxPtr)
     }
 
     // possibly --- try-or-retry to insert TEE into pipeline
-    if ( mySniffer.spin_state_ends_ns < now_nanos )
+    if ( mySniffer.wait_state_ends_ns < now_nanos )
     {
         if ((mySplicer.status == e_SPLICER_STATE_NONE) || (mySplicer.status == e_SPLICER_STATE_USED) )
         {
@@ -1282,7 +1325,7 @@ static gboolean do_pipeline_callback_for_idle_time(gpointer aCtxPtr)
 
         if (status == e_TEE_INSERT_ENDED)    // TEE inserted into pipeline
         {
-            mySniffer.spin_state_ends_ns = 0;
+            mySniffer.wait_state_ends_ns = 0;
 
             gst_element_set_state( mySniffer.pipeline_ptr,     GST_STATE_PLAYING );
             gst_element_set_state( mySniffer.video_sink2_ptr,  GST_STATE_PLAYING );
@@ -1293,7 +1336,7 @@ static gboolean do_pipeline_callback_for_idle_time(gpointer aCtxPtr)
         }
         else if (status != e_TEE_INSERT_WAITS)    // failed --- Retry later
         {
-            mySniffer.spin_state_ends_ns = now_nanos + (NANOS_PER_MILLISEC * mySplicer.params.one_tick_ms * 10);
+            mySniffer.wait_state_ends_ns = now_nanos + (NANOS_PER_MILLISEC * mySplicer.params.one_tick_ms * 10);
 
             g_print("frame_saver_filter --- playtime=%u %s", playtime_ms, "... Failed TEE insertion\n");
 
@@ -1325,9 +1368,9 @@ static gboolean do_pipeline_callback_for_timer_tick(gpointer aCtxPtr)
     uint32_t    playtime_ms = (uint32_t) (elapsed_ns / NANOS_PER_MILLISEC);
 
 
-    if (now_nanos < mySniffer.spin_state_ends_ns)   // idle spinning state
+    if (now_nanos < mySniffer.wait_state_ends_ns)   // idle waiting state
     {
-        g_print("frame_saver_filter --- playtime=%u ... idle-spin \n", playtime_ms);
+        g_print("frame_saver_filter --- playtime=%u ... idle-wait \n", playtime_ms);
     }
     else if (mySplicer.params.one_snap_ms == 0)     // not doing frame snaps
     {
@@ -1358,15 +1401,15 @@ static gboolean do_pipeline_callback_for_timer_tick(gpointer aCtxPtr)
 
 
 //=======================================================================================
-// synopsis: is_ok = do_pipeline_run_main_loop()
+// synopsis: is_ok = do_pipeline_prepare_to_play()
 //
-// runs the pipeline --- return TRUE on success, else error
+// prepares to run the main loop the pipeline --- return TRUE on success, else error
 //=======================================================================================
-static gboolean do_pipeline_run_main_loop()
-{
+static gboolean do_pipeline_prepare_to_play()
+{    
     GstClockTime some_nanos = (NANOS_PER_MILLISEC * MIN_TICKS_MILLISEC) / 10;
     GstClockTime play_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_play_ms) + some_nanos;
-    GstClockTime spin_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_spin_ms) + some_nanos;
+    GstClockTime wait_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_wait_ms) + some_nanos;
     GstClockTime now_nanos;
 
     strcpy(mySniffer.work_folder_path, mySplicer.params.folder_path);
@@ -1378,7 +1421,7 @@ static gboolean do_pipeline_run_main_loop()
     now_nanos = gst_clock_get_time(mySniffer.sys_clock_ptr);
 
     mySniffer.start_play_time_ns = now_nanos;
-    mySniffer.spin_state_ends_ns = (mySplicer.params.max_spin_ms < 1) ? 0 : spin_nanos + now_nanos;
+    mySniffer.wait_state_ends_ns = (mySplicer.params.max_wait_ms < 1) ? 0 : wait_nanos + now_nanos;
     mySniffer.frame_snap_wait_ns = (mySplicer.params.one_snap_ms > 0) ? 0 : play_nanos + NANOS_PER_DAY;
 
     mySniffer.num_appsink_frames = 0;
@@ -1387,6 +1430,19 @@ static gboolean do_pipeline_run_main_loop()
     mySniffer.num_saver_errors = 0;
     mySniffer.num_saved_frames = 0;
     mySniffer.num_snap_signals = 0;
+
+    return TRUE;
+}
+
+
+//=======================================================================================
+// synopsis: is_ok = do_pipeline_main_loop()
+//
+// runs the pipeline --- return TRUE on success, else error
+//=======================================================================================
+static gboolean do_pipeline_main_loop()
+{
+    do_pipeline_prepare_to_play();
 
     if (gst_element_set_state(mySniffer.pipeline_ptr, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE)
     {
@@ -1413,6 +1469,7 @@ static int     myPluginsCount = -1;
 
 #define MAX_NUM_KNOWN_PLUGINS  ( sizeof(myKnownPlugins) / sizeof(gpointer) )
 #define LOCK_MUTEX_TIMEOUT_MS  (10)
+
 
 //=======================================================================================
 // synopsis: result = Frame_Saver_Filter_Lookup(aPluginPtr)
@@ -1445,107 +1502,6 @@ int Frame_Saver_Filter_Lookup(const void * aPluginPtr)
     }
 
     return (myKnownPlugins[index] == NULL) ? -1 : index;
-}
-
-
-//=======================================================================================
-// synopsis: result = Frame_Saver_Filter_Set_Params(aPluginPtr, aValuePtr, aParamsSpecPtr)
-//
-// called at by the actual plugin to change params --- returns 0 on success, else error
-//=======================================================================================
-int Frame_Saver_Filter_Set_Params(GstElement * aPluginPtr, const GValue * aValuePtr, GParamSpec * aParamsSpecPtr)
-{
-    char params_specs[MAX_PARAMS_SPECS_LNG];
-
-    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
-
-    // possibly --- plugin is unknown
-    if (index < 0)
-    {
-        return -1;
-    }
-
-    // verify that value can hold a string
-    if (G_VALUE_HOLDS_STRING(aValuePtr) != TRUE)
-    {
-        return (G_IS_PARAM_SPEC_STRING(aParamsSpecPtr) == TRUE) ? -2 : -3;
-    }
-
-    const char * psz_specs = g_value_get_string(aValuePtr);
-
-    // possibly --- invalid string
-    if (psz_specs == NULL)
-    {
-        return -4;
-    }
-
-    int specs_lng = (int) strlen(psz_specs);
-
-    // possibly invalid length
-    if (sprintf(params_specs, "%s", psz_specs) != specs_lng)
-    {
-        return -5;
-    }
-
-    // possibly --- invalid params
-    if (frame_saver_params_parse_from_text(&mySplicer.params, params_specs) != TRUE)
-    {
-        return -6;
-    }
-
-    return 0;
-}
-
-
-//=======================================================================================
-// synopsis: result = Frame_Saver_Filter_Get_Params(aPluginPtr, aValuePtr, aParamsSpecPtr)
-//
-// called at by the actual plugin to obtain params --- returns 0 on success, else error
-//=======================================================================================
-int Frame_Saver_Filter_Get_Params(GstElement * aPluginPtr, GValue * aValuePtr, GParamSpec * aParamsSpecPtr)
-{
-    char params_report[MAX_PARAMS_SPECS_LNG];
-
-    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
-
-    // possibly --- plugin is unknown
-    if (index < 0)
-    {
-        return -1;
-    }
-
-    // verify that value can hold a string
-    if (G_VALUE_HOLDS_STRING(aValuePtr) != TRUE)
-    {
-        return (G_IS_PARAM_SPEC_STRING(aParamsSpecPtr) == TRUE) ? -2 : -3;
-    }
-
-    frame_saver_params_write_to_buffer( &mySplicer.params, params_report, sizeof(params_report) );
-
-    g_value_take_string(aValuePtr, params_report);
-
-    return 0;
-}
-
-
-//=======================================================================================
-// synopsis: result = Frame_Saver_Filter_Transition(aPluginPtr)
-//
-// called at by the actual plugin upon state change --- returns 0 on success, else error
-//=======================================================================================
-int Frame_Saver_Filter_Transition(GstElement * aPluginPtr, GstStateChange aTransition)
-{
-    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
-
-    // possibly --- plugin is unknown
-    if (index < 0)
-    {
-        return -1;
-    }
-
-    // TODO: perform state trnasition
-
-    return 0; 
 }
 
 
@@ -1597,6 +1553,10 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
             myKnownPlugins[index] = aPluginPtr;
 
             mySniffer.hosted_plugin_ptr = aPluginPtr;
+            
+            mySniffer.pipeline_ptr = gst_element_get_parent(aPluginPtr);
+            
+            do_pipeline_prepare_to_play();
         }
     }
 
@@ -1663,6 +1623,75 @@ int Frame_Saver_Filter_Detach(GstElement * aPluginPtr)
 
 
 //=======================================================================================
+// synopsis: result = Frame_Saver_Filter_Receive(aPluginPtr, aBufferPtr)
+//
+// called at by the actual plugin upon buffer arrival --- returns GST_FLOW_OK
+//=======================================================================================
+int Frame_Saver_Filter_Receive(GstElement * aPluginPtr, gpointer aBufferPtr)
+{
+    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+
+    if (index >= 0)
+    {
+        do_pipeline_callback_for_idle_time(NULL);
+    }
+
+    return (int) GST_FLOW_OK;
+}
+
+
+//=======================================================================================
+// synopsis: result = Frame_Saver_Filter_Transition(aPluginPtr)
+//
+// called at by the actual plugin upon state change --- returns 0 on success, else error
+//=======================================================================================
+int Frame_Saver_Filter_Transition(GstElement * aPluginPtr, GstStateChange aTransition)
+{
+    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+
+    // possibly --- plugin is unknown --- nothing to do ere in either case
+    return (index < 0) ? -1 : 0;
+}
+
+
+//=======================================================================================
+// synopsis: result = Frame_Saver_Filter_Set_Params(aPluginPtr, aNewValuePtr, aParamSpecPtr)
+//
+// called at by the actual plugin to change params --- returns 0 on success, else error
+//=======================================================================================
+int Frame_Saver_Filter_Set_Params(GstElement  * aPluginPtr, 
+                                  const gchar * aNewValuePtr, 
+                                  gchar       * aParamSpecPtr)
+{
+    char params_specs[MAX_PARAMS_SPECS_LNG];
+
+    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+
+    // possibly --- plugin is unknown
+    if (index < 0)
+    {
+        return -1;
+    }
+
+    int specs_lng = (int) strlen(aNewValuePtr);
+
+    // possibly invalid length
+    if (sprintf(params_specs, "%s", aNewValuePtr) != specs_lng)
+    {
+        return -2;
+    }
+
+    // possibly --- invalid params
+    if (frame_saver_params_parse_from_text(&mySplicer.params, params_specs) != TRUE)
+    {
+        return -3;
+    }
+
+    return 0;
+}
+
+
+//=======================================================================================
 // synopsis: result = frame_saver_filter_tester(argc, argv)
 //
 // performs a self-test of the frame-saver-filter --- returns 0 on success, else error
@@ -1691,7 +1720,7 @@ int frame_saver_filter_tester( int argc, char ** argv )
         {
             g_print("frame_saver_filter_tester --- error (%d) creating pipeline \n", result);
         }
-        else if (do_pipeline_run_main_loop() != TRUE)
+        else if (do_pipeline_main_loop() != TRUE)
         {
             result = 3;
         }

@@ -6,7 +6,7 @@
  *              2. 2016-11-06   JBendor     Updated
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
- *              5. 2016-11-08   JBendor     Support dynamic params update
+ *              5. 2016-11-09   JBendor     Support dynamic params update
  *
  * Description: implements parameters used by the Frame_Saver_Filter
  *
@@ -379,7 +379,7 @@ gboolean pipeline_params_parse_one(const char * aSpecsPtr, SplicerParams_t * aPa
         return is_ok;
     }
 
-    if ( strncmp(aSpecsPtr, "poke=", 5) == 0 )
+    if ( strncmp(aSpecsPtr, "link=", 5) == 0 )
     {
         int lengths[4] = { 0, 0, 0, 0 };
 
@@ -545,11 +545,11 @@ gint frame_saver_params_write_to_buffer(SplicerParams_t * aParamsPtr, char * aBu
                            "\n          snap", aParamsPtr->one_snap_ms,
                                                aParamsPtr->max_num_snaps_saved,
                                                aParamsPtr->max_num_failed_snap,
-                           "\n          spin", aParamsPtr->max_spin_ms,
+                           "\n          wait", aParamsPtr->max_wait_ms,
                            "\n          play", aParamsPtr->max_play_ms,
                            "\n          path", aParamsPtr->folder_path,
                            "\n          pipe", psz_pipeline_type,
-                           "\n          poke", aParamsPtr->pipeline_name,
+                           "\n          link", aParamsPtr->pipeline_name,
                                                aParamsPtr->producer_name, 
                                                aParamsPtr->consumer_name,
                            "\n          pads", aParamsPtr->producer_out_pad_name, 
@@ -614,7 +614,7 @@ gboolean frame_saver_params_initialize(SplicerParams_t * aParamsPtr)
 
     aParamsPtr->one_tick_ms = 1000;
     aParamsPtr->one_snap_ms = 2000;
-    aParamsPtr->max_spin_ms = 4000;
+    aParamsPtr->max_wait_ms = 4000;
     aParamsPtr->max_play_ms = 9000;
 
     return (GET_CWD(aParamsPtr->folder_path, sizeof(aParamsPtr->folder_path)) != NULL);
@@ -656,9 +656,9 @@ gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char 
             continue;
         }
 
-        if ( strncmp(psz_param, "spin=", 5) == 0 )
+        if ( strncmp(psz_param, "wait=", 5) == 0 )
         {
-            is_ok = (sscanf(&psz_param[5], "%u", &aParamsPtr->max_spin_ms) == 1);
+            is_ok = (sscanf(&psz_param[5], "%u", &aParamsPtr->max_wait_ms) == 1);
             continue;
         }
 
@@ -684,7 +684,7 @@ gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char 
         }
 
         // possibly --- parse parameters related to the pipeline
-        if ( (strncmp(psz_param, "poke=", 5) == 0) ||
+        if ( (strncmp(psz_param, "link=", 5) == 0) ||
              (strncmp(psz_param, "pads=", 5) == 0) ||
              (strncmp(psz_param, "pipe=", 5) == 0) )
         {

@@ -8,7 +8,7 @@
  *              2. 2016-10-29   JBendor     Updated 
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
- *              5. 2016-11-08   JBendor     Support dynamic params update
+ *              5. 2016-11-09   JBendor     Support dynamic params update
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -77,6 +77,9 @@
 #define  DEFAULT_QUEUE_2_NAME           "FSL_TQ2"
 #define  DEFAULT_1ST_CVT_NAME           "FSL_CVT_1"
 #define  DEFAULT_2ND_CVT_NAME           "FSL_CVT_2"
+#define  DEFAULT_PNG_ENC_NAME           "FSL_PNG_ENC"
+#define  DEFAULT_FILES_WRITER_NAME      "FSL_FILES_WRITER"
+#define  DEFAULT_FRAME_PUSHER_NAME      "FSL_FRAME_PUSHER"
 
 
 //=======================================================================================
@@ -86,7 +89,7 @@ typedef struct
 {
     guint   one_tick_ms,            // timer-ticks interval as milliseconds
             one_snap_ms,            // frame-snaps interval as milliseconds
-            max_spin_ms,            // spin-state-timeout as milliseconds
+            max_wait_ms,            // wait-state-timeout as milliseconds
             max_play_ms;            // play-state-timeout as milliseconds
 
     guint   max_num_snaps_saved,    // maximum number of saves --- 0=unlimited

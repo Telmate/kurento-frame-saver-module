@@ -5,7 +5,7 @@
 * Purpose:     saves image frames as PNG files
 * 
 * History:     1. 2016-10-17   JBendor     Created
-*              2. 2016-11-04   JBendor     Updated
+*              2. 2016-11-09   JBendor     Updated
 *
 * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
 *               Unauthorized copying of this file is strictly prohibited.
@@ -58,6 +58,8 @@ static RGB32_Pix_t * do_get_RGB32_pixel_ptr_at (PixmapInfo_t * aPixmapPtr, int a
 //=======================================================================================
 static int do_save_RGB_frame_to_PNG_file (PixmapInfo_t * aPixmapPtr, const char * file_path)
 {
+#ifdef _USING_PNG_LIBRARY_
+
     png_uint_32 row_idx = 0;
 
     png_uint_32 is_RGBA = (aPixmapPtr->depth == 32);
@@ -130,6 +132,13 @@ static int do_save_RGB_frame_to_PNG_file (PixmapInfo_t * aPixmapPtr, const char 
     png_free (png_ptr, row_pointers);
 
     fclose (fp);
+
+#else
+
+    do_get_RGB24_pixel_ptr_at(aPixmapPtr, 0, 0);    // supress "unused static" warning
+    do_get_RGB32_pixel_ptr_at(aPixmapPtr, 0, 0);    // supress "unused static" warning
+
+#endif
 
     return 0;
 }

@@ -5,7 +5,7 @@
  * Purpose:     external interface (API) for Frame_Saver_Filter_Library (aka FSL)
  * 
  * History:     1. 2016-10-14   JBendor     Created    
- *              2. 2016-11-04   JBendor     Updated 
+ *              2. 2016-11-09   JBendor     Updated 
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -15,6 +15,13 @@
 #ifndef __Frame_Saver_Filter_Lib_H__
 
 #define __Frame_Saver_Filter_Lib_H__
+
+#if defined _USRDLL && defined _MSC_VER
+    #define API_LINKAGE  __declspec(dllexport)
+#else
+    #define API_LINKAGE  __declspec(dllimport)
+#endif
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,7 +56,7 @@ typedef int32_t  fsl_error_t;
 //
 // gets version info about Gstreamer and FSL
 //=======================================================================================
-extern const char * fsl_get_version();
+API_LINKAGE const char * fsl_get_version();
 
 
 //=======================================================================================
@@ -57,7 +64,7 @@ extern const char * fsl_get_version();
 //
 // initializes the library --- returns 0 on success, else error
 //=======================================================================================
-extern int fsl_initialize();
+API_LINKAGE int fsl_initialize();
 
 
 //=======================================================================================
@@ -65,7 +72,7 @@ extern int fsl_initialize();
 //
 // performs a self-test on the library --- returns 0
 //=======================================================================================
-extern int fsl_main_test(int argc, char** argv);
+API_LINKAGE int fsl_main_test(int argc, char** argv);
 
 
 #ifdef __cplusplus
