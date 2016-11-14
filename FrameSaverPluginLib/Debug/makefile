@@ -24,19 +24,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: libFrameSaverPluginLib-Debug.so
+all: libFrameSaverPluginLib.Debug.so
 
 # Tool invocations
-libFrameSaverPluginLib-Debug.so: $(OBJS) $(USER_OBJS)
+libFrameSaverPluginLib.Debug.so: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -shared -o "libFrameSaverPluginLib-Debug.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu/gstreamer-1.5 -L/usr/lib/x86_64-linux-gnu/pix/extensions -shared -o "libFrameSaverPluginLib.Debug.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(LIBRARIES)$(OBJS)$(C_DEPS) libFrameSaverPluginLib-Debug.so
+	-$(RM) $(LIBRARIES)$(OBJS)$(C_DEPS) libFrameSaverPluginLib.Debug.so
 	-@echo ' '
 
 .PHONY: all clean dependents

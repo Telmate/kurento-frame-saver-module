@@ -29,7 +29,7 @@ all: libFrameSaverFilterLib.Release.so
 libFrameSaverFilterLib.Release.so: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L/usr/lib/x86_64-linux-gnu -shared -o "libFrameSaverFilterLib.Release.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu/gstreamer-1.5 -L/usr/lib/x86_64-linux-gnu/pix/extensions -shared -o "libFrameSaverFilterLib.Release.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

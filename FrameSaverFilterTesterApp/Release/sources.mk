@@ -2,7 +2,16 @@
 # Automatically-generated file. Do not edit!
 ################################################################################
 
-USER_OBJS :=
+OBJ_SRCS := 
+ASM_SRCS := 
+C_SRCS := 
+O_SRCS := 
+S_UPPER_SRCS := 
+EXECUTABLES := 
+OBJS := 
+C_DEPS := 
 
-LIBS := -lpng -lz -lm -lpthread -lglib-2.0 -lgstapp-1.5 -lgobject-2.0 -lgstreamer-1.5 -lgstreamer_utils -lgstreamer_tools
+# Every subdirectory with source files must be described here
+SUBDIRS := \
+src \
 

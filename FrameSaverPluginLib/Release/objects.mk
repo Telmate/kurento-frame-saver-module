@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -lz -lm -lpng -lpthread
+LIBS := -lpng -lz -lm -lpthread -lglib-2.0 -lgstapp-1.5 -lgobject-2.0 -lgstreamer-1.5 -lgstreamer_utils -lgstreamer_tools
 
