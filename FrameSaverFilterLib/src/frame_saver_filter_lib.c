@@ -5,7 +5,7 @@
  * Purpose:     implements the API for the Frame_Saver_Filter_Library (aka FSL)
  * 
  * History:     1. 2016-10-14   JBendor     Created
- *              2. 2016-11-09   JBendor     Updated 
+ *              2. 2016-11-13   JBendor     Updated 
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -65,17 +65,30 @@ API_LINKAGE const char * fsl_get_version()
 //=======================================================================================
 API_LINKAGE int fsl_initialize()
 {
+#ifdef _IS_LIB_FOR_PLUGIN_
+    #define _VERSION "FrameSaverPlugin: 1.0.0"
+#else
+    #define _VERSION "FrameSaverLibrary 1.0.0"
+#endif
+
     gst_init(NULL, NULL);
 
     gst_version(&s_GST_ver_major, &s_GST_ver_minor, &s_GST_ver_micro, &s_GST_ver_nano);
 
     snprintf(s_FSL_Version, 
              sizeof(s_FSL_Version) / sizeof(*s_FSL_Version),
-             "GStreamer version is: %d.%d.%d.%d \n", 
+             "%s %s %s --- Current GStreamer version: %d.%d.%d.%d\n", 
+             _VERSION, 
+             __DATE__, 
+             __TIME__,
              s_GST_ver_major, 
              s_GST_ver_minor, 
              s_GST_ver_micro, 
              s_GST_ver_nano);
+
+    char * ptr_date = s_FSL_Version + strlen(_VERSION) + 1;
+
+    ptr_date[3] = ptr_date[6] = '-';
 
     return 0;
 }

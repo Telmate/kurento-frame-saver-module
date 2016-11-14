@@ -8,7 +8,7 @@
  *              2. 2016-10-29   JBendor     Updated 
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
- *              5. 2016-11-09   JBendor     Support dynamic params update
+ *              5. 2016-11-13   JBendor     Support dynamic params update
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -67,19 +67,9 @@
 #define  MAX_PARAMS_SPECS_LNG           (4000)
 #define  MAX_PARAMS_ARRAY_LNG           (20)
 
-#define  DEFAULT_PIPELINE_NAME          "FSL_PIPE"
-#define  DEFAULT_VID_SINK_1_NAME        "FSL_VIEW1"
-#define  DEFAULT_VID_SINK_2_NAME        "FSL_VIEW2"
-#define  DEFAULT_APP_SINK_2_NAME        "FSL_SNAPS"
-#define  DEFAULT_VID_SOURCE_NAME        "FSL_SRC"
-#define  DEFAULT_VID_TEE_NAME           "FSL_TEE"
-#define  DEFAULT_QUEUE_1_NAME           "FSL_TQ1"
-#define  DEFAULT_QUEUE_2_NAME           "FSL_TQ2"
-#define  DEFAULT_1ST_CVT_NAME           "FSL_CVT_1"
-#define  DEFAULT_2ND_CVT_NAME           "FSL_CVT_2"
-#define  DEFAULT_PNG_ENC_NAME           "FSL_PNG_ENC"
-#define  DEFAULT_FILES_WRITER_NAME      "FSL_FILES_WRITER"
-#define  DEFAULT_FRAME_PUSHER_NAME      "FSL_FRAME_PUSHER"
+#define DEFAULT_VID_SRC_NAME            ("videotestsrc0")
+#define DEFAULT_VID_CVT_NAME            ("videoconvert0")
+#define DEFAULT_PIPELINE_NAME           ("FSL_DEFAULT_PIPELINE")
 
 
 //=======================================================================================

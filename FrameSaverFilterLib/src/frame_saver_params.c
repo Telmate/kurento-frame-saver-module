@@ -6,7 +6,7 @@
  *              2. 2016-11-06   JBendor     Updated
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
- *              5. 2016-11-09   JBendor     Support dynamic params update
+ *              5. 2016-11-13   JBendor     Support dynamic params update
  *
  * Description: implements parameters used by the Frame_Saver_Filter
  *
@@ -510,13 +510,13 @@ gint frame_saver_params_write_to_buffer(SplicerParams_t * aParamsPtr, char * aBu
     if ((*aParamsPtr->producer_name == 0) || 
         (strcmp(aParamsPtr->producer_name, "auto") == 0))
     {
-        sprintf(aParamsPtr->producer_name, "%s", DEFAULT_VID_SOURCE_NAME);
+        sprintf(aParamsPtr->producer_name, "%s", DEFAULT_VID_SRC_NAME);
     }
 
     if ((*aParamsPtr->consumer_name == 0) || 
         (strcmp(aParamsPtr->consumer_name, "auto") == 0))
     {
-        sprintf(aParamsPtr->consumer_name, "%s", DEFAULT_1ST_CVT_NAME);
+        sprintf(aParamsPtr->consumer_name, "%s", DEFAULT_VID_CVT_NAME);
     }
 
     if ((*aParamsPtr->producer_out_pad_name == 0) || 
@@ -555,6 +555,7 @@ gint frame_saver_params_write_to_buffer(SplicerParams_t * aParamsPtr, char * aBu
                            "\n          pads", aParamsPtr->producer_out_pad_name, 
                                                aParamsPtr->consumer_inp_pad_name, 
                                                aParamsPtr->consumer_out_pad_name);
+
     if (bangs_ptr != NULL)
     {
         char pipe_specs[sizeof(aParamsPtr->pipeline_spec)];
@@ -614,7 +615,7 @@ gboolean frame_saver_params_initialize(SplicerParams_t * aParamsPtr)
 
     aParamsPtr->one_tick_ms = 1000;
     aParamsPtr->one_snap_ms = 2000;
-    aParamsPtr->max_wait_ms = 4000;
+    aParamsPtr->max_wait_ms = 3000;
     aParamsPtr->max_play_ms = 9000;
 
     return (GET_CWD(aParamsPtr->folder_path, sizeof(aParamsPtr->folder_path)) != NULL);
@@ -650,9 +651,9 @@ gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char 
             continue;
         }
 
-        if ( strncmp(psz_param, "snap=", 5) == 0 )
+        if ( strncmp(psz_param, "tick=", 5) == 0 )
         {
-            is_ok = pipeline_params_parse_one(psz_param, aParamsPtr);
+            is_ok = (sscanf(&psz_param[5], "%u", &aParamsPtr->one_tick_ms) == 1);
             continue;
         }
 
@@ -662,9 +663,9 @@ gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char 
             continue;
         }
 
-        if ( strncmp(psz_param, "tick=", 5) == 0 )
+        if ( strncmp(psz_param, "snap=", 5) == 0 )
         {
-            is_ok = (sscanf(&psz_param[5], "%u", &aParamsPtr->one_tick_ms) == 1);
+            is_ok = pipeline_params_parse_one(psz_param, aParamsPtr);
             continue;
         }
 
@@ -678,7 +679,16 @@ gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char 
         {
             int lng = snprintf(aParamsPtr->folder_path, sizeof(aParamsPtr->folder_path), "%s", &psz_param[5]);
 
-            is_ok = (lng > 3) && ((lng + 30) < sizeof(aParamsPtr->folder_path));
+            if (strncmp(aParamsPtr->folder_path, "auto", 4) == 0)
+            {
+                char * ptr = GET_CWD(aParamsPtr->folder_path, sizeof(aParamsPtr->folder_path));
+
+                lng = (ptr == NULL) ? 0 : (int) strlen(aParamsPtr->folder_path);
+            }
+
+            // verify reasonable working folder path --- and space for image file name
+            is_ok = ((sizeof(aParamsPtr->folder_path) > lng + 30)) &&
+                     (strchr(aParamsPtr->folder_path, PATH_DELIMITER) != NULL) && (lng > 4);
 
             continue;
         }
