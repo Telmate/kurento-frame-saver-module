@@ -301,7 +301,7 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
                                     e_PROP_SILENT,
                                     g_param_spec_boolean("silent",
                                                          "Silent or Verbose",
-                                                         "Silent is 0/False --- Verbose is 1/True",
+                                                         "Silent is 1/True --- Verbose is 0/False",
                                                          FALSE,
                                                          G_PARAM_READWRITE));
 
