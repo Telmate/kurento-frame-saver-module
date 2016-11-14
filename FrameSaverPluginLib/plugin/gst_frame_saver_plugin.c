@@ -5,17 +5,40 @@
  * Purpose:     boiler-plate Gstreamer plugin --- uses "Frame-Saver-Filter" for behavior.
  *
  * History:     1. 2016-11-05   JBendor     Created
- *              2. 2016-11-09   JBendor     Updated
+ *              2. 2016-11-13   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
  * ======================================================================================
  */
 
+#ifdef _IS_LIB_FOR_PLUGIN_      /* should be defined only when building the plugin */
+
+ 
 #ifdef _HAVE_PLUGIN_CONFIG_H_
     #include "plugin_config.h"
 #else 
-    #define VERSION "1.0.0"
+    #ifdef _DEBUG
+        #define BUILD_TYPE  "BUILD.DEBUG"
+    #else
+        #define BUILD_TYPE  "BUILD.RELEASE"
+    #endif
+
+    #ifdef _MSC_VER
+        #define BUILD_TOOL  "MSC.WINDOWS"
+    #else
+        #define BUILD_TOOL  "GCC.LINUX"
+    #endif
+
+    #ifdef _CYGWIN
+        #undef  BUILD_TOOL
+        #define BUILD_TOOL  "GCC.CYGWIN"
+    #endif
+
+    #define BUILD_DATETIME  "(" __DATE__ "  " __TIME__ ")" 
+    
+    #define MY_VERSION ( "1.0.0"  " " BUILD_TYPE  "." BUILD_TOOL " " BUILD_DATETIME )
+    
     #define PACKAGE "frame_saver_plugin_package"
 #endif
 
@@ -30,6 +53,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <gst/gst.h>
+
+
+// stubs needed when gst-launch loads our plugin and appsink version is old
+#ifdef _PROVIDE_APPSINK_STUBS_
+    #include <gst/app/gstappsink.h>
+    GType gst_app_sink_get_type(void) { return 0xFEED1BAD; }
+    GstSample* gst_app_sink_pull_sample(GstAppSink *appsink) { return NULL; }
+#endif
+
 
 
 #ifdef __ALLOW_DYNAMIC_PARAMS__
@@ -60,15 +92,16 @@ typedef struct _GstFrameSaverPluginClass
 typedef struct _GstFrameSaverPlugin
 {
     GstElement   element;
-    GstPad     * sinkpad,
-               * srcpad;
-    gboolean     is_silent,
-                 is_pusher;
+    GstPad     * sinkpad;
+    GstPad     * srcpad;
     guint        num_buffs;
+    guint        num_drops;
+    gboolean     is_silent;
     gchar        sz_wait[30],
                  sz_snap[30],
-                 sz_poke[90],
-                 sz_pads[90];
+                 sz_link[90],
+                 sz_pads[90],
+                 sz_path[300];
 
 } GstFrameSaverPlugin;
 
@@ -79,8 +112,7 @@ typedef struct _GstFrameSaverPlugin
     G_DEFINE_TYPE(GstFrameSaverPlugin, gst_frame_saver_plugin, GST_TYPE_ELEMENT);
 #endif
 
-
-extern GType gst_frame_saver_plugin_get_type(void);    // defined by G_DEFINE_TYPE
+extern GType gst_frame_saver_plugin_get_type(void);  // body defined by G_DEFINE_TYPE
 
 GST_DEBUG_CATEGORY_STATIC(gst_frame_saver_plugin_debug);
 
@@ -110,36 +142,44 @@ enum
     e_PROP_0, 
     e_PROP_WAIT,    // "wait=MillisWaitBeforeNextFrameSnap"
     e_PROP_SNAP,    // "snap=MillisIntervals,MaxNumSnaps,MaxNumFails"
-    e_PROP_POKE,    // "poke=PipelineName,ProducerName,ConsumerName"
+    e_PROP_LINK,    // "link=PipelineName,ProducerName,ConsumerName"
     e_PROP_PADS,    // "pads=ProducerOut,ConsumerInput,ConsumerOut"
-    e_PROP_SILENT   // silent=0 or silent=1 --- 1 suppresses messages
+    e_PROP_PATH,    // "path=PathForWorkingFolderForSavedImageFiles"
+    e_PROP_SILENT   // silent=0 or silent=1 --- 1 disables messages
 
 } PLUGIN_PARAMS_e;
 
 
-#ifdef _DUMMY_PLUGIN_LIB
+#define _USING_FRAME_SAVER_     // when undefined: not saving image frames
+
+
+#ifdef _USING_FRAME_SAVER_
+
+    extern int Frame_Saver_Filter_Attach(GstElement * pluginPtr);
+    extern int Frame_Saver_Filter_Detach(GstElement * pluginPtr);
+    extern int Frame_Saver_Filter_Receive(GstElement * pluginPtr, GstBuffer * aBufferPtr);
+    extern int Frame_Saver_Filter_Transition(GstElement * pluginPtr, GstStateChange aTransition) ;
+    extern int Frame_Saver_Filter_Set_Params(GstElement * pluginPtr, const gchar * aNewValuePtr, gchar * aPrvSpecsPtr);
+
+#else
     static int Frame_Saver_Filter_Attach(GstElement * pluginPtr) 
     { 
-        return 0; 
+        return 0;
     }
     static int Frame_Saver_Filter_Detach(GstElement * pluginPtr) 
     { 
-        return 0; 
+        return 0;
     }
     static int Frame_Saver_Filter_Receive(GstElement * pluginPtr, GstBuffer * aBufferPtr) 
     { 
-        return 0; 
+        return 0;
     }
     static int Frame_Saver_Filter_Transition(GstElement * pluginPtr, GstStateChange aTransition) 
     { 
-        return 0; 
+        return 0;
     }
-    static int Frame_Saver_Filter_Set_Params(GstElement * pluginPtr, const gchar * aNewValuePtr, gchar * aParamSpecPtr)
+    static int Frame_Saver_Filter_Set_Params(GstElement * pluginPtr, const gchar * aNewValuePtr, gchar * aPrvSpecsPtr)
     {
-        g_print("FrameSaverPlugin_Set_Param --- IS (%s)  --- NEW (%s) \n", aParamSpecPtr, aNewValuePtr);
-
-        strcpy( &aParamSpecPtr[5], aNewValuePtr );
-
         #ifdef _ALLOW_DYNAMIC_PARAMS_
             gst_object_sync_values(pluginPtr, DYNAMIC_SYNC_NANOS);
         #endif
@@ -147,27 +187,22 @@ enum
         return 0; 
     }
 
-#else
-
-    extern int Frame_Saver_Filter_Attach(GstElement * pluginPtr);
-    extern int Frame_Saver_Filter_Detach(GstElement * pluginPtr); 
-    extern int Frame_Saver_Filter_Receive(GstElement * pluginPtr, GstBuffer * aBufferPtr);
-    extern int Frame_Saver_Filter_Transition(GstElement * pluginPtr, GstStateChange aTransition) ;
-    extern int Frame_Saver_Filter_Set_Params(GstElement * pluginPtr, const gchar * aNewValuePtr, gchar * aParamSpecPtr);
-
 #endif
 
 
 /* the capabilities of the inputs and outputs. describe the real formats here. */
-static GstStaticPadTemplate sink_factory = GST_STATIC_PAD_TEMPLATE( "sink",
-                                                                    GST_PAD_SINK,
-                                                                    GST_PAD_ALWAYS,
-                                                                    GST_STATIC_CAPS ("ANY") );
+static GstStaticPadTemplate gst_frame_saver_plugin_sink_template =
+                            GST_STATIC_PAD_TEMPLATE( "sink",
+                                                     GST_PAD_SINK,
+                                                     GST_PAD_ALWAYS,
+                                                     GST_STATIC_CAPS ("ANY") );
 
-static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE( "src",
-                                                                   GST_PAD_SRC,
-                                                                   GST_PAD_ALWAYS,
-                                                                   GST_STATIC_CAPS ("ANY") );
+static GstStaticPadTemplate gst_frame_saver_plugin_src_template =
+                            GST_STATIC_PAD_TEMPLATE( "src",
+                                                     GST_PAD_SRC,
+                                                     GST_PAD_ALWAYS,
+                                                     GST_STATIC_CAPS ("ANY") );
+
 
 static void gst_frame_saver_plugin_set_property(GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec);
 
@@ -233,10 +268,10 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
                                                         param_flags));
 
     g_object_class_install_property(gobject_class,
-                                    e_PROP_POKE,
-                                    g_param_spec_string("poke",
-                                                        "poke=pipelineName,producerName,consumerName",
-                                                        "poke TEE between producer and consumer elements",
+                                    e_PROP_LINK,
+                                    g_param_spec_string("link",
+                                                        "link=pipelineName,producerName,consumerName",
+                                                        "insert TEE between producer and consumer elements",
                                                         "auto,auto,auto",
                                                         param_flags));
 
@@ -248,10 +283,18 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
                                                         "src,sink,src",
                                                         param_flags));
 
-    gst_element_class_set_details_simple(This_Plugin_Element_Class_ptr,
+    g_object_class_install_property(gobject_class,
+                                    e_PROP_PATH,
+                                    g_param_spec_string("path",
+                                                        "path=path-of-working-folder-for-saved-images",
+                                                        "path of working folder for saved image files",
+                                                        "auto",
+                                                        param_flags));
+
+    gst_element_class_set_details_simple(GST_ELEMENT_CLASS(klass),
                                          "FrameSaverPlugin",                // name to launch
                                          "Pipeline-Splicer",                // classification
-                                         "Inserts-TEE-and-Saves-Frames",    // description
+                                         "Inserts TEE and Saves Frames",    // description
                                          "Author <<author@hostname.org>>"); // author info
 
     g_object_class_install_property(gobject_class,
@@ -262,9 +305,11 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
                                                          FALSE,
                                                          G_PARAM_READWRITE));
 
-    gst_element_class_add_pad_template(This_Plugin_Element_Class_ptr, gst_static_pad_template_get(&src_factory));
+    gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass),
+                                       gst_static_pad_template_get(&gst_frame_saver_plugin_src_template));
 
-    gst_element_class_add_pad_template(This_Plugin_Element_Class_ptr, gst_static_pad_template_get(&sink_factory));
+    gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass),
+                                       gst_static_pad_template_get(&gst_frame_saver_plugin_sink_template));
 
     return;
 }
@@ -287,21 +332,35 @@ static gboolean gst_my_filter_src_query(GstPad *pad, GstObject *parent, GstQuery
 
 static GstStateChangeReturn gst_frame_saver_plugin_change_state(GstElement *element, GstStateChange transition)
 {
-    GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
+    GstStateChangeReturn ret_val = GST_STATE_CHANGE_SUCCESS;
 
-    if (transition == GST_STATE_CHANGE_NULL_TO_READY)
+    GstFrameSaverPlugin * filter = GST_FRAME_SAVER_PLUGIN(element);
+
+    gboolean      is_frame_saver = (filter->sz_snap[5] > '0');
+        
+    if (is_frame_saver)
     {
-        Frame_Saver_Filter_Attach(element);
-    }
+        if (transition == GST_STATE_CHANGE_NULL_TO_READY)
+        {
+            if ( Frame_Saver_Filter_Attach(element) == 0 )
+            {
+                Frame_Saver_Filter_Set_Params(element, filter->sz_wait, filter->sz_wait);
+                Frame_Saver_Filter_Set_Params(element, filter->sz_snap, filter->sz_snap);
+                Frame_Saver_Filter_Set_Params(element, filter->sz_link, filter->sz_link);
+                Frame_Saver_Filter_Set_Params(element, filter->sz_pads, filter->sz_pads);
+                Frame_Saver_Filter_Set_Params(element, filter->sz_path, filter->sz_path);                
+            }
+        }
 
-    Frame_Saver_Filter_Transition(element, transition);
+        Frame_Saver_Filter_Transition(element, transition);
+    }
 
     if (This_Plugin_Element_Parent_Class_ptr->change_state != NULL)
     {
-        ret = This_Plugin_Element_Parent_Class_ptr->change_state(element, transition);
+        ret_val = This_Plugin_Element_Parent_Class_ptr->change_state(element, transition);
     }
 
-    if (ret != GST_STATE_CHANGE_FAILURE)
+    if (ret_val != GST_STATE_CHANGE_FAILURE)
     {
         if (transition == GST_STATE_CHANGE_READY_TO_NULL)
         {
@@ -309,7 +368,7 @@ static GstStateChangeReturn gst_frame_saver_plugin_change_state(GstElement *elem
         }
     }
 
-    return ret;
+    return ret_val;
 }
 
 
@@ -320,35 +379,31 @@ static GstStateChangeReturn gst_frame_saver_plugin_change_state(GstElement *elem
  */
 static void gst_frame_saver_plugin_init(GstFrameSaverPlugin * filter)
 {
-    filter->sinkpad = gst_pad_new_from_static_template(&sink_factory, "sink");
+    filter->sinkpad = gst_pad_new_from_static_template(&gst_frame_saver_plugin_sink_template, "sink");
+    filter->srcpad = gst_pad_new_from_static_template(&gst_frame_saver_plugin_src_template, "src");
 
     gst_pad_set_event_function(filter->sinkpad, GST_DEBUG_FUNCPTR(gst_frame_saver_plugin_sink_event));
-
     gst_pad_set_chain_function(filter->sinkpad, GST_DEBUG_FUNCPTR(gst_frame_saver_plugin_chain));
-
-    gst_pad_set_query_function(filter->srcpad, gst_my_filter_src_query);
+    gst_pad_set_query_function(filter->sinkpad, gst_my_filter_src_query);
 
     GST_PAD_SET_PROXY_CAPS(filter->sinkpad);
-
-    gst_element_add_pad(GST_ELEMENT(filter), filter->sinkpad);
-
-    filter->srcpad = gst_pad_new_from_static_template(&src_factory, "src");
-
     GST_PAD_SET_PROXY_CAPS(filter->srcpad);
 
+    gst_element_add_pad(GST_ELEMENT(filter), filter->sinkpad);
     gst_element_add_pad(GST_ELEMENT(filter), filter->srcpad);
 
-    strcpy(filter->sz_wait, "wait=1000");
-    strcpy(filter->sz_snap, "snap=1000,0,0");
-    strcpy(filter->sz_poke, "poke=auto,auto,auto");
+    strcpy(filter->sz_wait, "wait=2000");
+    strcpy(filter->sz_snap, "snap=0,0,0");
+    strcpy(filter->sz_link, "link=Live,auto,auto");
     strcpy(filter->sz_pads, "pads=auto,auto,auto");
+    strcpy(filter->sz_path, "path=auto");
     
-    filter->is_pusher = ((filter->sz_snap[5] < '1') || (filter->sz_snap[5] > '9'));
-    filter->is_silent = FALSE;
+    filter->is_silent = TRUE;
+
     filter->num_buffs = 0;
 
-    Frame_Saver_Filter_Attach(GST_ELEMENT(filter));
-    
+    filter->num_drops = 0;
+
     return;
 }
 
@@ -358,34 +413,53 @@ static void gst_frame_saver_plugin_set_property(GObject      * object,
                                                 const GValue * value,
                                                 GParamSpec   * pspec)
 {
+    const gchar * psz_now = NULL;
+
     GstFrameSaverPlugin * filter = GST_FRAME_SAVER_PLUGIN(object);
 
     switch (prop_id)
     {
     case e_PROP_SILENT:
         filter->is_silent = g_value_get_boolean(value);
+        psz_now = filter->is_silent ? "Silent=TRUE" : "Silent=FALSE";
         break;
 
     case e_PROP_WAIT:
-        Frame_Saver_Filter_Set_Params(GST_ELEMENT(filter), g_value_get_string(value), filter->sz_wait);
+        snprintf( filter->sz_wait, sizeof(filter->sz_wait), "wait=%s", g_value_get_string(value) );
+        psz_now = filter->sz_wait;
         break;
 
     case e_PROP_SNAP:
-        Frame_Saver_Filter_Set_Params(GST_ELEMENT(filter), g_value_get_string(value), filter->sz_snap);
-        filter->is_pusher = ((filter->sz_snap[5] < '1') || (filter->sz_snap[5] > '9'));        
+        snprintf( filter->sz_snap, sizeof(filter->sz_snap), "snap=%s", g_value_get_string(value) );
+        psz_now = filter->sz_snap;
         break;
 
-    case e_PROP_POKE:
-        Frame_Saver_Filter_Set_Params(GST_ELEMENT(filter), g_value_get_string(value), filter->sz_poke);
+    case e_PROP_LINK:
+        snprintf( filter->sz_link, sizeof(filter->sz_link), "link=%s", g_value_get_string(value) );
+        psz_now = filter->sz_link;
         break;
 
     case e_PROP_PADS:
-        Frame_Saver_Filter_Set_Params(GST_ELEMENT(filter), g_value_get_string(value), filter->sz_pads);
+        snprintf( filter->sz_pads, sizeof(filter->sz_pads), "pads=%s", g_value_get_string(value) );
+        psz_now = filter->sz_pads;
+        break;
+
+    case e_PROP_PATH:
+        snprintf( filter->sz_path, sizeof(filter->sz_path), "path=%s", g_value_get_string(value) );
+        psz_now = filter->sz_path;
         break;
 
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
+    }
+
+    if (psz_now != NULL)
+    {
+        g_print("FrameSaverPlugin --- Property #%u --- Now: (%s) \n", (guint) prop_id, psz_now);
+
+        filter->num_buffs = 0;
+        filter->num_drops = 0;
     }
 
     return;
@@ -410,12 +484,16 @@ static void gst_frame_saver_plugin_get_property(GObject * object, guint prop_id,
         g_value_set_string(value, filter->sz_snap);
         break;
 
-    case e_PROP_POKE:
-        g_value_set_string(value, filter->sz_poke);
+    case e_PROP_LINK:
+        g_value_set_string(value, filter->sz_link);
         break;
 
     case e_PROP_PADS:
         g_value_set_string(value, filter->sz_pads);
+        break;
+
+    case e_PROP_PATH:
+        g_value_set_string(value, filter->sz_path);
         break;
 
     default:
@@ -437,7 +515,7 @@ static gboolean gst_frame_saver_plugin_sink_event(GstPad * pad, GstObject * pare
     GstCaps * caps;
     GstFrameSaverPlugin * filter = GST_FRAME_SAVER_PLUGIN(parent);
 
-    GST_LOG_OBJECT(filter, "Received %s event: %" GST_PTR_FORMAT, GST_EVENT_TYPE_NAME (event), event);
+    GST_LOG_OBJECT(filter, "Received Event (%s) : %" GST_PTR_FORMAT, GST_EVENT_TYPE_NAME (event), event);
 
     switch (GST_EVENT_TYPE(event))
     {
@@ -461,32 +539,25 @@ static gboolean gst_frame_saver_plugin_sink_event(GstPad * pad, GstObject * pare
 /* chain function --- this function does the actual processing */
 static GstFlowReturn gst_frame_saver_plugin_chain(GstPad * pad, GstObject * parent, GstBuffer * buf)
 {
-    GstFlowReturn result = GST_FLOW_OK;
-    
     GstFrameSaverPlugin * filter = GST_FRAME_SAVER_PLUGIN(parent);
 
-    if (filter->is_pusher)
-    {
-        result = gst_pad_push(filter->srcpad, buf); /* push out the buffer untouched */
-        
-        filter->num_buffs += (result == GST_FLOW_OK) ? 1 : 0;
+    GstFlowReturn         result = gst_pad_push(filter->srcpad, buf);
+    
+    filter->num_buffs += 1;
 
-        if (filter->is_silent == FALSE)
-        {
-            g_print("FrameSaverPlugin --- pushed: #%u \n", filter->num_buffs);
-        }    
-    }
-    else
-    {
-        result = (GstFlowReturn) Frame_Saver_Filter_Receive(GST_ELEMENT(filter), buf);
+    filter->num_drops += (result == GST_FLOW_OK) ? 0 : 1;
 
-        if (filter->is_silent == FALSE)
-        {
-            g_print("FrameSaverPlugin --- Received: #%u \n", ++filter->num_buffs);
-        }    
+    if (filter->is_silent == FALSE)
+    {
+        g_print("FrameSaverPlugin --- Push --- (%u/%u) \n", filter->num_buffs, filter->num_drops);
+    }    
+    
+    if ( filter->sz_snap[5] > '0')  // is_frame_saver)
+    {
+        Frame_Saver_Filter_Receive(GST_ELEMENT(filter), buf);
     }
     
-    return result;
+    return result;  // anythin except GST_FLOW_OK could halt the flow in the pipeline
 }
 
 
@@ -507,16 +578,16 @@ static gboolean frame_saver_plugin_init(GstPlugin * filter)
 }
 
 
-
 /* gstreamer looks for this structure to register plugins */
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
                   GST_VERSION_MINOR,
                   FrameSaverPlugin,
-                  "FrameSaverPlugin_Description",
+                  "FrameSaverPlugin --- Inserts TEE and saves image frames",
                   frame_saver_plugin_init,
-                  VERSION,
+                  MY_VERSION,
                   "LGPL",
                   "GStreamer",
                   "http://gstreamer.net/")
 
-
+                  
+#endif  /* _IS_LIB_FOR_PLUGIN_ */

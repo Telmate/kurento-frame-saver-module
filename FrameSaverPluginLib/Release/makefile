@@ -9,6 +9,7 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include src/subdir.mk
+-include plugin/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -29,7 +30,7 @@ all: libFrameSaverPluginLib-Release.so
 libFrameSaverPluginLib-Release.so: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -shared -o "libFrameSaverPluginLib-Release.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L/usr/lib/x86_64-linux-gnu -shared -o "libFrameSaverPluginLib-Release.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
