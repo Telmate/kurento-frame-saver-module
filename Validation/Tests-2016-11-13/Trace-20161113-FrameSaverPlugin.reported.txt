@@ -1,0 +1,75 @@
+Factory Details:
+  Rank                     none (0)
+  Long-name                FrameSaverPlugin
+  Klass                    Pipeline-Splicer
+  Description              Inserts TEE and Saves Frames
+  Author                   Author <<author@hostname.org>>
+
+Plugin Details:
+  Name                     FrameSaverPlugin
+  Description              FrameSaverPlugin --- Inserts TEE and saves image frames
+  Filename                 /usr/lib/x86_64-linux-gnu/gstreamer-1.5/libFrameSaverPluginLib-Release.so
+  Version                  1.0.0 BUILD.RELEASE.GCC.LINUX (Nov 13 2016  12:55:04)
+  License                  LGPL
+  Source module            frame_saver_plugin_package
+  Binary package           GStreamer
+  Origin URL               http://gstreamer.net/
+
+GObject
+ +----GInitiallyUnowned
+       +----GstObject
+             +----GstElement
+                   +----GstFrameSaverPlugin
+
+Pad Templates:
+  SRC template: 'src'
+    Availability: Always
+    Capabilities:
+      ANY
+
+  SINK template: 'sink'
+    Availability: Always
+    Capabilities:
+      ANY
+
+
+Element Flags:
+  no flags set
+
+Element Implementation:
+  Has change_state() function: 0x7f5c411cd5a0
+
+Element has no clocking capabilities.
+Element has no URI handling capabilities.
+
+Pads:
+  SINK: 'sink'
+    Pad Template: 'sink'
+  SRC: 'src'
+    Pad Template: 'src'
+
+Element Properties:
+  name                : The name of the object
+                        flags: readable, writable
+                        String. Default: "framesaverplugin0"
+  parent              : The parent of the object
+                        flags: readable, writable
+                        Object of type "GstObject"
+  wait                : wait before snapping another frame
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "wait=2000"
+  snap                : snap and save frames as RGB images in PNG files
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "snap=0,0,0"
+  link                : insert TEE between producer and consumer elements
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "link=Live,auto,auto"
+  pads                : pads used by the producer and consumer elements
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "pads=auto,auto,auto"
+  path                : path of working folder for saved image files
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "path=auto"
+  silent              : Silent is 0/False --- Verbose is 1/True
+                        flags: readable, writable
+                        Boolean. Default: true

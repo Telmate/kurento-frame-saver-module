@@ -1,0 +1,157 @@
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ gst-inspect-1.5 FrameSaverPlugin
+Factory Details:
+  Rank                     none (0)
+  Long-name                FrameSaverPlugin
+  Klass                    Pipeline-Splicer
+  Description              Inserts TEE and Saves Frames
+  Author                   Author <<author@hostname.org>>
+
+Plugin Details:
+  Name                     FrameSaverPlugin
+  Description              FrameSaverPlugin --- Inserts TEE and saves image frames
+  Filename                 /usr/lib/x86_64-linux-gnu/gstreamer-1.5/libFrameSaverPluginLib-Release.so
+  Version                  1.0.0 BUILD.RELEASE.GCC.LINUX (Nov 13 2016  12:55:04)
+  License                  LGPL
+  Source module            frame_saver_plugin_package
+  Binary package           GStreamer
+  Origin URL               http://gstreamer.net/
+
+GObject
+ +----GInitiallyUnowned
+       +----GstObject
+             +----GstElement
+                   +----GstFrameSaverPlugin
+
+Pad Templates:
+  SRC template: 'src'
+    Availability: Always
+    Capabilities:
+      ANY
+
+  SINK template: 'sink'
+    Availability: Always
+    Capabilities:
+      ANY
+
+
+Element Flags:
+  no flags set
+
+Element Implementation:
+  Has change_state() function: 0x7f04cf2e45a0
+
+Element has no clocking capabilities.
+Element has no URI handling capabilities.
+
+Pads:
+  SINK: 'sink'
+    Pad Template: 'sink'
+  SRC: 'src'
+    Pad Template: 'src'
+
+Element Properties:
+  name                : The name of the object
+                        flags: readable, writable
+                        String. Default: "framesaverplugin0"
+  parent              : The parent of the object
+                        flags: readable, writable
+                        Object of type "GstObject"
+  wait                : wait before snapping another frame
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "wait=2000"
+  snap                : snap and save frames as RGB images in PNG files
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "snap=0,0,0"
+  link                : insert TEE between producer and consumer elements
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "link=Live,auto,auto"
+  pads                : pads used by the producer and consumer elements
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "pads=auto,auto,auto"
+  path                : path of working folder for saved image files
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "path=auto"
+  silent              : Silent is 0/False --- Verbose is 1/True
+                        flags: readable, writable
+                        Boolean. Default: true
+
+
+
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ gst-inspect-1.5 FrameSaverPlugin > FrameSaverPlugin.info.txt
+
+
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ ./FrameSaverTestApp.Release 
+
+fsl_main_test() started 
+FrameSaverLibrary 1.0.0 Nov-13-2016 12:55:19 --- Current GStreamer version: 1.8.1.1
+
+PARAMETERS: 
+          tick=1000 
+          snap=(2000,0,0) 
+          wait=3000 
+          play=9000 
+          path=(/home/jonny/Work/TELMATE/Validation) 
+          pipe=(default-pipeline) 
+          link=(FSL_DEFAULT_PIPELINE,videotestsrc0,videoconvert0) 
+          pads=(src,sink,src) 
+
+frame_saver_filter --- PLAYING 
+frame_saver_filter --- playtime=1003 ... idle-wait 
+frame_saver_filter --- playtime=2003 ... idle-wait 
+frame_saver_filter --- playtime=3003 ... idle-wait 
+frame_saver_filter --- playtime=3010 ... Starting TEE insertion 
+frame_saver_filter --- playtime=3040 ... Finished TEE insertion
+frame_saver_filter --- playtime=3044 ... New Folder (IMAGES_20161113_130011/) 
+frame_saver_filter --- playtime=3044 ... snap=1 ... save=0 ... error=0,0 ... appsink=0
+frame_saver_filter --- playtime=5044 ... snap=2 ... save=1 ... error=0,0 ... appsink=59
+frame_saver_filter --- playtime=7044 ... snap=3 ... save=2 ... error=0,0 ... appsink=119
+frame_saver_filter --- playtime=9003 ... play-ends 
+frame_saver_filter --- EXITING 
+fsl_main_test() result=(0x0) 
+fsl_main_test() ended 
+
+please press Ctrl-C ... ^C
+
+
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ gst-launch-1.5 videotestsrc is-live=1 ! videoconvert ! FrameSaverPlugin wait=3000 snap=1000,4,0 ! autovideosink
+FrameSaverPlugin --- Property #1 --- Now: (wait=3000) 
+FrameSaverPlugin --- Property #2 --- Now: (snap=1000,4,0) 
+Setting pipeline to PAUSED ...
+@@  Frame_Saver_Filter_Set_Params --- NEW=(wait=3000) --- PRV=(wait=3000) 
+@@  Frame_Saver_Filter_Set_Params --- NEW=(snap=1000,4,0) --- PRV=(snap=1000,4,0) 
+@@  Frame_Saver_Filter_Set_Params --- NEW=(link=Live,auto,auto) --- PRV=(link=Live,auto,auto) 
+@@  Frame_Saver_Filter_Set_Params --- NEW=(pads=auto,auto,auto) --- PRV=(pads=auto,auto,auto) 
+@@  Frame_Saver_Filter_Set_Params --- NEW=(path=auto) --- PRV=(path=auto) 
+
+PARAMETERS: 
+          tick=1000 
+          snap=(1000,4,0) 
+          wait=3000 
+          play=9000 
+          path=(/home/jonny/Work/TELMATE/Validation) 
+          pipe=(default-pipeline) 
+          link=(Live,videotestsrc0,videoconvert0) 
+          pads=(src,sink,src) 
+
+Pipeline is live and does not need PREROLL ...
+Setting pipeline to PLAYING ...
+New clock: GstSystemClock
+frame_saver_filter --- playtime=3010 ... Starting TEE insertion 
+frame_saver_filter --- playtime=3036 ... Finished TEE insertion
+frame_saver_filter --- playtime=3039 ... New Folder (IMAGES_20161113_130153/) 
+frame_saver_filter --- playtime=3039 ... snap=1 ... save=0 ... error=0,0 ... appsink=91
+frame_saver_filter --- playtime=4039 ... snap=2 ... save=1 ... error=1,0 ... appsink=149
+frame_saver_filter --- playtime=5039 ... snap=3 ... save=2 ... error=2,0 ... appsink=209
+frame_saver_filter --- playtime=6039 ... snap=4 ... save=3 ... error=3,0 ... appsink=269
+frame_saver_filter --- playtime=7039 ... snap=5 ... save=4 ... error=4,0 ... appsink=329
+frame_saver_filter --- Reached-Limit ... #Saved=(4) 
+ERROR: from element /GstPipeline:pipeline0/GstAutoVideoSink:autovideosink0/GstXvImageSink:autovideosink0-actual-sink-xvimage: Output window was closed
+Additional debug info:
+xvimagesink.c(555): gst_xv_image_sink_handle_xevents (): /GstPipeline:pipeline0/GstAutoVideoSink:autovideosink0/GstXvImageSink:autovideosink0-actual-sink-xvimage
+Execution ended after 0:00:16.274062241
+Setting pipeline to PAUSED ...
+^C
+
+jonny@XPS-15-JB1-LINUX ~/Work/TELMATE/Validation $ 
+
+
