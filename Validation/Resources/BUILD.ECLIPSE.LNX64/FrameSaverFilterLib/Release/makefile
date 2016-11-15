@@ -23,19 +23,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: libFrameSaverFilterLib.Release.so
+all: libFrameSaverFilterLib-Release.a
 
 # Tool invocations
-libFrameSaverFilterLib.Release.so: $(OBJS) $(USER_OBJS)
+libFrameSaverFilterLib-Release.a: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
-	@echo 'Invoking: GCC C Linker'
-	gcc -shared -o "libFrameSaverFilterLib.Release.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	@echo 'Invoking: GCC Archiver'
+	ar -r  "libFrameSaverFilterLib-Release.a" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(LIBRARIES)$(OBJS)$(C_DEPS) libFrameSaverFilterLib.Release.so
+	-$(RM) $(ARCHIVES)$(OBJS)$(C_DEPS) libFrameSaverFilterLib-Release.a
 	-@echo ' '
 
 .PHONY: all clean dependents
