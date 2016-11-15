@@ -5,7 +5,7 @@
  * Purpose:     external interface (API) for Frame_Saver_Filter_Library (aka FSL)
  * 
  * History:     1. 2016-10-14   JBendor     Created    
- *              2. 2016-11-09   JBendor     Updated 
+ *              2. 2016-11-15   JBendor     Updated 
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -16,7 +16,7 @@
 
 #define __Frame_Saver_Filter_Lib_H__
 
-#ifdef _MSC_VER
+#if defined _MSC_VER && defined _USRDLL
     #ifdef _USRDLL
         #define API_LINKAGE  __declspec(dllexport)
     #else
