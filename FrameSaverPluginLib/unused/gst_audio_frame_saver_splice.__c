@@ -55,7 +55,9 @@
  * </refsect2>
  */
  
-#include "plugin_config.h"
+#ifdef _HAVE_PLUGIN_CONFIG_H_
+    #include <audio_plugin_config.h>
+#endif
 
 #include <gst/gst.h>
 #include <gst/audio/audio.h>

@@ -9,7 +9,6 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include src/subdir.mk
--include plugin/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -24,19 +23,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: libFrameSaverPluginLib.Debug.so
+all: libFrameSaverPluginLib-Debug.so
 
 # Tool invocations
-libFrameSaverPluginLib.Debug.so: $(OBJS) $(USER_OBJS)
+libFrameSaverPluginLib-Debug.so: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu/gstreamer-1.5 -L/usr/lib/x86_64-linux-gnu/pix/extensions -shared -o "libFrameSaverPluginLib.Debug.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/jonny/Work/TELMATE/GST/ECLIPSE.LNX64.GST150/FrameSaverFilterLib/Debug" -L/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu/gstreamer-1.5 -L/usr/lib/x86_64-linux-gnu/pix/extensions -shared -o "libFrameSaverPluginLib-Debug.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(LIBRARIES)$(OBJS)$(C_DEPS) libFrameSaverPluginLib.Debug.so
+	-$(RM) $(LIBRARIES)$(OBJS)$(C_DEPS) libFrameSaverPluginLib-Debug.so
 	-@echo ' '
 
 .PHONY: all clean dependents

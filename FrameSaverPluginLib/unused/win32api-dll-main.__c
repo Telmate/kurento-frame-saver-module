@@ -1,4 +1,6 @@
-#ifdef _MSC_VER
+void * Frame_Saver_DLL_Single_Instance = (void *) 0L;
+
+#if defined _MSC_VER && defined _USRDLL
 
 // Including SDKDDKVer.h defines the highest available Windows platform.
 // If you wish to build your application for a previous Windows platform, include WinSDKVer.h and
@@ -20,12 +22,15 @@ BOOL APIENTRY DllMain( HMODULE h_Module, DWORD  dw_reason, LPVOID lp_Reserved)
 	case DLL_PROCESS_ATTACH:
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
+        Frame_Saver_DLL_Single_Instance = h_Module;
+        break;
+
 	case DLL_PROCESS_DETACH:
+        Frame_Saver_DLL_Single_Instance = NULL;
 		break;
 	}
 	return TRUE;
 }
 
 
-#endif // _MSC_VER
-
+#endif // _MSC_VER && _USRDLL

@@ -1,4 +1,4 @@
-#include <gst/gst.h>
+//#include <gst/gst.h>
 
 
 #define ALLOW___G_DEFINE_TYPE___TO_FREEZE_VISUAL_STUDIO_ON_EXIT_

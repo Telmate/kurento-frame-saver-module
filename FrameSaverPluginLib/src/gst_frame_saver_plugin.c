@@ -5,7 +5,7 @@
  * Purpose:     boiler-plate Gstreamer plugin --- uses "Frame-Saver-Filter" for behavior.
  *
  * History:     1. 2016-11-05   JBendor     Created
- *              2. 2016-11-13   JBendor     Updated
+ *              2. 2016-11-15   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -101,18 +101,18 @@ typedef struct _GstFrameSaverPlugin
                  sz_snap[30],
                  sz_link[90],
                  sz_pads[90],
-                 sz_path[300];
+                 sz_path[400];
 
 } GstFrameSaverPlugin;
 
 
 #ifdef _MSC_VER
-    #include "gst_frame_saver_plugin.ms" // parsing G_DEFINE_TYPE freezes VS-2015
+    #include "gst_frame_saver_plugin.ms.freeze.__c" /* parsing G_DEFINE_TYPE freezes VS-2015 */
 #else
     G_DEFINE_TYPE(GstFrameSaverPlugin, gst_frame_saver_plugin, GST_TYPE_ELEMENT);
 #endif
 
-extern GType gst_frame_saver_plugin_get_type(void);  // body defined by G_DEFINE_TYPE
+extern GType gst_frame_saver_plugin_get_type(void); /* body defined by G_DEFINE_TYPE */
 
 GST_DEBUG_CATEGORY_STATIC(gst_frame_saver_plugin_debug);
 
