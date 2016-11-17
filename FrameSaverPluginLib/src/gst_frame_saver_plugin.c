@@ -6,6 +6,7 @@
  *
  * History:     1. 2016-11-05   JBendor     Created
  *              2. 2016-11-15   JBendor     Updated
+ *              2. 2016-11-17   JBendor     Created read-only paramater named "note"
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -96,12 +97,14 @@ typedef struct _GstFrameSaverPlugin
     GstPad     * srcpad;
     guint        num_buffs;
     guint        num_drops;
+    guint        num_notes;
     gboolean     is_silent;
     gchar        sz_wait[30],
                  sz_snap[30],
                  sz_link[90],
                  sz_pads[90],
-                 sz_path[400];
+                 sz_path[400],
+                 sz_note[200];
 
 } GstFrameSaverPlugin;
 
@@ -145,6 +148,7 @@ enum
     e_PROP_LINK,    // "link=PipelineName,ProducerName,ConsumerName"
     e_PROP_PADS,    // "pads=ProducerOut,ConsumerInput,ConsumerOut"
     e_PROP_PATH,    // "path=PathForWorkingFolderForSavedImageFiles"
+    e_PROP_NOTE,    // "note=none or note=MostRecentError"
     e_PROP_SILENT   // silent=0 or silent=1 --- 1 disables messages
 
 } PLUGIN_PARAMS_e;
@@ -291,11 +295,13 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
                                                         "auto",
                                                         param_flags));
 
-    gst_element_class_set_details_simple(GST_ELEMENT_CLASS(klass),
-                                         "FrameSaverPlugin",                // name to launch
-                                         "Pipeline-Splicer",                // classification
-                                         "Inserts TEE and Saves Frames",    // description
-                                         "Author <<author@hostname.org>>"); // author info
+    g_object_class_install_property(gobject_class,
+                                    e_PROP_NOTE,
+                                    g_param_spec_string("note",
+                                                        "note=MostRecentErrorCodition",
+                                                        "most recent error",
+                                                        "none",
+                                                        G_PARAM_READABLE));
 
     g_object_class_install_property(gobject_class,
                                     e_PROP_SILENT,
@@ -304,6 +310,12 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
                                                          "Silent is 1/True --- Verbose is 0/False",
                                                          FALSE,
                                                          G_PARAM_READWRITE));
+
+    gst_element_class_set_details_simple(GST_ELEMENT_CLASS(klass),
+                                         "FrameSaverPlugin",                // name to launch
+                                         "Pipeline-Splicer",                // classification
+                                         "Inserts TEE and Saves Frames",    // description
+                                         "Author <<author@hostname.org>>"); // author info
 
     gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass),
                                        gst_static_pad_template_get(&gst_frame_saver_plugin_src_template));
@@ -397,12 +409,13 @@ static void gst_frame_saver_plugin_init(GstFrameSaverPlugin * filter)
     strcpy(filter->sz_link, "link=Live,auto,auto");
     strcpy(filter->sz_pads, "pads=auto,auto,auto");
     strcpy(filter->sz_path, "path=auto");
+    strcpy(filter->sz_note, "note=none");
     
     filter->is_silent = TRUE;
 
     filter->num_buffs = 0;
-
-    filter->num_drops = 0;
+    filter->num_drops = 0;    
+    filter->num_notes = 0;
 
     return;
 }
@@ -460,6 +473,7 @@ static void gst_frame_saver_plugin_set_property(GObject      * object,
 
         filter->num_buffs = 0;
         filter->num_drops = 0;
+        filter->num_notes = 0;
     }
 
     return;
@@ -494,6 +508,11 @@ static void gst_frame_saver_plugin_get_property(GObject * object, guint prop_id,
 
     case e_PROP_PATH:
         g_value_set_string(value, filter->sz_path);
+        break;
+
+    case e_PROP_NOTE:
+        g_value_set_string(value, filter->sz_note);
+        strcpy(filter->sz_note, "note=none");
         break;
 
     default:
