@@ -37,7 +37,6 @@
 									<listOptionValue builtIn="false" value="_LINUX"/>
 									<listOptionValue builtIn="false" value="_DEBUG"/>
 									<listOptionValue builtIn="false" value="_LIB_SHARED"/>
-									<listOptionValue builtIn="false" value="_USE_GSTREAMER_VER_=150"/>
 									<listOptionValue builtIn="false" value="_USING_PNG_LIBRARY_"/>
 									<listOptionValue builtIn="false" value="_USING_SINKER_CAPS_"/>
 									<listOptionValue builtIn="false" value="_IS_LIB_FOR_PLUGIN_"/>
@@ -45,8 +44,8 @@
 								<option id="gnu.c.compiler.option.include.paths.902066914" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FrameSaverFilterLib/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
-									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.5"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.0"/>
+									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/glib-2.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0"/>
 								</option>
@@ -65,16 +64,14 @@
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="pthread"/>
 									<listOptionValue builtIn="false" value="glib-2.0"/>
-									<listOptionValue builtIn="false" value="gstapp-1.5"/>
+									<listOptionValue builtIn="false" value="gstapp-1.0"/>
 									<listOptionValue builtIn="false" value="gobject-2.0"/>
-									<listOptionValue builtIn="false" value="gstreamer-1.5"/>
-									<listOptionValue builtIn="false" value="gstreamer_utils"/>
-									<listOptionValue builtIn="false" value="gstreamer_tools"/>
+									<listOptionValue builtIn="false" value="gstreamer-1.0"/>
 								</option>
 								<option id="gnu.c.link.option.paths.1677907906" name="Library search path (-L)" superClass="gnu.c.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FrameSaverFilterLib/${ConfigName}}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5"/>
+									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.0"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/pix/extensions"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.2081139452" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
@@ -129,7 +126,6 @@
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1044112124" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="_LINUX"/>
 									<listOptionValue builtIn="false" value="_LIB_SHARED"/>
-									<listOptionValue builtIn="false" value="_USE_GSTREAMER_VER_=150"/>
 									<listOptionValue builtIn="false" value="_USING_PNG_LIBRARY_"/>
 									<listOptionValue builtIn="false" value="_USING_SINKER_CAPS_"/>
 									<listOptionValue builtIn="false" value="_IS_LIB_FOR_PLUGIN_"/>
@@ -137,8 +133,8 @@
 								<option id="gnu.c.compiler.option.include.paths.1367264848" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FrameSaverFilterLib/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
-									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.5"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.0"/>
+									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/glib-2.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0"/>
 								</option>
@@ -153,7 +149,7 @@
 								<option id="gnu.c.link.option.paths.1025930096" name="Library search path (-L)" superClass="gnu.c.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/FrameSaverFilterLib/${ConfigName}}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5"/>
+									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.0"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/pix/extensions"/>
 								</option>
 								<option id="gnu.c.link.option.libs.1376551330" name="Libraries (-l)" superClass="gnu.c.link.option.libs" useByScannerDiscovery="false" valueType="libs">
@@ -163,11 +159,9 @@
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="pthread"/>
 									<listOptionValue builtIn="false" value="glib-2.0"/>
-									<listOptionValue builtIn="false" value="gstapp-1.5"/>
+									<listOptionValue builtIn="false" value="gstapp-1.0"/>
 									<listOptionValue builtIn="false" value="gobject-2.0"/>
-									<listOptionValue builtIn="false" value="gstreamer-1.5"/>
-									<listOptionValue builtIn="false" value="gstreamer_utils"/>
-									<listOptionValue builtIn="false" value="gstreamer_tools"/>
+									<listOptionValue builtIn="false" value="gstreamer-1.0"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1809771935" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

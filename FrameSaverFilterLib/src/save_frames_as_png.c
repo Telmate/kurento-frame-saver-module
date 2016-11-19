@@ -5,7 +5,7 @@
 * Purpose:     saves image frames as PNG files
 * 
 * History:     1. 2016-10-17   JBendor     Created
-*              2. 2016-11-09   JBendor     Updated
+*              2. 2016-11-18   JBendor     Updated
 *
 * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
 *               Unauthorized copying of this file is strictly prohibited.
@@ -100,7 +100,7 @@ static int do_save_RGB_frame_to_PNG_file (PixmapInfo_t * aPixmapPtr, const char 
                   PNG_COMPRESSION_TYPE_DEFAULT,
                   PNG_FILTER_TYPE_DEFAULT);
 
-    png_alloc_size_t length = (aPixmapPtr->height + 1) * sizeof(png_bytep);
+    png_uint_32 length = (png_uint_32) ((aPixmapPtr->height + 1) * sizeof(png_bytep));
 
     png_bytep* row_pointers = png_malloc (png_ptr, length);
 

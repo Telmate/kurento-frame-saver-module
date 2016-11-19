@@ -37,15 +37,12 @@
 									<listOptionValue builtIn="false" value="_LINUX"/>
 									<listOptionValue builtIn="false" value="_DEBUG"/>
 									<listOptionValue builtIn="false" value="_LIB"/>
-									<listOptionValue builtIn="false" value="_USE_GSTREAMER_VER_=150"/>
 									<listOptionValue builtIn="false" value="_USING_PNG_LIBRARY_"/>
 									<listOptionValue builtIn="false" value="_USING_SINKER_CAPS_"/>
 								</option>
 								<option id="gnu.c.compiler.option.include.paths.902066914" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/png-api}&quot;"/>
-									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.5"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.0"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/glib-2.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0"/>
 								</option>
@@ -126,15 +123,12 @@
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1044112124" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="_LINUX"/>
 									<listOptionValue builtIn="false" value="_LIB"/>
-									<listOptionValue builtIn="false" value="_USE_GSTREAMER_VER_=150"/>
 									<listOptionValue builtIn="false" value="_USING_PNG_LIBRARY_"/>
 									<listOptionValue builtIn="false" value="_USING_SINKER_CAPS_"/>
 								</option>
 								<option id="gnu.c.compiler.option.include.paths.1367264848" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/png-api}&quot;"/>
-									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.5"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.0"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/glib-2.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0"/>
 								</option>

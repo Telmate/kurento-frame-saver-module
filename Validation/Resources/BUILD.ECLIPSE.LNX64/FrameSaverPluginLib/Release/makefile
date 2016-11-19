@@ -29,7 +29,7 @@ all: libFrameSaverPluginLib-Release.so
 libFrameSaverPluginLib-Release.so: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/jonny/Work/TELMATE/GST/ECLIPSE.LNX64.GST150/FrameSaverFilterLib/Release" -L/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu/gstreamer-1.5 -L/usr/lib/x86_64-linux-gnu/pix/extensions -shared -o "libFrameSaverPluginLib-Release.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/jonny/Work/TELMATE/GST/ECLIPSE.LNX64.GST150/FrameSaverFilterLib/Release" -L/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu/gstreamer-1.0 -L/usr/lib/x86_64-linux-gnu/pix/extensions -shared -o "libFrameSaverPluginLib-Release.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

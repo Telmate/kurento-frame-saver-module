@@ -48,8 +48,8 @@
 									<listOptionValue builtIn="false" value="/usr/include/boost/flyweight"/>
 									<listOptionValue builtIn="false" value="/usr/include/sigc++-2.0"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/sigc++-2.0/include"/>
-									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.5"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.0"/>
+									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/glib-2.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0"/>
 								</option>
@@ -142,8 +142,8 @@
 									<listOptionValue builtIn="false" value="/usr/include/boost/flyweight"/>
 									<listOptionValue builtIn="false" value="/usr/include/sigc++-2.0"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/sigc++-2.0/include"/>
-									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.5"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.0"/>
+									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/glib-2.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0"/>
 								</option>
@@ -160,7 +160,6 @@
 								<option id="gnu.c.compiler.option.warnings.allwarn.1879383863" name="All warnings (-Wall)" superClass="gnu.c.compiler.option.warnings.allwarn" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.include.paths.557261109" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
-									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.5"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1298414387" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
