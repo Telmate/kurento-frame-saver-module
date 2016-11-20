@@ -3,7 +3,7 @@
  * File:        FrameSaverMediaPipeline_Impl.c
  *
  * History:     1. 2016-11-16   JBendor     Created
- *              2. 2016-11-17   JBendor     Updated
+ *              2. 2016-11-19   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -23,6 +23,11 @@ namespace kurento
 
 class FrameSaverMediaPipeline_Impl;
 
+// This function does not define a body --- it's declared for TBD future uses
+void Serialize(std::shared_ptr<FrameSaverMediaPipeline_Impl> & aSomeObjectRef,
+               kurento::JsonSerializer                       & aSerializerRef);
+
+
 class FrameSaverMediaPipeline_Impl: public MediaPipelineImpl
 {
 public:
@@ -30,8 +35,6 @@ public:
     FrameSaverMediaPipeline_Impl(const boost::property_tree::ptree &config);
 
     virtual ~FrameSaverMediaPipeline_Impl() { releaseResources(true); }
-
-    virtual void Serialize(kurento::JsonSerializer & aSerializerRef);
 
     virtual bool hasFrameSaver() { return (mFrameSaverPluginPtr ? true : false); }
 
@@ -42,6 +45,8 @@ public:
     virtual bool getParam(const STRING aName, STRING aPresentValue);    // returns FALSE on failure
 
     virtual bool setParam(const STRING aName, const STRING aNewVal);    // returns FALSE on failure
+
+    virtual void Serialize(kurento::JsonSerializer & aSerializerRef);	// no-body (abstract in base)
 
 protected:
 

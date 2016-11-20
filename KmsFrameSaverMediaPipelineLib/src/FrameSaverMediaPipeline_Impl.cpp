@@ -3,7 +3,7 @@
  * File:        FrameSaverMediaPipeline_Impl.c
  *
  * History:     1. 2016-11-16   JBendor     Created
- *              2. 2016-11-17   JBendor     Updated
+ *              2. 2016-11-19   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -22,21 +22,6 @@ GST_DEBUG_CATEGORY_STATIC   (GST_CAT_DEFAULT);
 
 namespace kurento
 {
-
-void serialize(std::shared_ptr<FrameSaverMediaPipeline_Impl> & aSomeObjectRef, 
-               kurento::JsonSerializer                       & aSerializerRef)
-{
-    return;     // TODO
-}
-
-
-void FrameSaverMediaPipeline_Impl::Serialize(kurento::JsonSerializer & aSerializerRef)
-{
-    std::shared_ptr<FrameSaverMediaPipeline_Impl> shared_self_ptr(this);
-
-    serialize(shared_self_ptr, aSerializerRef);
-}
-
 
 FrameSaverMediaPipeline_Impl::FrameSaverMediaPipeline_Impl(const boost::property_tree::ptree &config)
                             : MediaPipelineImpl(config)
