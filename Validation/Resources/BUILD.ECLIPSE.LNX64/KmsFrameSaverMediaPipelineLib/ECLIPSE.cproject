@@ -37,19 +37,17 @@
 								<option id="gnu.cpp.compiler.option.warnings.allwarn.981346330" name="All warnings (-Wall)" superClass="gnu.cpp.compiler.option.warnings.allwarn" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1924844767" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/boost}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/kms-core-server-implementation}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/kms-core-server-stubs-for-missing}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/kms-core-server-implementation/objects}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/kms-core-server-implementation/interface}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/include/kmsjsoncpp"/>
+									<listOptionValue builtIn="false" value="/usr/include/kurento"/>
+									<listOptionValue builtIn="false" value="/usr/include/kurento/commons"/>
+									<listOptionValue builtIn="false" value="/usr/include/kurento/modules/core"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/kurento"/>
 									<listOptionValue builtIn="false" value="/usr/include/boost/flyweight"/>
 									<listOptionValue builtIn="false" value="/usr/include/sigc++-2.0"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/sigc++-2.0/include"/>
-									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.0"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.5"/>
+									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5/include"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/glib-2.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0"/>
 								</option>
@@ -131,19 +129,17 @@
 								<option id="gnu.cpp.compiler.option.warnings.allwarn.398979914" name="All warnings (-Wall)" superClass="gnu.cpp.compiler.option.warnings.allwarn" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1007802336" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/boost}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/kms-core-server-implementation}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/kms-core-server-stubs-for-missing}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/kms-core-server-implementation/objects}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/kms-core-server-implementation/interface}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/include/kmsjsoncpp"/>
+									<listOptionValue builtIn="false" value="/usr/include/kurento"/>
+									<listOptionValue builtIn="false" value="/usr/include/kurento/commons"/>
+									<listOptionValue builtIn="false" value="/usr/include/kurento/modules/core"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/kurento"/>
 									<listOptionValue builtIn="false" value="/usr/include/boost/flyweight"/>
 									<listOptionValue builtIn="false" value="/usr/include/sigc++-2.0"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/sigc++-2.0/include"/>
-									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.0"/>
-									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/gstreamer-1.5"/>
+									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/gstreamer-1.5/include"/>
 									<listOptionValue builtIn="false" value="/usr/lib/x86_64-linux-gnu/glib-2.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/glib-2.0"/>
 								</option>
