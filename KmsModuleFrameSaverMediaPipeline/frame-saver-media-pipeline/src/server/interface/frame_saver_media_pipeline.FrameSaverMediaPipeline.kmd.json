@@ -1,0 +1,20 @@
+{
+  "remoteClasses": [
+    {
+      "name": "FrameSaverMediaPipeline",
+      "extends": "Filter",
+      "doc": "FrameSaverMediaPipeline interface --- extends MediaPipeline --- supports FrameSaverPlugin",
+      "constructor": {
+	"doc": "Create an element",
+	"params": [
+	  {
+	    "name": "FrameSaverMediaPipeline",
+	    "doc": "the parent :rom:cls:`FrameSaverMediaPipeline`",
+	    "type": "FrameSaverMediaPipeline",
+	    "final": true
+	  }
+	]
+      }
+    }
+  ]
+}
