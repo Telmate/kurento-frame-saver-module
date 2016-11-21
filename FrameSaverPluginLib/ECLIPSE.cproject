@@ -59,7 +59,7 @@
 								<option defaultValue="true" id="gnu.c.link.option.shared.1829661803" name="Shared (-shared)" superClass="gnu.c.link.option.shared" useByScannerDiscovery="false" valueType="boolean"/>
 								<option id="gnu.c.link.option.libs.618535272" name="Libraries (-l)" superClass="gnu.c.link.option.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="FrameSaverFilterLib-${ConfigName}"/>
-									<listOptionValue builtIn="false" value="png"/>
+									<listOptionValue builtIn="false" value="png12"/>
 									<listOptionValue builtIn="false" value="z"/>
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="pthread"/>
@@ -154,7 +154,7 @@
 								</option>
 								<option id="gnu.c.link.option.libs.1376551330" name="Libraries (-l)" superClass="gnu.c.link.option.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="FrameSaverFilterLib-${ConfigName}"/>
-									<listOptionValue builtIn="false" value="png"/>
+									<listOptionValue builtIn="false" value="png12"/>
 									<listOptionValue builtIn="false" value="z"/>
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="pthread"/>
@@ -197,3 +197,4 @@
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 	<storageModule moduleId="refreshScope"/>
 </cproject>
+
