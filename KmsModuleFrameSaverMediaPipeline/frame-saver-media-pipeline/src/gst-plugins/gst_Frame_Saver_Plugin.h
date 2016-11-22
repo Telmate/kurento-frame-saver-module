@@ -14,3 +14,4 @@
 
 
 #endif  // _GST_FRAME_SAVER_PLUGIN_H_
+

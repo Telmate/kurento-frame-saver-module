@@ -1,0 +1,21 @@
+{
+  "remoteClasses": [
+    {
+      "name": "FrameSaverMediaPipeline",
+      "extends": "Filter",
+      "doc": "FrameSaverMediaPipeline interface. Documentation about the module (TODO-F-S-M-P)",
+      "constructor": {
+	"doc": "Create an element (TODO-F-S-M-P)",
+	"params": [
+	  {
+	    "name": "FrameSaverMediaPipeline",
+	    "doc": "the parent :rom:cls:`MediaPipeline`",
+	    "type": "MediaPipeline",
+	    "final": true
+	  }
+	]
+      }
+    }
+  ]
+}
+

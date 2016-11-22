@@ -1,5 +1,6 @@
 {
-  "name": "frame_saver_media_pipeline",
+  "name": "FrameSaverMediaPipeline",
   "version": "0.0.1-dev",
   "kurentoVersion": "^6.0.0"
 }
+

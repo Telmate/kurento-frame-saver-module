@@ -682,3 +682,4 @@ GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
                   "http://gstreamer.net/")
 
 // ends file:  "gst_frame_saver_plugin.cpp"
+
