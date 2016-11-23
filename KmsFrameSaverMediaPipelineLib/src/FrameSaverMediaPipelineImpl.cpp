@@ -4,21 +4,14 @@
  *
  * History:     1. 2016-11-16   JBendor     Created
  *              2. 2016-11-21   JBendor     Updated
+ *              3. 2016-11-22   JBendor     Methods for class FrameSaverMediaPipelineImplFactory
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
  * =================================================================================================
  */
 
-#include <gst/gst.h>
-
-#include <MediaPipelineImplFactory.hpp>
-
-#include "FrameSaverMediaPipelineImpl.hpp"
-
-#include <jsonrpc/JsonSerializer.hpp>
-
-#include <KurentoException.hpp>
+#include "FrameSaverMediaPipelineImpl.hpp"    // also defines class FrameSaverMediaPipelineImplFactory
 
 #include <DotGraph.hpp>
 
@@ -39,29 +32,26 @@ GST_DEBUG_CATEGORY_STATIC   (GST_CAT_DEFAULT);
 namespace kurento
 {
 
-FrameSaverMediaPipelineImpl::FrameSaverMediaPipelineImpl(const boost::property_tree::ptree & ref_config)
-                            : MediaObjectImpl(ref_config)
+static boost::property_tree::ptree  The_Default_Config; // = new boost::property_tree::ptree();
+
+
+FrameSaverMediaPipelineImpl::FrameSaverMediaPipelineImpl() : MediaObjectImpl(The_Default_Config)
 {
-	mFrameSaverPluginPtr = NULL;
+    initializeInstance(true);
+}
 
-	mBusMessageHandler = 0;
 
-	mLatencyStatsFlag = false;
+FrameSaverMediaPipelineImpl::FrameSaverMediaPipelineImpl (std::shared_ptr <MediaObject> parent)
+                            : MediaObjectImpl(The_Default_Config, parent)
+{
+    initializeInstance(true);
+}
 
-    mPipelinePtr = gst_pipeline_new (NULL);
 
-    if (mPipelinePtr == NULL) 
-    {
-        throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE, "Cannot create gstreamer pipeline");
-    }
-
-    GstClock * clock_ptr = gst_system_clock_obtain ();
-
-    gst_pipeline_use_clock ( GST_PIPELINE(mPipelinePtr), clock_ptr );
-
-    g_object_unref ( clock_ptr );
-
-    setPipelinePlayState ( false );
+FrameSaverMediaPipelineImpl::FrameSaverMediaPipelineImpl (const boost::property_tree::ptree & config)
+                            : MediaObjectImpl(config)
+{
+    initializeInstance(true);
 }
 
 
@@ -305,6 +295,37 @@ void FrameSaverMediaPipelineImpl::postConstructor()
 }
 
 
+bool FrameSaverMediaPipelineImpl::initializeInstance(bool isNewInstance)
+{
+    if (! isNewInstance)
+    {
+        releaseResources(false);
+    }
+
+    mFrameSaverPluginPtr = NULL;
+
+    mBusMessageHandler = 0;
+
+    mLatencyStatsFlag = false;
+
+    mPipelinePtr = gst_pipeline_new (NULL);
+
+    if (mPipelinePtr == NULL)
+    {
+        throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE, "Cannot create gstreamer pipeline");
+    }
+
+    GstClock * clock_ptr = gst_system_clock_obtain ();
+
+    gst_pipeline_use_clock ( GST_PIPELINE(mPipelinePtr), clock_ptr );
+
+    g_object_unref ( clock_ptr );
+
+    setPipelinePlayState ( false );
+
+    return true;
+}
+
 
 bool FrameSaverMediaPipelineImpl::releaseResources(bool isDelete)
 {
@@ -386,12 +407,6 @@ void FrameSaverMediaPipelineImpl::handleBusMessage (GstMessage * aMessagePtr)
 }
 
 
-MediaObjectImpl * MediaPipelineImplFactory::createObject (const boost::property_tree::ptree & ref_props_tree) const
-{
-  return new FrameSaverMediaPipelineImpl (ref_props_tree);
-}
-
-
 FrameSaverMediaPipelineImpl::StaticConstructor FrameSaverMediaPipelineImpl::Private_Static_Constructor;
 
 FrameSaverMediaPipelineImpl::StaticConstructor::StaticConstructor()
@@ -400,7 +415,12 @@ FrameSaverMediaPipelineImpl::StaticConstructor::StaticConstructor()
 }
 
 
+MediaObjectImpl * FrameSaverMediaPipelineImplFactory::createObject (const boost::property_tree::ptree & config) const
+{
+    return new FrameSaverMediaPipelineImpl (config);
+}
+
+
 } /* ends namespace kurento */
 
 // ends file: "FrameSaverMediaPipelineImpl.cpp"
-

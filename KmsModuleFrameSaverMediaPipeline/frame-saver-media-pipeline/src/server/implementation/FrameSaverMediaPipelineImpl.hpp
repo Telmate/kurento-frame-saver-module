@@ -4,6 +4,7 @@
  *
  * History:     1. 2016-11-16   JBendor     Created
  *              2. 2016-11-21   JBendor     Updated
+ *              3. 2016-11-22   JBendor     Created class FrameSaverMediaPipelineImplFactory
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -14,10 +15,17 @@
 #define __FRAME_SAVER_MEDIA_PIPELINE_IMPL_HPP__
 
 #include "MediaObjectImpl.hpp"
-#include "MediaPipeline.hpp"
-#include <EventHandler.hpp>
-#include <gst/gst.h>
-#include <boost/property_tree/ptree.hpp>
+#include "MediaPipelineImpl.hpp"
+
+#include "MediaObjectImplFactory.hpp"
+#include <Factory.hpp>
+
+#include <boost/property_tree/ptree.hpp>    // also in "MediaObjectImpl.hpp"
+#include <jsonrpc/JsonSerializer.hpp>       // also in "MediaObjectImpl.hpp"
+#include <KurentoException.hpp>             // also in "MediaObjectImpl.hpp"
+#include <EventHandler.hpp>                 // also in "MediaObjectImpl.hpp"
+#include <mutex>                            // also in "MediaObjectImpl.hpp"
+#include <gst/gst.h>                        // also in "MediaObjectImpl.hpp"
 
 
 namespace kurento
@@ -32,11 +40,15 @@ void Serialize(std::shared_ptr<FrameSaverMediaPipelineImpl> & ref_object_ptr,
                kurento::JsonSerializer                      & ref_serializer);
 
 
-class FrameSaverMediaPipelineImpl: public MediaObjectImpl, public virtual MediaPipeline
+class FrameSaverMediaPipelineImpl: public MediaObjectImpl
 {
 public:
 
-    FrameSaverMediaPipelineImpl(const boost::property_tree::ptree &config);
+    FrameSaverMediaPipelineImpl ();        // default c'tr
+
+    FrameSaverMediaPipelineImpl (std::shared_ptr <MediaObject> parent);
+
+    FrameSaverMediaPipelineImpl (const boost::property_tree::ptree & config);
 
     virtual ~FrameSaverMediaPipelineImpl();
 
@@ -78,6 +90,8 @@ protected:
 
     virtual void postConstructor();
 
+    virtual bool initializeInstance(bool isNewInstance);
+
     virtual bool releaseResources(bool isDelete);
 
 private:
@@ -97,10 +111,26 @@ private:
 };
 
 
+class FrameSaverMediaPipelineImplFactory : public virtual MediaObjectImplFactory
+{
+public:
+    FrameSaverMediaPipelineImplFactory () {};    // empy c'tor
+
+    virtual std::string getName () const { return "FrameSaverMediaPipeline"; };
+
+private:
+    MediaObjectImpl *createObject (const boost::property_tree::ptree & ref_config) const;
+
+    // the function "createObjectPointer" is implementd by auto-generated code
+    virtual MediaObjectImpl *createObjectPointer (const boost::property_tree::ptree & ref_config,
+                                                  const Json::Value                 & ref_params) const;
+
+};
+
+
 } /* ends namespace kurento */
 
 
 #endif /*  __FRAME_SAVER_MEDIA_PIPELINE_IMPL_HPP__ */
 
 // ends file: "FrameSaverMediaPipelineImpl.hpp"
-
