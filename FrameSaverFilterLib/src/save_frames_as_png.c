@@ -5,7 +5,7 @@
 * Purpose:     saves image frames as PNG files
 * 
 * History:     1. 2016-10-17   JBendor     Created
-*              2. 2016-11-18   JBendor     Updated
+*              2. 2016-11-24   JBendor     Updated
 *
 * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
 *               Unauthorized copying of this file is strictly prohibited.
@@ -58,7 +58,7 @@ static RGB32_Pix_t * do_get_RGB32_pixel_ptr_at (PixmapInfo_t * aPixmapPtr, int a
 //=======================================================================================
 static int do_save_RGB_frame_to_PNG_file (PixmapInfo_t * aPixmapPtr, const char * file_path)
 {
-#ifdef _USING_PNG_LIBRARY_
+#ifndef _NOT_USING_PNG_LIBRARY_
 
     png_uint_32 row_idx = 0;
 
@@ -170,13 +170,15 @@ static int do_save_RGB24_frame(const char * aPathPtr, PixmapInfo_t * aPixmapPtr)
     {
         RGB24_Pix_t * pixels_ptr = calloc(row_stride * frame_rows, 1);
 
-        for (int offset = 0, row_idx = 0; row_idx < frame_rows; ++row_idx)
+        int offset = 0, col_idx = 0, row_idx = -1;
+
+        while ( ++row_idx < frame_rows )
         {
             uint8_t  red = ((row_idx & 0x3) == 1) ? 255 : 0;
             uint8_t  grn = ((row_idx & 0x3) == 2) ? 255 : 0;
             uint8_t  blu = ((row_idx & 0x3) == 3) ? 255 : 0;
 
-            for (int col_idx = 0; col_idx < frame_cols; ++col_idx, ++offset)
+            for ( col_idx = -1; ++col_idx < frame_cols; ++offset )
             {
                 int group = col_idx % 10;
                 pixels_ptr[offset].red   = (group ? red : 127);
@@ -226,13 +228,15 @@ static int do_save_RGB32_frame(const char * aPathPtr, PixmapInfo_t * aPixmapPtr)
     {
         RGB32_Pix_t * pixels_ptr = calloc(row_stride * frame_rows, 1);
 
-        for (int offset = 0, row_idx = 0; row_idx < frame_rows; ++row_idx)
+        int offset = 0, col_idx = 0, row_idx = -1;
+
+        while ( ++row_idx < frame_rows )
         {
             uint8_t  red = ((row_idx & 0x3) == 1) ? 255 : 0;
             uint8_t  grn = ((row_idx & 0x3) == 2) ? 255 : 0;
             uint8_t  blu = ((row_idx & 0x3) == 3) ? 255 : 0;
 
-            for (int col_idx = 0; col_idx < frame_cols; ++col_idx, ++offset)
+            for ( col_idx = -1;  ++col_idx < frame_cols; ++offset )
             {
                 int group = col_idx % 10;
                 pixels_ptr[offset].red   = (group ? red : 127);

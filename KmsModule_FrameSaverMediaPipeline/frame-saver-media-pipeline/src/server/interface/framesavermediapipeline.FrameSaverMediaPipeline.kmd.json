@@ -1,0 +1,21 @@
+{
+    "remoteClasses": 
+    [
+        {
+            "name": "FrameSaverMediaPipeline",
+
+            "extends": "MediaPipeline",
+
+            "doc": "FrameSaverMediaPipeline interface. Documentation about the module (TODO-F-S-M-P)",
+
+            "constructor": 
+            {
+                "doc": "Create the singleton pipeline element (TODO-F-S-M-P)",
+                "params": 
+                [
+                ]
+            }
+        }
+    ]
+}
+

@@ -1,0 +1,4 @@
+/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipeline/frame-saver-media-pipeline/build/src/gst-plugins/CMakeFiles/framesavermediapipeline.dir
+/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipeline/frame-saver-media-pipeline/build/src/server/CMakeFiles/kmsframesavermediapipelineimpl.dir
+/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipeline/frame-saver-media-pipeline/build/src/server/CMakeFiles/kmsframesavermediapipelineinterface.dir
+/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipeline/frame-saver-media-pipeline/build/src/server/CMakeFiles/kmsframesavermediapipelinemodule.dir

@@ -1,0 +1,6 @@
+# Hashes of file build rules.
+58b4c13ec2c74c3e04a7b7414d901f0a src/server/FrameSaverMediaPipeline.kmd.json
+d0cc788a584507be979993cd4150d0dd src/server/cpp_interface.generated
+a2e57d175b29710ca6849fcc0291c817 src/server/cpp_interface_internal.generated
+3ddd4f27d9cd8509e5d60265c360e564 src/server/cpp_module.generated
+7a725f196c2412346f1536fbcede6994 src/server/cpp_server_internal.generated
