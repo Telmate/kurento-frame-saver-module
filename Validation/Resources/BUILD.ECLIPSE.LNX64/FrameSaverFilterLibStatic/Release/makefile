@@ -23,19 +23,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: FrameSaverFilterTesterApp-Release
+all: libFrameSaverFilterLibStatic-Release.a
 
 # Tool invocations
-FrameSaverFilterTesterApp-Release: $(OBJS) $(USER_OBJS)
+libFrameSaverFilterLibStatic-Release.a: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
-	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/jonny/Work/TELMATE/GST/ECLIPSE.LNX64.GST150/FrameSaverFilterLibStatic/Release" -L/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu/gstreamer-1.0 -L/usr/lib/x86_64-linux-gnu/pix/extensions -o "FrameSaverFilterTesterApp-Release" $(OBJS) $(USER_OBJS) $(LIBS)
+	@echo 'Invoking: GCC Archiver'
+	ar -r  "libFrameSaverFilterLibStatic-Release.a" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) FrameSaverFilterTesterApp-Release
+	-$(RM) $(ARCHIVES)$(OBJS)$(C_DEPS) libFrameSaverFilterLibStatic-Release.a
 	-@echo ' '
 
 .PHONY: all clean dependents
