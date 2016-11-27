@@ -1,0 +1,27 @@
+include_directories(
+  ${GSTREAMER_INCLUDE_DIRS}
+  ${GSTREAMER_VIDEO_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${OPENCV_INCLUDE_DIRS}
+)
+
+set(FRAME_SAVER_MEDIA_PIPELINE_SOURCES
+  gst_Frame_Saver_Plugin.c
+  gst_Frame_Saver_Plugin.h
+)
+
+add_library(framesavermediapipeline MODULE ${FRAME_SAVER_MEDIA_PIPELINE_SOURCES})
+
+target_link_libraries(framesavermediapipeline
+  ${GSTREAMER_LIBRARIES}
+  ${GSTREAMER_VIDEO_LIBRARIES}
+  ${OPENCV_LIBRARIES}
+)
+
+install(
+  TARGETS framesavermediapipeline
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_GST_PLUGINS_DIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+

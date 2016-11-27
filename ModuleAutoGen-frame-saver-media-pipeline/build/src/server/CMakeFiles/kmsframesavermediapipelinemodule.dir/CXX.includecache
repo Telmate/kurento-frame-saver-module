@@ -48,12 +48,6 @@ string
 FrameSaverMediaPipeline.kmd.json
 /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipeline/frame-saver-media-pipeline/build/src/server/FrameSaverMediaPipeline.kmd.json
 
-/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipeline/frame-saver-media-pipeline/build/src/server/module_generation_time.cpp
-
-/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipeline/frame-saver-media-pipeline/build/src/server/module_name.cpp
-
-/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipeline/frame-saver-media-pipeline/build/src/server/module_version.cpp
-
 /usr/include/glib-2.0/glib-object.h
 gobject/gbinding.h
 -
