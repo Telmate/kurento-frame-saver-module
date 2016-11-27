@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImplFactory.hpp
  *
  * History:     1. 2016-11-25   JBendor     Created
- *              2. 2016-11-26   JBendor     Updated
+ *              2. 2016-11-27   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -23,7 +23,7 @@ namespace kurento
 namespace module
 {
 
-namespace FrameSaverVideoFilter
+namespace kms_frame_saver_video_filter
 {
 
 class FrameSaverVideoFilterImplFactory : public virtual FilterImplFactory
@@ -31,7 +31,7 @@ class FrameSaverVideoFilterImplFactory : public virtual FilterImplFactory
 public:
     FrameSaverVideoFilterImplFactory () {};    // default empty c'tor
 
-    virtual std::string getName () const { return "FrameSaverVideoFilter"; };
+    virtual std::string getName () const { return "FrameSaverVideoFilterImpl"; };
 
 private:
     // The (factory) function "createObject" is implemeted in file "FrameSaverVideoFilterImpl.cpp"
@@ -44,11 +44,12 @@ private:
 };
 
 
-} // ends namespace FrameSaverVideoFilter
+} // ends namespace: frame_saver_video_filter
 
-} // ends namespace module
+} // ends namespace: module
 
-} // ends namespace kurento
+} // ends namespace: kurento
 
 
 #endif /*  __FRAME_SAVER_VIDEO_FILTER_IMPL_FACTORY_HPP__ */
+

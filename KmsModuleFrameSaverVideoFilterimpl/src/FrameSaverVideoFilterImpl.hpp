@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImpl.hpp
  *
  * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-11-26   JBendor     Updated
+ *              2. 2016-11-27   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -18,7 +18,6 @@
 #include "MediaPipeline.hpp"
 #include "MediaObjectImpl.hpp"
 #include "MediaPipelineImpl.hpp"
-#include "FrameSaverVideoFilter.hpp"
 
 #include <boost/property_tree/ptree.hpp>    // also in "MediaObjectImpl.hpp"
 #include <jsonrpc/JsonSerializer.hpp>       // also in "MediaObjectImpl.hpp"
@@ -30,20 +29,26 @@
 
 namespace kurento
 {
-    class MediaPipelineImpl;
-
-    class JsonSerializer;
-
     namespace module
     {
-        namespace FrameSaverVideoFilter
+        namespace kms_frame_saver_video_filter
         {
             class FrameSaverVideoFilterImpl;
         }
     }
+}
 
+
+namespace kurento
+{
     // This function is called by an auto-generated function
-    void Serialize (std::shared_ptr<kurento::module::FrameSaverVideoFilter::FrameSaverVideoFilterImpl> &object, JsonSerializer &serializer);
+    void Serialize (std::shared_ptr<kurento::module::kms_frame_saver_video_filter::FrameSaverVideoFilterImpl> & object, JsonSerializer & serializer);
+}
+
+
+namespace kurento
+{
+    class MediaPipelineImpl;
 }
 
 
@@ -53,15 +58,17 @@ namespace kurento
 namespace module
 {
 
-namespace FrameSaverVideoFilter
+namespace kms_frame_saver_video_filter
 {
 
-class FrameSaverVideoFilterImpl : public FilterImpl //, public virtual FrameSaverVideoFilter
+class FrameSaverVideoFilterImpl : public FilterImpl
 {
 
 public:
 
-    FrameSaverVideoFilterImpl (const boost::property_tree::ptree &config, std::shared_ptr<MediaPipeline> parent);
+    static FrameSaverVideoFilterImpl * getFirstInstancePtr();               // the first instance
+
+    FrameSaverVideoFilterImpl (const boost::property_tree::ptree & ref_cfg, std::shared_ptr<MediaPipeline> ptr_parent);
 
     virtual ~FrameSaverVideoFilterImpl();                                   // virtual d'tor
 
@@ -90,9 +97,6 @@ protected:
 private:
     std::recursive_mutex    mRecursiveMutex;
 
-    GstElement            * mFrameSaverPluginPtr;
-    GstElement            * mPipelineParentPtr;
-
     class StaticConstructor
     {
         public:  StaticConstructor();
@@ -103,10 +107,11 @@ private:
 };
 
 
-} // ends namespace FrameSaverVideoFilter
+} // ends namespace: kms_frame_saver_video_filter
 
-} // ends namespace module
+} // ends namespace: module
 
-} // ends namespace kurento 
+} // ends namespace: kurento
 
 #endif //  __FRAME_SAVER_VIDEO_FILTER_IMPL_HPP__
+
