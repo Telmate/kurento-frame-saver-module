@@ -1,0 +1,24 @@
+{
+    "remoteClasses": 
+    [
+        {
+            "name": "FrameSaverVideoFilter",
+            "extends": "Filter",
+            "doc": "kms_frame_saver_video_filter interface. Documentation about the module",
+            "constructor": 
+            {
+                "doc": "Create the FrameSaverVideoFilter element",
+                "params": 
+                [
+                    {
+                        "name": "mediaPipelineParent",
+                        "doc": "the parent :rom:cls:`MediaPipeline`",
+                        "type": "MediaPipeline",
+                        "final": true
+                    }
+                ]
+            }
+        }
+    ]
+}
+
