@@ -15,8 +15,7 @@ void dummyKms_frame_saver_video_filter ()
 {
   {
     JsonSerializer s (true);
-    std::shared_ptr<FrameSaverVideoFilterImpl> object;
-
+    std::shared_ptr<FrameSaverVideoFilterImpl> object( FrameSaverVideoFilterImpl::getFirstInstancePtr() );   //? TODO-FIXED-JB
     s.SerializeNVP (object);
   }
 }

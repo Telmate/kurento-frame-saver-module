@@ -6,7 +6,7 @@
  *
  * History:     1. 2016-11-05   JBendor     created from base
  *              2. 2016-11-07   JBendor     updated copyright 
- *              3. 2016-11-24   JBendor     updated
+ *              3. 2016-11-29   JBendor     updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -140,12 +140,12 @@
 
     #define THREAD_EXIT(v)      return((THREAD_RETVAL)(&v))
 
-    #ifndef S_IWRITE
+    #ifndef S_IFMT
         #define S_IWRITE  0020000
         #define S_IREAD   0010000
         #define S_IFDIR   0040000
         #define S_IFREG   0100000
-        #define S_IFMT   (S_IFDIR | S_IFREG | S_IREAD | S_IWRITE)
+		#define S_IFMT   (S_IFDIR | S_IFREG | S_IREAD | S_IWRITE)
     #endif
 
     #define MAX_PATH            250
