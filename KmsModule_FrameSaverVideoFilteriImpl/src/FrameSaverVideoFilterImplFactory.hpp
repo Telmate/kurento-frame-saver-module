@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImplFactory.hpp
  *
  * History:     1. 2016-11-25   JBendor     Created
- *              2. 2016-11-27   JBendor     Updated
+ *              2. 2016-11-28   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -31,7 +31,7 @@ class FrameSaverVideoFilterImplFactory : public virtual FilterImplFactory
 public:
     FrameSaverVideoFilterImplFactory () {};    // default empty c'tor
 
-    virtual std::string getName () const { return "FrameSaverVideoFilterImpl"; };
+    virtual std::string getName () const { return FrameSaverVideoFilterImpl::getClassName(); };
 
 private:
     // The (factory) function "createObject" is implemeted in file "FrameSaverVideoFilterImpl.cpp"

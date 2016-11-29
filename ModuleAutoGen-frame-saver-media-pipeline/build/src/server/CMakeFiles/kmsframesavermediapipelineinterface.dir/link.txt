@@ -1,2 +1,0 @@
-/usr/bin/ar cr libkmsframesavermediapipelineinterface.a  CMakeFiles/kmsframesavermediapipelineinterface.dir/interface/generated-cpp/FrameSaverMediaPipelineInternal.cpp.o CMakeFiles/kmsframesavermediapipelineinterface.dir/interface/generated-cpp/FrameSaverMediaPipeline.cpp.o
-/usr/bin/ranlib libkmsframesavermediapipelineinterface.a

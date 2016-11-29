@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImpl.cpp
  *
  * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-11-27   JBendor     Updated
+ *              2. 2016-11-28   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -15,11 +15,10 @@
 #include <FrameSaverVideoFilterImplFactory.hpp>
 
 
-#define GST_DEFAULT_NAME    "FrameSaverVideoFilterImpl"
-
+#define GST_DEFAULT_NAME    THE_CLASS_NAME
 #define GST_CAT_DEFAULT     kurento_frame_saver_video_filter_impl
-
 GST_DEBUG_CATEGORY_STATIC   (GST_CAT_DEFAULT);
+
 
 namespace kurento
 {
@@ -30,7 +29,16 @@ namespace module
 namespace kms_frame_saver_video_filter
 {
 
-static FrameSaverVideoFilterImpl * First_Instance_Ptr = NULL;
+static FrameSaverVideoFilterImpl *  First_Instance_Ptr = NULL;
+
+static std::string                  This_Class_Name(THE_CLASS_NAME);
+
+
+
+std::string FrameSaverVideoFilterImpl::getClassName()
+{
+    This_Class_Name.assign(THE_CLASS_NAME);    return This_Class_Name;
+}
 
 
 FrameSaverVideoFilterImpl * FrameSaverVideoFilterImpl::getFirstInstancePtr()
@@ -50,34 +58,68 @@ FrameSaverVideoFilterImpl::FrameSaverVideoFilterImpl (const boost::property_tree
                           : 
                           FilterImpl ( ref_config, std::dynamic_pointer_cast<MediaPipelineImpl>(ptr_parent) )
 {
+    mGstreamElementPtr = NULL;
+
     initializeInstance(true);
 }
 
 
-bool FrameSaverVideoFilterImpl::setPipelinePlayState(bool isEnabled)
+bool FrameSaverVideoFilterImpl::startPipelinePlaying()
 {
     std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
 
-    GstElement  * self_ptr = NULL;
-
-    g_object_get (G_OBJECT (element), "filter", & self_ptr, NULL);
-
-    bool is_ok = (self_ptr != NULL);
+    bool is_ok = (mGstreamElementPtr != NULL);
 
     if (is_ok)
     {
-        GstElement * pipeline_ptr = (GstElement *) gst_element_get_parent( self_ptr );
+        GstElement * pipeline_ptr = (GstElement *) gst_element_get_parent( mGstreamElementPtr );
 
         if (pipeline_ptr != NULL)
         {
-            gst_element_set_state ( pipeline_ptr, isEnabled ? GST_STATE_PLAYING : GST_STATE_READY );
+            GstState pipeline_state = GST_STATE_NULL;
+
+            gst_element_get_state(pipeline_ptr, &pipeline_state, NULL, 0);
+
+            if (pipeline_state != GST_STATE_PLAYING)
+            {
+                gst_element_set_state ( pipeline_ptr, GST_STATE_PLAYING );
+            }
         }
         else
         {
             is_ok = false;
         }
+    }
 
-        g_object_unref (self_ptr);
+    return is_ok;
+}
+
+
+bool FrameSaverVideoFilterImpl::stopPipelinePlaying()
+{
+    std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
+
+    bool is_ok = (mGstreamElementPtr != NULL);
+
+    if (is_ok)
+    {
+        GstElement * pipeline_ptr = (GstElement *) gst_element_get_parent( mGstreamElementPtr );
+
+        if (pipeline_ptr != NULL)
+        {
+            GstState pipeline_state = GST_STATE_NULL;
+
+            gst_element_get_state(pipeline_ptr, &pipeline_state, NULL, 0);
+
+            if (pipeline_state == GST_STATE_PLAYING)
+            {
+                gst_element_set_state ( pipeline_ptr, GST_STATE_READY );
+            }
+        }
+        else
+        {
+            is_ok = false;
+        }
     }
 
     return is_ok;
@@ -113,17 +155,11 @@ bool FrameSaverVideoFilterImpl::getParam(const std::string aName, std::string aP
 {
     gchar       * text_ptr = NULL;
 
-    GstElement  * self_ptr = NULL;
-
-    g_object_get (G_OBJECT (element), "filter", & self_ptr, NULL);
-
-    bool is_ok = (self_ptr != NULL);
+    bool is_ok = (mGstreamElementPtr != NULL);
 
     if (is_ok)
     {
-        g_object_get( G_OBJECT(self_ptr), aName.c_str(), & text_ptr, NULL );
-
-        g_object_unref (self_ptr);
+        g_object_get( G_OBJECT(mGstreamElementPtr), aName.c_str(), & text_ptr, NULL );
 
         is_ok = (text_ptr != NULL);
     }
@@ -144,20 +180,7 @@ bool FrameSaverVideoFilterImpl::setParam(const std::string aName, const std::str
 
     if (is_ok)
     {
-        GstElement * self_ptr = NULL;
-
-        g_object_get (G_OBJECT (element), "filter", & self_ptr, NULL);
-
-        if (self_ptr != NULL) 
-        {
-            g_object_set( G_OBJECT(self_ptr), aName.c_str(), aNewVal.c_str(), NULL );
-
-            g_object_unref (self_ptr);
-        }
-        else
-        {
-            is_ok = false;
-        }
+        g_object_set( G_OBJECT(mGstreamElementPtr), aName.c_str(), aNewVal.c_str(), NULL );
     }
 
     return is_ok;
@@ -168,7 +191,7 @@ void FrameSaverVideoFilterImpl::postConstructor()
 {
     FilterImpl::postConstructor ();
 
-    setPipelinePlayState(false);
+    stopPipelinePlaying();
 
     return;    
 }
@@ -178,18 +201,16 @@ bool FrameSaverVideoFilterImpl::initializeInstance(bool isNewInstance)
 {
     std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
 
-    GstElement * self_ptr = NULL;
+    g_object_get (G_OBJECT (element), "filter", & mGstreamElementPtr, NULL);
 
-    g_object_get (G_OBJECT (element), "filter", & self_ptr, NULL);
-
-    if (self_ptr == NULL) 
+    if (mGstreamElementPtr == NULL) 
     {
         throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE, "Media Object " GST_DEFAULT_NAME " not available");
     }
 
-    g_object_unref (self_ptr);
-
     g_object_set (element, "filter-factory", GST_DEFAULT_NAME, NULL);
+
+    g_object_unref (mGstreamElementPtr);    // pointer remains valid
 
     if (First_Instance_Ptr == NULL)
     {
@@ -231,3 +252,4 @@ MediaObjectImpl * FrameSaverVideoFilterImplFactory::createObject (const boost::p
 } // ends namespace: module
 
 } // ends namespace: kurento
+

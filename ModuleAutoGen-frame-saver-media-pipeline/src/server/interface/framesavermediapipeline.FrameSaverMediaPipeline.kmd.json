@@ -6,16 +6,103 @@
 
             "extends": "MediaPipeline",
 
-            "doc": "FrameSaverMediaPipeline interface. Documentation about the module (TODO-F-S-M-P)",
+            "doc": "FrameSaverMediaPipeline interface. Documentation about the module (TODO)",
 
             "constructor": 
             {
-                "doc": "Create the singleton pipeline element (TODO-F-S-M-P)",
+                "doc": "Create the singleton pipeline element (TODO)",
                 "params": 
                 [
                 ]
-            }
+            },
+            "methods": 
+            [
+                {
+                    "name": "addFrameSaver",
+                    "doc":  "adds to pipeline new FrameSaverPlugin element, sets splicing params",
+                    "params": 
+                    [
+                        {
+                            "name": "aLink",
+                            "doc":  "string form is: aPipelineName,aElementName1,aElementName2",
+                            "type": "String"
+                        },
+                        {
+                            "name": "aPads",
+                            "doc":  "string form is: aPadNameFrom,aPadNameInto,aPadNameNext.",
+                            "type": "String"
+                        }
+                    ]
+                },
+                {
+                    "name": "getFrameSaverName",
+                    "doc":  "gets name of FrameSaverPlugin element which was added to pipeline",
+                    "params": 
+                    [
+                        {
+                            "name": "aElementName",
+                            "doc":  "string gets name of FrameSaverPlugin element.",
+                            "type": "String"
+                        }
+                    ]
+                },
+                {
+                    "name": "startPipelinePlaying",
+                    "doc":  "changes pipeline state to PLAYING",
+                    "params": [ ]
+                },
+                {
+                    "name": "stopPipelinePlaying",
+                    "doc":  "changes pipeline state from PLAYING to READY",
+                    "params": [ ]
+                },
+                {
+                    "name": "getParamsList",
+                    "doc": "gets a string of all parameters separated by tabs.",
+                    "params": 
+                    [
+                        {
+                            "name": "aCurrentParamsSeparatedByTabs",
+                            "doc":  "string of all parameters separated by tabs.",
+                            "type": "String"
+                        }
+                    ]
+                },
+                {
+                    "name": "getParam",
+                    "doc": "gets the current string value of one parameter.",
+                    "params": 
+                    [
+                        {
+                            "name": "aParamName",
+                            "doc":  "string with name of parameter.",
+                            "type": "String"
+                        },
+                        {
+                            "name": "aParamValue",
+                            "doc":  "string for the current value of the parameter.",
+                            "type": "String"
+                        }
+                    ]
+                },
+                {
+                    "name": "setParam",
+                    "doc": "sets the current string value of one parameter.",
+                    "params": 
+                    [
+                        {
+                            "name": "aParamName",
+                            "doc":  "string with name of parameter.",
+                            "type": "String"
+                        },
+                        {
+                            "name": "aNewParamValue",
+                            "doc":  "string has the desired value of the parameter.",
+                            "type": "String"
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }
-

@@ -3,7 +3,7 @@
  * File:        FrameSaverMediaPipelineImplFactory.hpp
  *
  * History:     1. 2016-11-23   JBendor     Created
- *              2. 2016-11-24   JBendor     Updated
+ *              2. 2016-11-28   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -32,7 +32,7 @@ class FrameSaverMediaPipelineImplFactory : public virtual MediaPipelineImplFacto
 public:
     FrameSaverMediaPipelineImplFactory () {};    // default empty c'tor
 
-    virtual std::string getName () const { return "FrameSaverMediaPipeline"; };
+    virtual std::string getName () const { return FrameSaverMediaPipelineImpl::getClassName(); ; };
 
 private:
     // The (factory) function "createObject" is implemeted in file "FrameSaverMediaPipelineImpl.cpp"
@@ -53,3 +53,4 @@ private:
 
 
 #endif /*  __FRAME_SAVER_MEDIA_PIPELINE_IMPL_FACTORY_HPP__ */
+

@@ -1,8 +1,22 @@
 {
-  "name": "FrameSaverMediaPipeline",
+    "name": "FrameSaverMediaPipeline",
 
-  "version": "0.0.1-dev",
+    "version": "0.0.1-dev",
 
-  "kurentoVersion": "^6.0.0"
+    "kurentoVersion": "^6.0.0",
+
+    "code": 
+    {
+        "api": 
+        {
+            "js": 
+            {
+                "nodeName": "TODO-MODULE-NAME-frame-saver-media-pipeline",
+
+                "npmDescription": "TODO-DESCRIBE-FrameSaverMediaPipeline",
+
+                "npmGit": "TODO-REPOSITORY/frame-saver-media-pipeline-js"
+            }
+        }
+    }
 }
-

@@ -5,7 +5,7 @@
  * Purpose:     Kurento+Gstreamer plugin-filter --- uses "Frame-Saver" for full behavior.
  *
  * History:     1. 2016-11-25   JBendor     Created as copy of "gst_Frame_Saver_Plugin.h"
- *              2. 2016-11-26   JBendor     Updated
+ *              2. 2016-11-28   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -16,6 +16,10 @@
 #define _GST_FRAME_SAVER_VIDEO_FILTER_PLUGIN_H_
 
 #include <config.h>
+
+#ifdef THIS_PLUGIN_NAME
+    #undef THIS_PLUGIN_NAME
+#endif
 
 #define THIS_PLUGIN_NAME  "FrameSaverVideoFilterPlugin"
 
@@ -29,4 +33,3 @@
 
 
 #endif  // _GST_FRAME_SAVER_VIDEO_FILTER_PLUGIN_H_
-

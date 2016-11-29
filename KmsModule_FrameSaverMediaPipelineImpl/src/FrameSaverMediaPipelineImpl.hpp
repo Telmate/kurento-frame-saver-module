@@ -3,7 +3,7 @@
  * File:        FrameSaverMediaPipelineImpl.hpp
  *
  * History:     1. 2016-11-16   JBendor     Created as a class derived from MediaPipelineImpl
- *              2. 2016-11-24   JBendor     Updated
+ *              2. 2016-11-28   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -22,6 +22,13 @@
 #include <EventHandler.hpp>                 // also in "MediaObjectImpl.hpp"
 #include <mutex>                            // also in "MediaObjectImpl.hpp"
 #include <gst/gst.h>                        // also in "MediaObjectImpl.hpp"
+
+
+#ifdef THE_CLASS_NAME
+    #undef THE_CLASS_NAME
+#endif
+
+#define THE_CLASS_NAME "FrameSaverMediaPipelineImpl"
 
 
 namespace kurento
@@ -45,19 +52,23 @@ class FrameSaverMediaPipelineImpl: public MediaPipelineImpl
 {
 public:
 
-    static FrameSaverMediaPipelineImpl * getLiveInstancePtr();              // one instance
-
-    virtual ~FrameSaverMediaPipelineImpl();                                 // virtual d'tor
+    FrameSaverMediaPipelineImpl (const boost::property_tree::ptree & cfg);  // c'tor same as base class
 
     FrameSaverMediaPipelineImpl ();                                         // default c'tor
 
-    FrameSaverMediaPipelineImpl (const boost::property_tree::ptree & cfg);  // c'tor same as base class
+    virtual ~FrameSaverMediaPipelineImpl();                                 // virtual d'tor
 
-    GstElement * getPipeline() { return mPipelinePtr; }                     // overrides the base class
+    static std::string getClassName();                                      // the class name
 
-    bool setPipelinePlayState(bool isEnabled);                              // sets state READY or PLAY
+    static FrameSaverMediaPipelineImpl * getLiveInstancePtr();              // the single instance
 
-    bool hasFrameSaver() { return (mFrameSaverPluginPtr != NULL); }         // returns TRUE when exists
+    GstElement * getPipeline();                                             // overrides base class
+
+    bool startPipelinePlaying();                                            // sets state to PLAYING
+
+    bool stopPipelinePlaying();                                             // changes PLAYING to READY
+
+    bool getFrameSaverName(std::string aElementName);                       // returns FALSE on failure
 
     bool addFrameSaver(const std::string aLink, const std::string aPads);   // returns FALSE on failure
 
@@ -100,3 +111,4 @@ private:
 
 
 #endif /*  __FRAME_SAVER_MEDIA_PIPELINE_IMPL_HPP__ */
+

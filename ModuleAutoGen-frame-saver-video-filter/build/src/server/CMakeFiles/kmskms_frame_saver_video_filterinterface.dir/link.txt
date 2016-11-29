@@ -1,2 +1,0 @@
-/usr/bin/ar cr libkmskms_frame_saver_video_filterinterface.a  CMakeFiles/kmskms_frame_saver_video_filterinterface.dir/interface/generated-cpp/FrameSaverVideoFilterInternal.cpp.o CMakeFiles/kmskms_frame_saver_video_filterinterface.dir/interface/generated-cpp/FrameSaverVideoFilter.cpp.o
-/usr/bin/ranlib libkmskms_frame_saver_video_filterinterface.a

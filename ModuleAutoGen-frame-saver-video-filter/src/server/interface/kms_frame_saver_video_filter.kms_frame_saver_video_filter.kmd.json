@@ -5,20 +5,79 @@
             "name": "FrameSaverVideoFilter",
             "extends": "Filter",
             "doc": "kms_frame_saver_video_filter interface. Documentation about the module",
+
             "constructor": 
             {
-                "doc": "Create the FrameSaverVideoFilter element",
+                "doc": "Create element FrameSaverVideoFilter with parent :rom:cls:`MediaPipeline`",
                 "params": 
                 [
                     {
                         "name": "mediaPipelineParent",
-                        "doc": "the parent :rom:cls:`MediaPipeline`",
+                        "doc": "the :rom:cls:`MediaPipeline` parent of the FrameSaverVideoFilter",
                         "type": "MediaPipeline",
                         "final": true
                     }
                 ]
-            }
+            },
+            "methods": 
+            [
+                {
+                    "name": "startPipelinePlaying",
+                    "doc":  "changes pipeline state to PLAYING",
+                    "params": [ ]
+                },
+                {
+                    "name": "stopPipelinePlaying",
+                    "doc":  "changes pipeline state from PLAYING to READY",
+                    "params": [ ]
+                },
+                {
+                    "name": "getParamsList",
+                    "doc": "gets a string of all parameters separated by tabs.",
+                    "params": 
+                    [
+                        {
+                            "name": "aCurrentParamsSeparatedByTabs",
+                            "doc":  "string of all parameters separated by tabs.",
+                            "type": "String"
+                        }
+                    ]
+                },
+                {
+                    "name": "getParam",
+                    "doc": "gets the current string value of one parameter.",
+                    "params": 
+                    [
+                        {
+                            "name": "aParamName",
+                            "doc":  "string with name of parameter.",
+                            "type": "String"
+                        },
+                        {
+                            "name": "aParamValue",
+                            "doc":  "string for the current value of the parameter.",
+                            "type": "String"
+                        }
+                    ]
+                },
+                {
+                    "name": "setParam",
+                    "doc": "sets the current string value of one parameter.",
+                    "params": 
+                    [
+                        {
+                            "name": "aParamName",
+                            "doc":  "string with name of parameter.",
+                            "type": "String"
+                        },
+                        {
+                            "name": "aNewParamValue",
+                            "doc":  "string has the desired value of the parameter.",
+                            "type": "String"
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }
-

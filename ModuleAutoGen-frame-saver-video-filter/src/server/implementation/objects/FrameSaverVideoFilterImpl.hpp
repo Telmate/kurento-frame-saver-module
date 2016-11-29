@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImpl.hpp
  *
  * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-11-27   JBendor     Updated
+ *              2. 2016-11-28   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -25,6 +25,13 @@
 #include <EventHandler.hpp>                 // also in "MediaObjectImpl.hpp"
 #include <mutex>                            // also in "MediaObjectImpl.hpp"
 #include <gst/gst.h>                        // also in "MediaObjectImpl.hpp"
+
+
+#ifdef THE_CLASS_NAME
+    #undef THE_CLASS_NAME
+#endif
+
+#define THE_CLASS_NAME "FrameSaverVideoFilterImpl"
 
 
 namespace kurento
@@ -66,15 +73,17 @@ class FrameSaverVideoFilterImpl : public FilterImpl
 
 public:
 
-    static FrameSaverVideoFilterImpl * getFirstInstancePtr();               // the first instance
-
     FrameSaverVideoFilterImpl (const boost::property_tree::ptree & ref_cfg, std::shared_ptr<MediaPipeline> ptr_parent);
 
     virtual ~FrameSaverVideoFilterImpl();                                   // virtual d'tor
 
-    bool setPipelinePlayState(bool isEnabled);                              // sets state READY or PLAY
+    static std::string getClassName();                                      // the class name
 
-    bool addFrameSaver(const std::string aLink, const std::string aPads);   // returns FALSE on failure
+    static FrameSaverVideoFilterImpl * getFirstInstancePtr();               // the first instance
+
+    bool startPipelinePlaying();                                            // sets state to PLAYING
+
+    bool stopPipelinePlaying();                                             // changes PLAYING to READY
 
     bool getParamsList(std::string aCurrentParamsSeparatedByTabs);          // returns FALSE on failure
 
@@ -96,6 +105,8 @@ protected:
 
 private:
     std::recursive_mutex    mRecursiveMutex;
+
+    GstElement            * mGstreamElementPtr;
 
     class StaticConstructor
     {

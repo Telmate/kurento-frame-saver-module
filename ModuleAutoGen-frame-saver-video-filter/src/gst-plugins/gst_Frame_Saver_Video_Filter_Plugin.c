@@ -6,7 +6,7 @@
  *
  * History:     1. 2016-11-25   JBendor     Created as copy of "gst_Frame_Saver_Plugin.c"
  *              2. 2016-11-25   JBendor     Adapted to _VIDEO_FILTER_TYPE_ being defined
- *              3. 2016-11-26   JBendor     Updated
+ *              3. 2016-11-28   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -37,7 +37,7 @@
 
     #define BUILD_DATETIME  "(" __DATE__ "  " __TIME__ ")"
 
-    #define FRAME_SAVER_PLUGIN_VERSION_INFO ( "1.0.0"  " " BUILD_TYPE  "." BUILD_TOOL " " BUILD_DATETIME  " source=" __FILE__ )
+    #define FRAME_SAVER_PLUGIN_VERSION_INFO ( "1.0.0"  " " BUILD_TYPE  "." BUILD_TOOL " " BUILD_DATETIME  " name=" THIS_PLUGIN_NAME )
 
 #endif
 
@@ -388,7 +388,7 @@ static void gst_frame_saver_plugin_set_property(GObject      * object,
 
     if (psz_now != NULL)
     {
-        g_print("FrameSaverPlugin --- Property #%u --- Now: (%s) \n", (guint) prop_id, psz_now);
+        g_print("%s --- Property #%u --- Now: (%s) \n", THIS_PLUGIN_NAME, (guint) prop_id, psz_now);
 
         ptr_private->num_buffs = 0;
         ptr_private->num_drops = 0;
@@ -445,7 +445,6 @@ static void gst_frame_saver_plugin_get_property(GObject * object, guint prop_id,
 }
 
 
-/* this function handles sink events */
 static gboolean gst_frame_saver_plugin_sink_event(GstPad * pad, GstObject * parent, GstEvent * event)
 {
     gboolean ret;
@@ -488,7 +487,7 @@ static GstFlowReturn gst_frame_saver_plugin_chain(GstPad * pad, GstObject * pare
 
     if (ptr_private->is_silent == FALSE)
     {
-        g_print("FrameSaverPlugin --- Push --- (%u/%u) \n", ptr_private->num_buffs, ptr_private->num_drops);
+        g_print("%s --- Push --- (%u/%u) \n", THIS_PLUGIN_NAME, ptr_private->num_buffs, ptr_private->num_drops);
     }    
     
     if ( ptr_private->sz_snap[5] > '0')  // is_frame_saver)
@@ -497,6 +496,12 @@ static GstFlowReturn gst_frame_saver_plugin_chain(GstPad * pad, GstObject * pare
     }
     
     return result;  // anythin except GST_FLOW_OK could halt the flow in the pipeline
+}
+
+
+static void gst_frame_saver_plugin_dispose (GObject *object)
+{
+    return;
 }
 
 
@@ -515,8 +520,14 @@ static void gst_frame_saver_plugin_init(GstFrameSaverPlugin * filter)
 {
     GstFrameSaverPluginPrivate * ptr_private = GST_GET_PRIVATE(filter);
 
-    ptr_private->sinkpad = gst_pad_new_from_static_template(&gst_frame_saver_plugin_sink_template, "sink");
-    ptr_private->srcpad = gst_pad_new_from_static_template(&gst_frame_saver_plugin_src_template, "src");
+    #ifdef _VIDEO_FILTER_TYPE_
+        filter->priv = ptr_private;
+        ptr_private->sinkpad = filter->base.element.sinkpad;
+        ptr_private->srcpad = filter->base.element.srcpad;
+    #else
+        ptr_private->sinkpad = gst_pad_new_from_static_template(&gst_frame_saver_plugin_sink_template, "sink");
+        ptr_private->srcpad = gst_pad_new_from_static_template(&gst_frame_saver_plugin_src_template, "src");
+    #endif
 
     gst_pad_set_event_function(ptr_private->sinkpad, GST_DEBUG_FUNCPTR(gst_frame_saver_plugin_sink_event));
     gst_pad_set_chain_function(ptr_private->sinkpad, GST_DEBUG_FUNCPTR(gst_frame_saver_plugin_chain));
@@ -525,8 +536,10 @@ static void gst_frame_saver_plugin_init(GstFrameSaverPlugin * filter)
     GST_PAD_SET_PROXY_CAPS(ptr_private->sinkpad);
     GST_PAD_SET_PROXY_CAPS(ptr_private->srcpad);
 
-    gst_element_add_pad(GST_ELEMENT(filter), ptr_private->sinkpad);
-    gst_element_add_pad(GST_ELEMENT(filter), ptr_private->srcpad);
+	#ifndef _VIDEO_FILTER_TYPE_
+        gst_element_add_pad(GST_ELEMENT(filter), ptr_private->sinkpad);
+        gst_element_add_pad(GST_ELEMENT(filter), ptr_private->srcpad);
+    #endif 
 
     strcpy(ptr_private->sz_wait, "wait=2000");
     strcpy(ptr_private->sz_snap, "snap=0,0,0");
@@ -558,6 +571,8 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
 
     gobject_class->finalize     = gst_frame_saver_plugin_finalize;
 
+    gobject_class->dispose      = gst_frame_saver_plugin_dispose;
+
     // possibly --- first time here
     if (This_Plugin_Element_Class_ptr == NULL)
     {
@@ -579,6 +594,8 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
 			GstVideoFilterClass *video_filter_class = GST_VIDEO_FILTER_CLASS (klass);
 
 			video_filter_class->transform_frame_ip = GST_DEBUG_FUNCPTR (gst_frame_saver_plugin_transform_frame_ip);
+
+            g_type_class_add_private (klass, sizeof (GstFrameSaverPluginPrivate));
 		#endif
     }
     else if (This_Plugin_Element_Class_ptr != (GstElementClass *) klass)
@@ -656,10 +673,10 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
                                                          G_PARAM_READWRITE));
 
     gst_element_class_set_details_simple(GST_ELEMENT_CLASS(klass),
-                                         "FrameSaverPlugin",                // name to launch
+                                         THIS_PLUGIN_NAME,                  // name to launch
                                          "Pipeline-Splicer",                // classification
                                          "Inserts TEE and Saves Frames",    // description
-                                         "Author <<author@hostname.org>>"); // author info
+                                         "Author <<author@hostname.org>>"); // author info --- TODO
 
     return;
 }
@@ -682,8 +699,8 @@ static gboolean frame_saver_plugin_register(GstPlugin * aPluginPtr)
 /* gstreamer looks for this structure to register plugins */
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
                   GST_VERSION_MINOR,
-                  FrameSaverPlugin,
-                  "FrameSaverPlugin --- Inserts TEE and saves image frames",
+                  FrameSaverVideoFilterPlugin,
+                  THIS_PLUGIN_NAME " --- Inserts TEE and saves image frames",
 				  frame_saver_plugin_register,
                   FRAME_SAVER_PLUGIN_VERSION_INFO,
                   "LGPL",
@@ -691,3 +708,4 @@ GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
                   "http://gstreamer.net/")
 
 // ends file:  "gst_frame_saver_plugin_video_filter.c"
+

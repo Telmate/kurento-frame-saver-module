@@ -1,6 +1,22 @@
 {
     "name": "kms_frame_saver_video_filter",
-    "version": "0.0.1-dev",
-    "kurentoVersion": "^6.0.0"
-}
 
+    "version": "0.0.1-dev",
+
+    "kurentoVersion": "^6.0.0",
+
+    "code": 
+    {
+        "api": 
+        {
+            "js": 
+            {
+                "nodeName": "TODO-MODULE-NAME-frame-saver-video-filter",
+
+                "npmDescription": "TODO-DESCRIBE-FrameSaverVideoFilter",
+
+                "npmGit": "TODO-REPOSITORY/frame-saver-video-filter-js"
+            }
+        }
+    }
+}

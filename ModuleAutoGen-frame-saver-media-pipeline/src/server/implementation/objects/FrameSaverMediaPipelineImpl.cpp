@@ -19,9 +19,9 @@
 //#include "kmselement.h"
 
 
-#define GST_DEFAULT_NAME    "KurentoFrameSaverMediaPipelineImpl"
+#define GST_DEFAULT_NAME    THE_CLASS_NAME
 
-#define GST_CAT_DEFAULT     kurento_frame_saver_media_pipeline_impl
+#define GST_CAT_DEFAULT     frame_saver_media_pipeline_impl
 
 GST_DEBUG_CATEGORY_STATIC   (GST_CAT_DEFAULT);
 
@@ -37,12 +37,21 @@ namespace FrameSaverMediaPipeline
 
 static boost::property_tree::ptree   The_Default_Config;
 
-static FrameSaverMediaPipelineImpl * The_Instance_Ptr = NULL;
+static FrameSaverMediaPipelineImpl * The_Single_Instance_Ptr = NULL;
+
+static std::string                   This_Class_Name(THE_CLASS_NAME);
+
+
+
+std::string FrameSaverMediaPipelineImpl::getClassName()
+{
+    This_Class_Name.assign(THE_CLASS_NAME);    return This_Class_Name;
+}
 
 
 FrameSaverMediaPipelineImpl * FrameSaverMediaPipelineImpl::getLiveInstancePtr()
 {
-    return The_Instance_Ptr;
+    return The_Single_Instance_Ptr;
 }
 
 
@@ -65,7 +74,13 @@ FrameSaverMediaPipelineImpl::FrameSaverMediaPipelineImpl (const boost::property_
 }
 
 
-bool FrameSaverMediaPipelineImpl::setPipelinePlayState(bool isEnabled)
+GstElement * FrameSaverMediaPipelineImpl::getPipeline() 
+{ 
+    return mPipelinePtr; 
+}
+
+
+bool FrameSaverMediaPipelineImpl::startPipelinePlaying()
 {
     std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
 
@@ -73,7 +88,36 @@ bool FrameSaverMediaPipelineImpl::setPipelinePlayState(bool isEnabled)
 
     if (is_ok)
     {
-        gst_element_set_state (mPipelinePtr, isEnabled ? GST_STATE_PLAYING : GST_STATE_READY);
+        GstState pipeline_state = GST_STATE_NULL;
+
+        gst_element_get_state(mPipelinePtr, &pipeline_state, NULL, 0);
+
+        if (pipeline_state != GST_STATE_PLAYING)
+        {
+            gst_element_set_state ( mPipelinePtr, GST_STATE_PLAYING );
+        }
+    }
+
+    return is_ok;
+}
+
+
+bool FrameSaverMediaPipelineImpl::stopPipelinePlaying()
+{
+    std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
+
+    bool is_ok = (mPipelinePtr != NULL);
+
+    if (is_ok)
+    {
+        GstState pipeline_state = GST_STATE_NULL;
+
+        gst_element_get_state(mPipelinePtr, &pipeline_state, NULL, 0);
+
+        if (pipeline_state == GST_STATE_PLAYING)
+        {
+            gst_element_set_state ( mPipelinePtr, GST_STATE_READY );
+        }
     }
 
     return is_ok;
@@ -84,14 +128,11 @@ bool FrameSaverMediaPipelineImpl::addFrameSaver(const std::string aLink, const s
 {
     std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
 
-    #define PLUGIN_TYPE   "FrameSaverPlugin"
-    #define PLUGIN_NAME   "FrameSaverPlugin_0"
-
     bool is_ok = (mFrameSaverPluginPtr == NULL);
 
     if (is_ok)
     {
-        mFrameSaverPluginPtr = gst_element_factory_make(PLUGIN_TYPE, PLUGIN_NAME);
+        mFrameSaverPluginPtr = gst_element_factory_make("FrameSaverPlugin", "FrameSaverPlugin_0" );
 
         is_ok = (mFrameSaverPluginPtr == NULL);
     }
@@ -112,6 +153,17 @@ bool FrameSaverMediaPipelineImpl::addFrameSaver(const std::string aLink, const s
     }
 
     return is_ok;
+}
+
+
+bool FrameSaverMediaPipelineImpl::getFrameSaverName(std::string aElementName)
+{
+    bool is_ok = (mFrameSaverPluginPtr != NULL);
+
+    aElementName.assign(is_ok ? "FrameSaverPlugin_0" : "");
+
+    return is_ok;
+
 }
 
 
@@ -182,7 +234,7 @@ void FrameSaverMediaPipelineImpl::postConstructor()
 
     mPipelinePtr = MediaPipelineImpl::getPipeline();
 
-    setPipelinePlayState(false);
+    stopPipelinePlaying();
 
     return;    
 }
@@ -190,7 +242,7 @@ void FrameSaverMediaPipelineImpl::postConstructor()
 
 bool FrameSaverMediaPipelineImpl::initializeInstance(bool isNewInstance)
 {
-    if (The_Instance_Ptr)
+    if (The_Single_Instance_Ptr)
     {
         throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE, "FrameSaverMediaPipeline is singleton");
     }
@@ -200,16 +252,16 @@ bool FrameSaverMediaPipelineImpl::initializeInstance(bool isNewInstance)
         releaseResources(false);
     }
 
-    if (! The_Instance_Ptr)
+    if (! The_Single_Instance_Ptr)
     {
-        The_Instance_Ptr = this;
+        The_Single_Instance_Ptr = this;
     }
 
     mFrameSaverPluginPtr = NULL;
 
     mPipelinePtr = MediaPipelineImpl::getPipeline();
 
-    setPipelinePlayState ( false );
+    stopPipelinePlaying();
 
     return true;
 }
@@ -219,13 +271,13 @@ bool FrameSaverMediaPipelineImpl::releaseResources(bool isDelete)
 {
     std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
 
-    setPipelinePlayState(false);
+    stopPipelinePlaying();
 
     mFrameSaverPluginPtr = mPipelinePtr = NULL;
 
-    if (The_Instance_Ptr == this)
+    if (The_Single_Instance_Ptr == this)
     {
-        The_Instance_Ptr = NULL;
+        The_Single_Instance_Ptr = NULL;
     }
 
     return true;
@@ -250,3 +302,4 @@ MediaObjectImpl * FrameSaverMediaPipelineImplFactory::createObject (const boost:
 } // ends namespace module
 
 } // ends namespace kurento
+
