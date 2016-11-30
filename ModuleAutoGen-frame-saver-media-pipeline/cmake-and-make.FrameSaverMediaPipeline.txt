@@ -1,0 +1,449 @@
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ ls -alR
+###################################################################################################
+
+.:
+total 12
+drwxr-xr-x 3 jonny jonny 4096 Nov 30 12:36 .
+drwxr-xr-x 6 jonny jonny 4096 Nov 29 12:38 ..
+drwxr-xr-x 2 jonny jonny 4096 Nov 29 11:21 Autogen-Fixes-For-FrameSaverMediaPipeline
+
+./Autogen-Fixes-For-FrameSaverMediaPipeline:
+total 16
+drwxr-xr-x 2 jonny jonny 4096 Nov 29 11:21 .
+drwxr-xr-x 3 jonny jonny 4096 Nov 30 12:36 ..
+-rw-r--r-- 1 jonny jonny 2824 Nov 29 09:00 FrameSaverMediaPipelineImplInternal.cpp
+-rw-r--r-- 1 jonny jonny  547 Nov 29 09:10 SerializerExpanderFrameSaverMediaPipeline.cpp
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ cmake ..
+###################################################################################################
+
+-- The C compiler identification is GNU 4.8.4
+-- The CXX compiler identification is GNU 4.8.4
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+If KurentoHelpers is not found, then it is necessary to install
+          kms-cmake-utils package from the kurento repository
+-- Found KurentoHelpers: 1.3.2 (found version "1.3.2") 
+-- Found Git: /usr/bin/git (found version "1.9.1") 
+If CodeGenerator is not found, then it is necessary to install
+          kms-core package from the kurento repository
+-- Found PkgConfig: /usr/bin/pkg-config (found version "0.26") 
+-- Found /usr/bin/kurento-module-creator
+-- Found /usr/bin/kurento-module-creator
+-- Found KurentoModuleCreator: 4.0.7 (found version "4.0.7") 
+-- Resolving KurentoModuleCreator version ^4.0.0 with 4.0.7
+-- Version got from git is 0.0.1~0.g424ffcb
+-- checking for module 'gstreamer-1.5>=1.5.0'
+--   found gstreamer-1.5, version 1.8.1.1
+-- checking for module 'gstreamer-base-1.5>=1.5.0'
+--   found gstreamer-base-1.5, version 1.8.1.1
+-- checking for module 'gstreamer-video-1.5>=1.5.0'
+--   found gstreamer-video-1.5, version 1.8.1.1
+-- checking for module 'gstreamer-check-1.5>=1.5.0'
+--   found gstreamer-check-1.5, version 1.8.1.1
+-- checking for module 'kmscore'
+--   found kmscore, version 6.6.1
+-- checking for module 'opencv>=2.0.0'
+--   found opencv, version 2.4.8
+-- Compiling : frame-saver-media-pipeline-0.0.1~0.g424ffcb
+-- KurentoModuleCreator Already found
+-- Including generated cmake FrameSaverMediaPipelineDependencies.cmake
+-- KMSCORE Already found
+-- Looking for KMSELEMENTS: 6.6.1
+-- KMSCORE Already found
+-- Looking for KMSELEMENTS: 6.6.1
+-- KMSCORE Already found
+-- Found KMSELEMENTS: 6.6.1 (found version "6.6.1") 
+-- Resolving KMSELEMENTS version ^6.0.0 with 6.6.1
+-- Looking for KMSFILTERS: 6.6.1
+-- KMSCORE Already found
+-- KMSELEMENTS Already found
+-- checking for module 'opencv'
+--   found opencv, version 2.4.8
+-- Found opencv
+-- Looking for KMSFILTERS: 6.6.1
+-- KMSCORE Already found
+-- KMSELEMENTS Already found
+-- opencv Already found
+-- Found KMSFILTERS: 6.6.1 (found version "6.6.1") 
+-- Resolving KMSFILTERS version ^6.0.0 with 6.6.1
+-- Generated: kmsframesavermediapipeline.pc.in
+-- Generated: FrameSaverMediaPipelineImpl.cpp
+-- Generated: FrameSaverMediaPipelineImpl.hpp
+-- Generated: FindKMSFRAMESAVERMEDIAPIPELINE.cmake.in
+-- Getting config files from /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/src/server/config
+-- No config files found
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ make all
+###################################################################################################
+
+[  4%] Generating cpp_interface.generated, interface/generated-cpp/FrameSaverMediaPipeline.cpp, interface/generated-cpp/FrameSaverMediaPipeline.hpp
+Generation success
+[  9%] Generating cpp_interface_internal.generated, interface/generated-cpp/FrameSaverMediaPipelineInternal.cpp, interface/generated-cpp/FrameSaverMediaPipelineInternal.hpp
+Generation success
+Scanning dependencies of target kmsframesavermediapipelineinterface
+[ 14%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelineinterface.dir/interface/generated-cpp/FrameSaverMediaPipelineInternal.cpp.o
+[ 19%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelineinterface.dir/interface/generated-cpp/FrameSaverMediaPipeline.cpp.o
+Linking CXX static library libkmsframesavermediapipelineinterface.a
+[ 19%] Built target kmsframesavermediapipelineinterface
+[ 23%] Generating cpp_server_internal.generated, implementation/generated-cpp/SerializerExpanderFrameSaverMediaPipeline.cpp, implementation/generated-cpp/FrameSaverMediaPipelineImplInternal.cpp, implementation/generated-cpp/FrameSaverMediaPipelineImplFactory.hpp
+Generation success
+Scanning dependencies of target kmsframesavermediapipelineimpl
+[ 28%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelineimpl.dir/implementation/objects/FrameSaverMediaPipelineImpl.cpp.o
+[ 33%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelineimpl.dir/implementation/generated-cpp/SerializerExpanderFrameSaverMediaPipeline.cpp.o
+/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build/src/server/implementation/generated-cpp/SerializerExpanderFrameSaverMediaPipeline.cpp: In function ‘void kurento::module::FrameSaverMediaPipeline::dummyFrameSaverMediaPipeline()’:
+/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build/src/server/implementation/generated-cpp/SerializerExpanderFrameSaverMediaPipeline.cpp:18:44: error: template argument 1 is invalid
+     std::shared_ptr<FrameSaverMediaPipeline> object;
+                                            ^
+/home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build/src/server/implementation/generated-cpp/SerializerExpanderFrameSaverMediaPipeline.cpp:18:52: error: invalid type in declaration before ‘;’ token
+     std::shared_ptr<FrameSaverMediaPipeline> object;
+                                                    ^
+make[2]: *** [src/server/CMakeFiles/kmsframesavermediapipelineimpl.dir/implementation/generated-cpp/SerializerExpanderFrameSaverMediaPipeline.cpp.o] Error 1
+make[1]: *** [src/server/CMakeFiles/kmsframesavermediapipelineimpl.dir/all] Error 2
+make: *** [all] Error 2
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ cp Autogen-Fixes-For-FrameSaverMediaPipeline/*.cpp src/server/implementation/generated-cpp/
+###################################################################################################
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ make all
+###################################################################################################
+
+[ 19%] Built target kmsframesavermediapipelineinterface
+Scanning dependencies of target kmsframesavermediapipelineimpl
+[ 23%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelineimpl.dir/implementation/generated-cpp/SerializerExpanderFrameSaverMediaPipeline.cpp.o
+[ 28%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelineimpl.dir/implementation/generated-cpp/FrameSaverMediaPipelineImplInternal.cpp.o
+Linking CXX shared library libkmsframesavermediapipelineimpl.so
+[ 38%] Built target kmsframesavermediapipelineimpl
+[ 42%] Generating FrameSaverMediaPipeline.kmd.json
+Generation success
+[ 47%] Generating cpp_module.generated, implementation/generated-cpp/Module.cpp
+Generation success
+Scanning dependencies of target kmsframesavermediapipelinemodule
+[ 52%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelinemodule.dir/implementation/generated-cpp/Module.cpp.o
+[ 57%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelinemodule.dir/module_version.cpp.o
+[ 61%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelinemodule.dir/module_name.cpp.o
+[ 66%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelinemodule.dir/module_descriptor.cpp.o
+[ 71%] Building CXX object src/server/CMakeFiles/kmsframesavermediapipelinemodule.dir/module_generation_time.cpp.o
+Linking CXX shared module libkmsframesavermediapipelinemodule.so
+[ 71%] Built target kmsframesavermediapipelinemodule
+Scanning dependencies of target frame_saver_media_pipeline
+[ 76%] Building C object src/gst-plugins/CMakeFiles/frame_saver_media_pipeline.dir/gst_Frame_Saver_Plugin.c.o
+[ 80%] Building C object src/gst-plugins/CMakeFiles/frame_saver_media_pipeline.dir/frame_saver/frame_saver_filter.c.o
+[ 85%] Building C object src/gst-plugins/CMakeFiles/frame_saver_media_pipeline.dir/frame_saver/frame_saver_filter_lib.c.o
+[ 90%] Building C object src/gst-plugins/CMakeFiles/frame_saver_media_pipeline.dir/frame_saver/frame_saver_params.c.o
+[ 95%] Building C object src/gst-plugins/CMakeFiles/frame_saver_media_pipeline.dir/frame_saver/save_frames_as_png.c.o
+[100%] Building C object src/gst-plugins/CMakeFiles/frame_saver_media_pipeline.dir/frame_saver/wrapped_natives.c.o
+Linking C shared module libframe_saver_media_pipeline.so
+[100%] Built target frame_saver_media_pipeline
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ ls -al src/gst-plugins/
+###################################################################################################
+
+total 192
+drwxr-xr-x 3 jonny jonny   4096 Nov 30 12:37 .
+drwxr-xr-x 5 jonny jonny   4096 Nov 30 12:36 ..
+drwxr-xr-x 3 jonny jonny   4096 Nov 30 12:36 CMakeFiles
+-rw-r--r-- 1 jonny jonny   2584 Nov 30 12:36 cmake_install.cmake
+-rwxr-xr-x 1 jonny jonny 159173 Nov 30 12:37 libframe_saver_media_pipeline.so
+-rw-r--r-- 1 jonny jonny  17392 Nov 30 12:36 Makefile
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ sudo cp src/gst-plugins/libframe_saver_media_pipeline.so /usr/lib/x86_64-linux-gnu/gstreamer-1.5
+###################################################################################################
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ ls -al src/server/*.so
+###################################################################################################
+
+lrwxrwxrwx 1 jonny jonny     38 Nov 30 12:37 src/server/libkmsframesavermediapipelineimpl.so -> libkmsframesavermediapipelineimpl.so.0
+-rwxr-xr-x 1 jonny jonny 478179 Nov 30 12:37 src/server/libkmsframesavermediapipelinemodule.so
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ gst-inspect-1.5 "FrameSaverPlugin"
+###################################################################################################
+
+Factory Details:
+  Rank                     none (0)
+  Long-name                FrameSaverPlugin
+  Klass                    Pipeline-Splicer
+  Description              Inserts TEE and Saves Frames
+  Author                   Author <<author@hostname.org>>
+
+Plugin Details:
+  Name                     FrameSaverPlugin
+  Description              FrameSaverPlugin --- Inserts TEE and saves image frames
+  Filename                 /usr/lib/x86_64-linux-gnu/gstreamer-1.5/libframe_saver_media_pipeline.so
+  Version                  1.0.0 BUILD.RELEASE.GCC.LINUX (Nov 30 2016  12:37:39) name=FrameSaverPlugin
+  License                  LGPL
+  Source module            frame-saver-media-pipeline
+  Binary package           GStreamer
+  Origin URL               http://gstreamer.net/
+
+GObject
+ +----GInitiallyUnowned
+       +----GstObject
+             +----GstElement
+                   +----GstFrameSaverPlugin
+
+Pad Templates:
+  SINK template: 'sink'
+    Availability: Always
+    Capabilities:
+      ANY
+
+  SRC template: 'src'
+    Availability: Always
+    Capabilities:
+      ANY
+
+
+Element Flags:
+  no flags set
+
+Element Implementation:
+  Has change_state() function: 0x7ff9ef9e9dbc
+
+Element has no clocking capabilities.
+Element has no URI handling capabilities.
+
+Pads:
+  SINK: 'sink'
+    Pad Template: 'sink'
+  SRC: 'src'
+    Pad Template: 'src'
+
+Element Properties:
+  name                : The name of the object
+                        flags: readable, writable
+                        String. Default: "framesaverplugin0"
+  parent              : The parent of the object
+                        flags: readable, writable
+                        Object of type "GstObject"
+  wait                : wait before snapping another frame
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "wait=2000"
+  snap                : snap and save frames as RGB images in PNG files
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "snap=0,0,0"
+  link                : insert TEE between producer and consumer elements
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "link=Live,auto,auto"
+  pads                : pads used by the producer and consumer elements
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "pads=auto,auto,auto"
+  path                : path of working folder for saved image files
+                        flags: readable, writable, changeable only in NULL or READY state
+                        String. Default: "path=auto"
+  note                : most recent error
+                        flags: readable
+                        String. Default: "note=none"
+  silent              : Silent is 1/True --- Verbose is 0/False
+                        flags: readable, writable
+                        Boolean. Default: true
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ 
+###################################################################################################
+###################################################################################################
+###################################################################################################
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ cmake .. -DGENERATE_JAVA_CLIENT_PROJECT=TRUE
+###################################################################################################
+
+If KurentoHelpers is not found, then it is necessary to install
+          kms-cmake-utils package from the kurento repository
+If CodeGenerator is not found, then it is necessary to install
+          kms-core package from the kurento repository
+-- KurentoModuleCreator Already found
+-- Version got from git is 0.0.1~0.g424ffcb
+-- Compiling : frame-saver-media-pipeline-0.0.1~0.g424ffcb
+-- KurentoModuleCreator Already found
+-- Including generated cmake FrameSaverMediaPipelineDependencies.cmake
+-- KMSCORE Already found
+-- KMSELEMENTS Already found
+-- KMSFILTERS Already found
+-- Generated: kmsframesavermediapipeline.pc.in
+-- Generated: FrameSaverMediaPipelineImpl.cpp
+-- Generated: FrameSaverMediaPipelineImpl.hpp
+-- Generated: FindKMSFRAMESAVERMEDIAPIPELINE.cmake.in
+-- Getting config files from /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/src/server/config
+-- No config files found
+-- Found Maven: /usr/bin/mvn  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ make java_install
+###################################################################################################
+
+Scanning dependencies of target java_install
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building FrameSaverMediaPipeline 0.0.1-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- kurento-maven-plugin:2.0.2:generate-kurento-client (default) @ FrameSaverMediaPipeline ---
+[INFO] Searching for kmd files in /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build/java/src/main/kmd
+[INFO]   Found kmd file to generate code: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build/java/src/main/kmd/FrameSaverMediaPipeline.kmd.json
+[INFO] Searching for kurento dependencies:
+[INFO]   Found kurento dependency in artifact: org.kurento:kms-api-core:6.6.0
+[INFO]   Found kurento dependency in artifact: org.kurento:kms-api-elements:6.6.0
+[INFO]   Found kurento dependency in artifact: org.kurento:kms-api-filters:6.6.0
+[INFO] Preparing code generation tool:
+[INFO]   Adding kmd file to generate code: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build/java/src/main/kmd/FrameSaverMediaPipeline.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/core.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/elements.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/filters.kmd.json
+[INFO] Searching for kurento dependencies:
+[INFO] Templates path: /templates
+Nov 30, 2016 1:03:55 PM freemarker.log.JDK14LoggerFactory$JDK14Logger error
+SEVERE: Template processing error: "Expression remoteClass.constructor.params[0] is undefined on line 124, column 41 in remoteClass_interface_java.ftl."
+
+Expression remoteClass.constructor.params[0] is undefined on line 124, column 41 in remoteClass_interface_java.ftl.
+The problematic instruction:
+----------
+==> ${remoteClass.constructor.params[0].name} [on line 124, column 39 in remoteClass_interface_java.ftl]
+----------
+
+Java backtrace for programmers:
+----------
+freemarker.core.InvalidReferenceException: Expression remoteClass.constructor.params[0] is undefined on line 124, column 41 in remoteClass_interface_java.ftl.
+	at freemarker.core.TemplateObject.assertNonNull(TemplateObject.java:125)
+	at freemarker.core.TemplateObject.invalidTypeException(TemplateObject.java:135)
+	at freemarker.core.Dot._getAsTemplateModel(Dot.java:78)
+	at freemarker.core.Expression.getAsTemplateModel(Expression.java:89)
+	at freemarker.core.Expression.getStringValue(Expression.java:93)
+	at freemarker.core.DollarVariable.accept(DollarVariable.java:76)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.MixedContent.accept(MixedContent.java:92)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.ConditionalBlock.accept(ConditionalBlock.java:79)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.MixedContent.accept(MixedContent.java:92)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.Environment.process(Environment.java:199)
+	at freemarker.template.Template.process(Template.java:259)
+	at org.kurento.modulecreator.codegen.CodeGen.generateFile(CodeGen.java:202)
+	at org.kurento.modulecreator.codegen.CodeGen.generateCode(CodeGen.java:193)
+	at org.kurento.modulecreator.codegen.CodeGen.generateCode(CodeGen.java:131)
+	at org.kurento.modulecreator.KurentoModuleCreator.generateCode(KurentoModuleCreator.java:222)
+	at org.kurento.maven.GenerateKurentoJavaClientMojo.executeKurentoMavenPlugin(GenerateKurentoJavaClientMojo.java:304)
+	at org.kurento.maven.GenerateKurentoJavaClientMojo.execute(GenerateKurentoJavaClientMojo.java:359)
+	at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo(DefaultBuildPluginManager.java:101)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:209)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:153)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:145)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:84)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:59)
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.singleThreadedBuild(LifecycleStarter.java:183)
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:161)
+	at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:320)
+	at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:156)
+	at org.apache.maven.cli.MavenCli.execute(MavenCli.java:537)
+	at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:196)
+	at org.apache.maven.cli.MavenCli.main(MavenCli.java:141)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:289)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:229)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:415)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:356)
+
+
+Expression remoteClass.constructor.params[0] is undefined on line 124, column 41 in remoteClass_interface_java.ftl.
+The problematic instruction:
+----------
+==> ${remoteClass.constructor.params[0].name} [on line 124, column 39 in remoteClass_interface_java.ftl]
+----------
+
+Java backtrace for programmers:
+----------
+freemarker.core.InvalidReferenceException: Expression remoteClass.constructor.params[0] is undefined on line 124, column 41 in remoteClass_interface_java.ftl.
+	at freemarker.core.TemplateObject.assertNonNull(TemplateObject.java:125)
+	at freemarker.core.TemplateObject.invalidTypeException(TemplateObject.java:135)
+	at freemarker.core.Dot._getAsTemplateModel(Dot.java:78)
+	at freemarker.core.Expression.getAsTemplateModel(Expression.java:89)
+	at freemarker.core.Expression.getStringValue(Expression.java:93)
+	at freemarker.core.DollarVariable.accept(DollarVariable.java:76)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.MixedContent.accept(MixedContent.java:92)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.ConditionalBlock.accept(ConditionalBlock.java:79)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.MixedContent.accept(MixedContent.java:92)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.Environment.process(Environment.java:199)
+	at freemarker.template.Template.process(Template.java:259)
+	at org.kurento.modulecreator.codegen.CodeGen.generateFile(CodeGen.java:202)
+	at org.kurento.modulecreator.codegen.CodeGen.generateCode(CodeGen.java:193)
+	at org.kurento.modulecreator.codegen.CodeGen.generateCode(CodeGen.java:131)
+	at org.kurento.modulecreator.KurentoModuleCreator.generateCode(KurentoModuleCreator.java:222)
+	at org.kurento.maven.GenerateKurentoJavaClientMojo.executeKurentoMavenPlugin(GenerateKurentoJavaClientMojo.java:304)
+	at org.kurento.maven.GenerateKurentoJavaClientMojo.execute(GenerateKurentoJavaClientMojo.java:359)
+	at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo(DefaultBuildPluginManager.java:101)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:209)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:153)
+	at org.apache.maven.lifecycle.internal.MojoExecutor.execute(MojoExecutor.java:145)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:84)
+	at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject(LifecycleModuleBuilder.java:59)
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.singleThreadedBuild(LifecycleStarter.java:183)
+	at org.apache.maven.lifecycle.internal.LifecycleStarter.execute(LifecycleStarter.java:161)
+	at org.apache.maven.DefaultMaven.doExecute(DefaultMaven.java:320)
+	at org.apache.maven.DefaultMaven.execute(DefaultMaven.java:156)
+	at org.apache.maven.cli.MavenCli.execute(MavenCli.java:537)
+	at org.apache.maven.cli.MavenCli.doMain(MavenCli.java:196)
+	at org.apache.maven.cli.MavenCli.main(MavenCli.java:141)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced(Launcher.java:289)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.launch(Launcher.java:229)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode(Launcher.java:415)
+	at org.codehaus.plexus.classworlds.launcher.Launcher.main(Launcher.java:356)
+[ERROR] Generation failed
+[ERROR] Errors:
+[ERROR] Unexpected error: freemarker.core.InvalidReferenceException Expression remoteClass.constructor.params[0] is undefined on line 124, column 41 in remoteClass_interface_java.ftl.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 1.602s
+[INFO] Finished at: Wed Nov 30 13:03:55 PST 2016
+[INFO] Final Memory: 20M/429M
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.kurento:kurento-maven-plugin:2.0.2:generate-kurento-client (default) on project FrameSaverMediaPipeline: Kurento Rom Processor found errors: [Unexpected error: freemarker.core.InvalidReferenceException Expression remoteClass.constructor.params[0] is undefined on line 124, column 41 in remoteClass_interface_java.ftl.] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+make[3]: *** [src/server/CMakeFiles/java_install] Error 1
+make[2]: *** [src/server/CMakeFiles/java_install.dir/all] Error 2
+make[1]: *** [src/server/CMakeFiles/java_install.dir/rule] Error 2
+make: *** [java_install] Error 2
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-media-pipeline/build $ 
+###################################################################################################
+###################################################################################################
+###################################################################################################
