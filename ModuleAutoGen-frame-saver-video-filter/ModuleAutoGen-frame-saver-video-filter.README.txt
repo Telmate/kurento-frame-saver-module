@@ -1,0 +1,27 @@
+#############################################################################################################
+
+0.  The procedure described herein is based on section 25.1.1 in Kurento's documentation (for release 6.6.0).
+
+1.  Kurento's scaffold creator for a gstreamer-based-plugin-module creates a folder-tree similar to this one.
+
+2.  The auto-created folder-tree has a "src" sub-tree and several files for a "cmake" tool used subsequently.
+
+3.  The developer must review/edit "cpp-and-hpp" files in the sub-folder "src/server/implementation/objects".
+
+4.  The developer must review/edit the descriptive "kmd.json" files in the sub-folder "src/server/interface".
+
+5.  The developer must place/edit all gstreamer-related "c-and-h" files in the sub-folder "src/sgst-plugins".
+
+6.  The developer must review/edit the file "CMakeLists.txt" in folder "src/gst-plugins/" as well as in root.
+
+7.  The developer must create the "build" folder, navigate to it, enter commands: "cmake ..", and "make all".
+
+8.  For this project, the compiler rejected one auto-generated "cpp" file --- so the developer created a fix.
+
+9.  The developer perfomed a second "make all" command after replacing the flawed file with the modified one. 
+
+10. The developer copies the plugin's shared-library from "/build/src/gst-plugins" to "/usr/lib/gstreamer-X".
+
+11. The devloper can use the command "cmake .. -DGENERATE_JAVA_CLIENT_PROJECT=TRUE" to create a Java project.
+
+#############################################################################################################
