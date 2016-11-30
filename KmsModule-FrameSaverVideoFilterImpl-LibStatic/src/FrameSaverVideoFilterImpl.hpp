@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImpl.hpp
  *
  * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-11-28   JBendor     Updated
+ *              2. 2016-11-30   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -84,6 +84,8 @@ public:
     bool startPipelinePlaying();                                            // sets state to PLAYING
 
     bool stopPipelinePlaying();                                             // changes PLAYING to READY
+
+    bool getElementsNamesList(std::string aElementsNamesSeparatedByTabs);   // returns FALSE on failure
 
     bool getParamsList(std::string aCurrentParamsSeparatedByTabs);          // returns FALSE on failure
 

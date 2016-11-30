@@ -32,6 +32,18 @@
                     "params": [ ]
                 },
                 {
+                    "name": "getElementsNamesList",
+                    "doc": "gets a string of names of all elements separated by tabs.",
+                    "params": 
+                    [
+                        {
+                            "name": "aElementsNamesSeparatedByTabs",
+                            "doc":  "string of names of all elements separated by tabs.",
+                            "type": "String"
+                        }
+                    ]
+                },
+                {
                     "name": "getParamsList",
                     "doc": "gets a string of all parameters separated by tabs.",
                     "params": 

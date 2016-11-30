@@ -3,7 +3,7 @@
  * File:        FrameSaverMediaPipelineImpl.hpp
  *
  * History:     1. 2016-11-16   JBendor     Created as a class derived from MediaPipelineImpl
- *              2. 2016-11-28   JBendor     Updated
+ *              2. 2016-11-30   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -71,6 +71,8 @@ public:
     bool getFrameSaverName(std::string aElementName);                       // returns FALSE on failure
 
     bool addFrameSaver(const std::string aLink, const std::string aPads);   // returns FALSE on failure
+
+    bool getElementsNamesList(std::string aElementsNamesSeparatedByTabs);   // returns FALSE on failure
 
     bool getParamsList(std::string aCurrentParamsSeparatedByTabs);          // returns FALSE on failure
 

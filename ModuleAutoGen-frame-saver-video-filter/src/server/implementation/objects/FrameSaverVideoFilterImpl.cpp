@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImpl.cpp
  *
  * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-11-28   JBendor     Updated
+ *              2. 2016-11-30   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -11,7 +11,6 @@
  */
 
 #include <FrameSaverVideoFilterImpl.hpp>
-
 #include <FrameSaverVideoFilterImplFactory.hpp>
 
 
@@ -120,6 +119,50 @@ bool FrameSaverVideoFilterImpl::stopPipelinePlaying()
         {
             is_ok = false;
         }
+    }
+
+    return is_ok;
+}
+
+
+bool FrameSaverVideoFilterImpl::getElementsNamesList(std::string aElementsNamesSeparatedByTabs)
+{
+    std::unique_lock <std::recursive_mutex>  locker(mRecursiveMutex);
+
+    bool is_ok = (mGstreamElementPtr != NULL);
+
+    GstElement * pipeline_ptr = is_ok ? (GstElement *) gst_element_get_parent(mGstreamElementPtr) : NULL;
+
+    GstIterator * iterate_ptr = pipeline_ptr ? gst_bin_iterate_elements(GST_BIN(pipeline_ptr)) : NULL;
+
+    is_ok = (iterate_ptr != NULL);
+
+    if (is_ok)
+    {
+        gchar * name_ptr = gst_element_get_name(pipeline_ptr);
+
+        aElementsNamesSeparatedByTabs.append(name_ptr ? name_ptr : "PipelineNameIsNull");
+        aElementsNamesSeparatedByTabs.append("\t");
+
+        g_free(name_ptr);
+
+        GValue element_as_value = G_VALUE_INIT;
+
+        while (gst_iterator_next(iterate_ptr, &element_as_value) == GST_ITERATOR_OK)
+        {
+            name_ptr = gst_element_get_name( g_value_get_object(&element_as_value) );
+
+            aElementsNamesSeparatedByTabs.append(name_ptr ? name_ptr : "ElementNameIsNull");
+            aElementsNamesSeparatedByTabs.append("\t");
+
+            g_free(name_ptr);
+
+            g_value_reset( &element_as_value );
+        }
+
+        g_value_unset( &element_as_value );
+
+        gst_iterator_free(iterate_ptr);
     }
 
     return is_ok;
