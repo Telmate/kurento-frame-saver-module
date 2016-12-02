@@ -1,0 +1,83 @@
+
+   .------------------------------------.
+   |                                    |
+   |   | |/ /  _ _ _ ___ _ _| |_ ___    |
+   |   | ' < || | '_/ -_) ' \  _/ _ \   |
+   |   |_|\_\_,_|_| \___|_||_\__\___/   |
+   |                                    |
+   '------------------------------------'
+       Kurento Java Tutorial --- Player-Frame-Saver
+       Version 6.6.0
+
+2016-12-01 23:34:29.963  INFO 21072 --- [           main] o.k.tutorial.player.PlayerFrameSaverApp  : Starting PlayerFrameSaverApp on XPS-15-JB1-LNX17 with PID 21072 (/home/jonny/Work/TELMATE/GST/ECLIPSE.LNX64.GST150/Tutorials/kurento-player-frame-saver-app/target/classes started by jonny in /home/jonny/Work/TELMATE/GST/ECLIPSE.LNX64.GST150/Tutorials/kurento-player-frame-saver-app)
+2016-12-01 23:34:29.967  INFO 21072 --- [           main] o.k.tutorial.player.PlayerFrameSaverApp  : No active profile set, falling back to default profiles: default
+2016-12-01 23:34:30.006  INFO 21072 --- [           main] ationConfigEmbeddedWebApplicationContext : Refreshing org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@6e2c9341: startup date [Thu Dec 01 23:34:30 PST 2016]; root of context hierarchy
+2016-12-01 23:34:30.587  INFO 21072 --- [           main] f.a.AutowiredAnnotationBeanPostProcessor : JSR-330 'javax.inject.Inject' annotation found and supported for autowiring
+2016-12-01 23:34:30.935  INFO 21072 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat initialized with port(s): 8443 (https)
+2016-12-01 23:34:30.946  INFO 21072 --- [           main] o.apache.catalina.core.StandardService   : Starting service Tomcat
+2016-12-01 23:34:30.947  INFO 21072 --- [           main] org.apache.catalina.core.StandardEngine  : Starting Servlet Engine: Apache Tomcat/8.0.28
+2016-12-01 23:34:31.018  INFO 21072 --- [ost-startStop-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2016-12-01 23:34:31.018  INFO 21072 --- [ost-startStop-1] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 1015 ms
+2016-12-01 23:34:31.198  INFO 21072 --- [ost-startStop-1] o.s.b.c.e.ServletRegistrationBean        : Mapping servlet: 'dispatcherServlet' to [/]
+2016-12-01 23:34:31.201  INFO 21072 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'characterEncodingFilter' to: [/*]
+2016-12-01 23:34:31.202  INFO 21072 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2016-12-01 23:34:31.202  INFO 21072 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'httpPutFormContentFilter' to: [/*]
+2016-12-01 23:34:31.202  INFO 21072 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'requestContextFilter' to: [/*]
+2016-12-01 23:34:31.242  INFO 21072 --- [           main] o.s.s.c.ThreadPoolTaskScheduler          : Initializing ExecutorService  'defaultSockJsTaskScheduler'
+2016-12-01 23:34:31.288  INFO 21072 --- [           main] org.eclipse.jetty.util.log               : Logging initialized @1820ms
+2016-12-01 23:34:31.449  INFO 21072 --- [ntLoopGroup-2-1] o.k.j.c.JsonRpcClientNettyWebSocket      : [KurentoClient]  Inititating new Netty channel. Will create new handler too!
+2016-12-01 23:34:31.539  INFO 21072 --- [           main] o.s.w.s.s.s.WebSocketHandlerMapping      : Mapped URL path [/player] onto handler of type [class org.springframework.web.socket.server.support.WebSocketHttpRequestHandler]
+2016-12-01 23:34:31.641  INFO 21072 --- [           main] s.w.s.m.m.a.RequestMappingHandlerAdapter : Looking for @ControllerAdvice: org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@6e2c9341: startup date [Thu Dec 01 23:34:30 PST 2016]; root of context hierarchy
+2016-12-01 23:34:31.694  INFO 21072 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/error],produces=[text/html]}" onto public org.springframework.web.servlet.ModelAndView org.springframework.boot.autoconfigure.web.BasicErrorController.errorHtml(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)
+2016-12-01 23:34:31.695  INFO 21072 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/error]}" onto public org.springframework.http.ResponseEntity<java.util.Map<java.lang.String, java.lang.Object>> org.springframework.boot.autoconfigure.web.BasicErrorController.error(javax.servlet.http.HttpServletRequest)
+2016-12-01 23:34:31.697  INFO 21072 --- [           main] o.s.w.s.c.a.WebMvcConfigurerAdapter      : Adding welcome page: class path resource [static/index.html]
+2016-12-01 23:34:31.703  INFO 21072 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Root mapping to handler of type [class org.springframework.web.servlet.mvc.ParameterizableViewController]
+2016-12-01 23:34:31.767  INFO 21072 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/webjars/**] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
+2016-12-01 23:34:31.767  INFO 21072 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/**] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
+2016-12-01 23:34:31.792  INFO 21072 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/**/favicon.ico] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
+2016-12-01 23:34:31.863  INFO 21072 --- [           main] o.s.j.e.a.AnnotationMBeanExporter        : Registering beans for JMX exposure on startup
+2016-12-01 23:34:31.868  INFO 21072 --- [           main] o.s.c.support.DefaultLifecycleProcessor  : Starting beans in phase 2147483647
+2016-12-01 23:34:32.124  INFO 21072 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8443 (https)
+2016-12-01 23:34:32.126  INFO 21072 --- [           main] o.k.tutorial.player.PlayerFrameSaverApp  : Started PlayerFrameSaverApp in 2.369 seconds (JVM running for 2.659)
+2016-12-01 23:34:43.571  INFO 21072 --- [nio-8443-exec-4] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring FrameworkServlet 'dispatcherServlet'
+2016-12-01 23:34:43.571  INFO 21072 --- [nio-8443-exec-4] o.s.web.servlet.DispatcherServlet        : FrameworkServlet 'dispatcherServlet': initialization started
+2016-12-01 23:34:43.579  INFO 21072 --- [nio-8443-exec-4] o.s.web.servlet.DispatcherServlet        : FrameworkServlet 'dispatcherServlet': initialization completed in 8 ms
+2016-12-01 23:34:53.137  INFO 21072 --- [nio-8443-exec-9] o.k.t.player.PlayerFrameSaverHandler     : Video-URL is http://192.168.0.9/http/videos/sintel.webm --- Session-ID is 0
+2016-12-01 23:34:53.160  INFO 21072 --- [nio-8443-exec-9] o.k.t.player.FrameSaverPluginProxy       : Using Factory.Build for new instance of FrameSaverVideoFilter
+2016-12-01 23:34:53.169 ERROR 21072 --- [nio-8443-exec-9] o.k.t.player.PlayerFrameSaverHandler     : Exception handling message {"id":"start","sdpOffer":"v=0\r\no=mozilla...THIS_IS_SDPARTA-50.0.2 2843221423397930781 0 IN IP4 0.0.0.0\r\ns=-\r\nt=0 0\r\na=sendrecv\r\na=fingerprint:sha-256 8D:9C:F9:82:23:A7:38:52:8C:BF:CC:C4:FD:0D:70:D1:BC:77:00:3A:3C:5E:1A:9C:FD:24:19:5C:12:1B:33:7A\r\na=group:BUNDLE sdparta_0 sdparta_1\r\na=ice-options:trickle\r\na=msid-semantic:WMS *\r\nm=audio 9 UDP/TLS/RTP/SAVPF 109 9 0 8\r\nc=IN IP4 0.0.0.0\r\na=recvonly\r\na=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level\r\na=fmtp:109 maxplaybackrate=48000;stereo=1;useinbandfec=1\r\na=ice-pwd:ca2248ce7268dc39dc997673c7a81cee\r\na=ice-ufrag:f2642a38\r\na=mid:sdparta_0\r\na=rtcp-mux\r\na=rtpmap:109 opus/48000/2\r\na=rtpmap:9 G722/8000/1\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=setup:actpass\r\na=ssrc:3540300428 cname:{de5f7254-502f-4411-96b8-1da2405809b2}\r\nm=video 9 UDP/TLS/RTP/SAVPF 120 126 97\r\nc=IN IP4 0.0.0.0\r\na=recvonly\r\na=fmtp:120 max-fs=12288;max-fr=60\r\na=fmtp:126 profile-level-id=42e01f;level-asymmetry-allowed=1;packetization-mode=1\r\na=fmtp:97 profile-level-id=42e01f;level-asymmetry-allowed=1\r\na=ice-pwd:ca2248ce7268dc39dc997673c7a81cee\r\na=ice-ufrag:f2642a38\r\na=mid:sdparta_1\r\na=rtcp-fb:120 nack\r\na=rtcp-fb:120 nack pli\r\na=rtcp-fb:120 ccm fir\r\na=rtcp-fb:120 goog-remb\r\na=rtcp-fb:126 nack\r\na=rtcp-fb:126 nack pli\r\na=rtcp-fb:126 ccm fir\r\na=rtcp-fb:126 goog-remb\r\na=rtcp-fb:97 nack\r\na=rtcp-fb:97 nack pli\r\na=rtcp-fb:97 ccm fir\r\na=rtcp-fb:97 goog-remb\r\na=rtcp-mux\r\na=rtpmap:120 VP8/90000\r\na=rtpmap:126 H264/90000\r\na=rtpmap:97 H264/90000\r\na=setup:actpass\r\na=ssrc:1483413966 cname:{de5f7254-502f-4411-96b8-1da2405809b2}\r\n","videourl":"http://192.168.0.9/http/videos/sintel.webm"} in sessionId 0
+
+org.kurento.client.internal.server.KurentoServerException: Factory 'FrameSaverVideoFilter' not found (Code:40108, Type:null, Data: {"type":"MEDIA_OBJECT_NOT_AVAILABLE"})
+	at org.kurento.client.internal.transport.jsonrpc.RomClientJsonRpcClient.sendRequest(RomClientJsonRpcClient.java:264) ~[kurento-client-6.6.0.jar:6.6.0]
+	at org.kurento.client.internal.transport.jsonrpc.RomClientJsonRpcClient.create(RomClientJsonRpcClient.java:157) ~[kurento-client-6.6.0.jar:6.6.0]
+	at org.kurento.client.internal.transport.jsonrpc.RomClientJsonRpcClient.create(RomClientJsonRpcClient.java:147) ~[kurento-client-6.6.0.jar:6.6.0]
+	at org.kurento.client.internal.client.RomManager.create(RomManager.java:54) ~[kurento-client-6.6.0.jar:6.6.0]
+	at org.kurento.client.internal.client.RomManager.createWithKurentoObject(RomManager.java:252) ~[kurento-client-6.6.0.jar:6.6.0]
+	at org.kurento.client.AbstractBuilder.build(AbstractBuilder.java:65) ~[kurento-client-6.6.0.jar:6.6.0]
+	at org.kurento.tutorial.player.FrameSaverPluginProxy.newInstance(FrameSaverPluginProxy.java:57) ~[classes/:na]
+	at org.kurento.tutorial.player.PlayerFrameSaverHandler.start(PlayerFrameSaverHandler.java:126) ~[classes/:na]
+	at org.kurento.tutorial.player.PlayerFrameSaverHandler.handleTextMessage(PlayerFrameSaverHandler.java:87) ~[classes/:na]
+	at org.springframework.web.socket.handler.AbstractWebSocketHandler.handleMessage(AbstractWebSocketHandler.java:43) [spring-websocket-4.2.7.RELEASE.jar:4.2.7.RELEASE]
+	at org.springframework.web.socket.handler.WebSocketHandlerDecorator.handleMessage(WebSocketHandlerDecorator.java:75) [spring-websocket-4.2.7.RELEASE.jar:4.2.7.RELEASE]
+	at org.springframework.web.socket.handler.LoggingWebSocketHandlerDecorator.handleMessage(LoggingWebSocketHandlerDecorator.java:56) [spring-websocket-4.2.7.RELEASE.jar:4.2.7.RELEASE]
+	at org.springframework.web.socket.handler.ExceptionWebSocketHandlerDecorator.handleMessage(ExceptionWebSocketHandlerDecorator.java:58) [spring-websocket-4.2.7.RELEASE.jar:4.2.7.RELEASE]
+	at org.springframework.web.socket.adapter.standard.StandardWebSocketHandlerAdapter.handleTextMessage(StandardWebSocketHandlerAdapter.java:110) [spring-websocket-4.2.7.RELEASE.jar:4.2.7.RELEASE]
+	at org.springframework.web.socket.adapter.standard.StandardWebSocketHandlerAdapter.access$000(StandardWebSocketHandlerAdapter.java:42) [spring-websocket-4.2.7.RELEASE.jar:4.2.7.RELEASE]
+	at org.springframework.web.socket.adapter.standard.StandardWebSocketHandlerAdapter$3.onMessage(StandardWebSocketHandlerAdapter.java:81) [spring-websocket-4.2.7.RELEASE.jar:4.2.7.RELEASE]
+	at org.springframework.web.socket.adapter.standard.StandardWebSocketHandlerAdapter$3.onMessage(StandardWebSocketHandlerAdapter.java:78) [spring-websocket-4.2.7.RELEASE.jar:4.2.7.RELEASE]
+	at org.apache.tomcat.websocket.WsFrameBase.sendMessageText(WsFrameBase.java:393) [tomcat-embed-websocket-8.0.28.jar:8.0.28]
+	at org.apache.tomcat.websocket.WsFrameBase.processDataText(WsFrameBase.java:494) [tomcat-embed-websocket-8.0.28.jar:8.0.28]
+	at org.apache.tomcat.websocket.WsFrameBase.processData(WsFrameBase.java:289) [tomcat-embed-websocket-8.0.28.jar:8.0.28]
+	at org.apache.tomcat.websocket.WsFrameBase.processInputBuffer(WsFrameBase.java:130) [tomcat-embed-websocket-8.0.28.jar:8.0.28]
+	at org.apache.tomcat.websocket.server.WsFrameServer.onDataAvailable(WsFrameServer.java:60) [tomcat-embed-websocket-8.0.28.jar:8.0.28]
+	at org.apache.tomcat.websocket.server.WsHttpUpgradeHandler$WsReadListener.onDataAvailable(WsHttpUpgradeHandler.java:203) [tomcat-embed-websocket-8.0.28.jar:8.0.28]
+	at org.apache.coyote.http11.upgrade.AbstractServletInputStream.onDataAvailable(AbstractServletInputStream.java:198) [tomcat-embed-core-8.0.28.jar:8.0.28]
+	at org.apache.coyote.http11.upgrade.AbstractProcessor.upgradeDispatch(AbstractProcessor.java:96) [tomcat-embed-core-8.0.28.jar:8.0.28]
+	at org.apache.coyote.AbstractProtocol$AbstractConnectionHandler.process(AbstractProtocol.java:668) [tomcat-embed-core-8.0.28.jar:8.0.28]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1500) [tomcat-embed-core-8.0.28.jar:8.0.28]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.run(NioEndpoint.java:1456) [tomcat-embed-core-8.0.28.jar:8.0.28]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142) [na:1.8.0_112]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617) [na:1.8.0_112]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61) [tomcat-embed-core-8.0.28.jar:8.0.28]
+	at java.lang.Thread.run(Thread.java:745) [na:1.8.0_112]
+
+
