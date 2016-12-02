@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project ("kms_frame_saver_video_filter")
+project ("kms-framesaver")
 
 message ("If KurentoHelpers is not found, then it is necessary to install
           kms-cmake-utils package from the kurento repository")
@@ -61,3 +61,4 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "Compiling : ${PROJECT_NAME}-${PROJECT_VERSION}")
 
 add_subdirectory (src)
+

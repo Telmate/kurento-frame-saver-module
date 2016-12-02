@@ -3,19 +3,21 @@
  * File:        FrameSaverVideoFilterImpl.cpp
  *
  * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-11-30   JBendor     Updated
+ *              2. 2016-12-01   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
  * =================================================================================================
  */
 
+#include <gst/gst.h>
+#include "MediaPipeline.hpp"
+#include "MediaPipelineImpl.hpp"
 #include <FrameSaverVideoFilterImpl.hpp>
-#include <FrameSaverVideoFilterImplFactory.hpp>
 
 
-#define GST_DEFAULT_NAME    THE_CLASS_NAME
-#define GST_CAT_DEFAULT     kurento_frame_saver_video_filter_impl
+#define GST_DEFAULT_NAME    "KurentoFrameSaverFilterImpl"
+#define GST_CAT_DEFAULT     kurento_frame_saver_filter_impl
 GST_DEBUG_CATEGORY_STATIC   (GST_CAT_DEFAULT);
 
 
@@ -25,19 +27,10 @@ namespace kurento
 namespace module
 {
 
-namespace kms_frame_saver_video_filter
+namespace framesaver
 {
 
-static FrameSaverVideoFilterImpl *  First_Instance_Ptr = NULL;
-
-static std::string                  This_Class_Name(THE_CLASS_NAME);
-
-
-
-std::string FrameSaverVideoFilterImpl::getClassName()
-{
-    This_Class_Name.assign(THE_CLASS_NAME);    return This_Class_Name;
-}
+static FrameSaverVideoFilterImpl * First_Instance_Ptr = NULL;
 
 
 FrameSaverVideoFilterImpl * FrameSaverVideoFilterImpl::getFirstInstancePtr()
@@ -46,20 +39,19 @@ FrameSaverVideoFilterImpl * FrameSaverVideoFilterImpl::getFirstInstancePtr()
 }
 
 
-FrameSaverVideoFilterImpl::~FrameSaverVideoFilterImpl()
-{
-    releaseResources(true);
-}
-
-
 FrameSaverVideoFilterImpl::FrameSaverVideoFilterImpl (const boost::property_tree::ptree & ref_config, 
-                                                      std::shared_ptr<MediaPipeline>      ptr_parent)
-                          : 
-                          FilterImpl ( ref_config, std::dynamic_pointer_cast<MediaPipelineImpl>(ptr_parent) )
+                                                      std::shared_ptr<MediaPipeline>      ptr_Pipeline)
+                         : FilterImpl (ref_config, std::dynamic_pointer_cast<MediaPipelineImpl> (ptr_Pipeline))
 {
     mGstreamElementPtr = NULL;
 
     initializeInstance(true);
+}
+
+
+FrameSaverVideoFilterImpl::~FrameSaverVideoFilterImpl()
+{
+    releaseResources(true);
 }
 
 
@@ -89,6 +81,8 @@ bool FrameSaverVideoFilterImpl::startPipelinePlaying()
             is_ok = false;
         }
     }
+
+    mLastErrorDetails.assign( is_ok ? "" : "ERROR" );
 
     return is_ok;
 }
@@ -121,13 +115,29 @@ bool FrameSaverVideoFilterImpl::stopPipelinePlaying()
         }
     }
 
+    mLastErrorDetails.assign( is_ok ? "" : "ERROR" );
+
     return is_ok;
 }
 
 
-bool FrameSaverVideoFilterImpl::getElementsNamesList(std::string aElementsNamesSeparatedByTabs)
+std::string FrameSaverVideoFilterImpl::getLastError()
 {
     std::unique_lock <std::recursive_mutex>  locker(mRecursiveMutex);
+
+    std::string  last_error( mLastErrorDetails.c_str() );
+
+    mLastErrorDetails.assign("");
+
+    return last_error;
+}
+
+
+std::string FrameSaverVideoFilterImpl::getElementsNamesList()
+{
+    std::unique_lock <std::recursive_mutex>  locker(mRecursiveMutex);
+
+    std::string  names_separated_by_tabs;
 
     bool is_ok = (mGstreamElementPtr != NULL);
 
@@ -141,8 +151,8 @@ bool FrameSaverVideoFilterImpl::getElementsNamesList(std::string aElementsNamesS
     {
         gchar * name_ptr = gst_element_get_name(pipeline_ptr);
 
-        aElementsNamesSeparatedByTabs.append(name_ptr ? name_ptr : "PipelineNameIsNull");
-        aElementsNamesSeparatedByTabs.append("\t");
+        names_separated_by_tabs.append(name_ptr ? name_ptr : "PipelineNameIsNull");
+        names_separated_by_tabs.append("\t");
 
         g_free(name_ptr);
 
@@ -152,8 +162,8 @@ bool FrameSaverVideoFilterImpl::getElementsNamesList(std::string aElementsNamesS
         {
             name_ptr = gst_element_get_name( g_value_get_object(&element_as_value) );
 
-            aElementsNamesSeparatedByTabs.append(name_ptr ? name_ptr : "ElementNameIsNull");
-            aElementsNamesSeparatedByTabs.append("\t");
+            names_separated_by_tabs.append(name_ptr ? name_ptr : "ElementNameIsNull");
+            names_separated_by_tabs.append("\t");
 
             g_free(name_ptr);
 
@@ -165,66 +175,80 @@ bool FrameSaverVideoFilterImpl::getElementsNamesList(std::string aElementsNamesS
         gst_iterator_free(iterate_ptr);
     }
 
-    return is_ok;
+    mLastErrorDetails.assign( is_ok ? "" : "ERROR" );
+
+    return names_separated_by_tabs;
 }
 
 
-bool FrameSaverVideoFilterImpl::getParamsList(std::string aCurrentParamsSeparatedByTabs)
+std::string FrameSaverVideoFilterImpl::getParamsList()
 {
     static const char * names[] = { "wait", "snap", "link", "pads", "path", "note", NULL };
 
-    std::string param_text;
+    std::string  params_separated_by_tabs;
 
     int index = -1;
 
     while ( names[++index] != NULL )
     {
-        if (getParam(std::string(names[index]), param_text) == true)
+        std::string param_text = getParam( std::string(names[index]) );
+
+        bool is_ok = mLastErrorDetails.empty();
+
+        if (! is_ok)
         {
-            aCurrentParamsSeparatedByTabs.append( names[index] ); 
-            aCurrentParamsSeparatedByTabs.append( "=" );
-            aCurrentParamsSeparatedByTabs.append( param_text.c_str() );
-            aCurrentParamsSeparatedByTabs.append( "\t" );
-            continue;
+            params_separated_by_tabs.assign("");
+            break;
         }
-        break;
+
+        params_separated_by_tabs.append( names[index] ); 
+        params_separated_by_tabs.append( "=" );
+
+        params_separated_by_tabs.append( param_text.c_str() );
+        params_separated_by_tabs.append( "\t" );
     }
 
-    return (names[index] ? false : true);
+    return params_separated_by_tabs;
 }
 
 
-bool FrameSaverVideoFilterImpl::getParam(const std::string aName, std::string aPresentValue)
+std::string FrameSaverVideoFilterImpl::getParam(const std::string & rParamName)
 {
-    gchar       * text_ptr = NULL;
+    std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
+
+    gchar * text_ptr = NULL;
 
     bool is_ok = (mGstreamElementPtr != NULL);
 
     if (is_ok)
     {
-        g_object_get( G_OBJECT(mGstreamElementPtr), aName.c_str(), & text_ptr, NULL );
+        g_object_get( G_OBJECT(mGstreamElementPtr), rParamName.c_str(), & text_ptr, NULL );
 
         is_ok = (text_ptr != NULL);
     }
 
-    aPresentValue.assign(is_ok ? text_ptr : "");
+    std::string param_value(is_ok ? text_ptr : "");
 
-    return is_ok;
+    mLastErrorDetails.assign(is_ok ? "" : "ERROR");
+
+    return param_value;
 }
 
 
-bool FrameSaverVideoFilterImpl::setParam(const std::string aName, const std::string aNewVal)
+bool FrameSaverVideoFilterImpl::setParam(const std::string & rParamName, const std::string & rNewValue)
 {
     std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
 
-    std::string param_text;
+    std::string param_text = getParam(rParamName);
 
-    bool is_ok = getParam(aName, param_text);
+    bool is_ok = mLastErrorDetails.empty();
 
     if (is_ok)
     {
-        g_object_set( G_OBJECT(mGstreamElementPtr), aName.c_str(), aNewVal.c_str(), NULL );
+        g_object_set( G_OBJECT(mGstreamElementPtr), rParamName.c_str(), rNewValue.c_str(), NULL );
     }
+
+    mLastErrorDetails.assign( is_ok ? "" : "ERROR" );
 
     return is_ok;
 }
@@ -243,6 +267,8 @@ void FrameSaverVideoFilterImpl::postConstructor()
 bool FrameSaverVideoFilterImpl::initializeInstance(bool isNewInstance)
 {
     std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
+
+    mLastErrorDetails.assign("");
 
     g_object_get (G_OBJECT (element), "filter", & mGstreamElementPtr, NULL);
 
@@ -277,6 +303,15 @@ bool FrameSaverVideoFilterImpl::releaseResources(bool isDelete)
 }
 
 
+// factory method is defined AFTER all virtual public functions have a body because the auto-generated class FrameSaverVideoFilter delares them Abstract
+MediaObjectImpl * FrameSaverVideoFilterImplFactory::createObject (const boost::property_tree::ptree & config, std::shared_ptr<MediaPipeline> parent) const
+{
+    MediaObjectImpl * object_ptr = (MediaObjectImpl *) new FrameSaverVideoFilterImpl (config, parent);
+
+    return object_ptr;
+}
+
+
 FrameSaverVideoFilterImpl::StaticConstructor FrameSaverVideoFilterImpl::Private_Static_Constructor;
 
 FrameSaverVideoFilterImpl::StaticConstructor::StaticConstructor()
@@ -284,13 +319,7 @@ FrameSaverVideoFilterImpl::StaticConstructor::StaticConstructor()
     GST_DEBUG_CATEGORY_INIT(GST_CAT_DEFAULT, GST_DEFAULT_NAME, 0, GST_DEFAULT_NAME);
 }
 
-
-MediaObjectImpl * FrameSaverVideoFilterImplFactory::createObject (const boost::property_tree::ptree & config, std::shared_ptr<MediaPipeline> parent) const
-{
-    return new FrameSaverVideoFilterImpl (config, parent);
-}
-
-} // ends namespace: fkms_frame_saver_video_filter
+} // ends namespace: framesaver
 
 } // ends namespace: module
 

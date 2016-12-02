@@ -1,0 +1,21 @@
+{
+    "name": "framesaver",
+
+    "version": "6.6.1-dev",
+
+    "kurentoVersion": "^6.1.0",
+
+    "code": 
+    {
+        "api": 
+        {
+            "js": 
+            {
+                "nodeName": "kurento-module-framesaver",
+                "npmDescription": "Frame Saver Filter",
+                "npmGit": "Kurento/kurento-module-framesaver-js"
+            }
+        }
+    }
+}
+

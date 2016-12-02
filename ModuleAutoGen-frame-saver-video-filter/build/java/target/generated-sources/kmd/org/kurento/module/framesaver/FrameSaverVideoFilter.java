@@ -2,13 +2,13 @@
  * This file is generated with Kurento-maven-plugin.
  * Please don't edit.
  */
-package org.kurento.module.kms_frame_saver_video_filter;
+package org.kurento.module.framesaver;
 
 import org.kurento.client.*;
 
 /**
  *
- * kms_frame_saver_video_filter interface. Documentation about the module
+ * This type of {@link module:core/abstracts.Filter Filter} --- saves frames as PNG files.
  *
  **/
 @org.kurento.client.internal.RemoteClass
@@ -19,9 +19,9 @@ public interface FrameSaverVideoFilter extends Filter {
 /**
  *
  * changes pipeline state to PLAYING
- *
+ * @return FALSE when Failed. *
  **/
-  void startPipelinePlaying();
+  boolean startPipelinePlaying();
 
 /**
  *
@@ -31,22 +31,22 @@ public interface FrameSaverVideoFilter extends Filter {
  * @see FrameSaverVideoFilter#startPipelinePlaying
  *
  **/
-    void startPipelinePlaying(Continuation<Void> cont);
+    void startPipelinePlaying(Continuation<Boolean> cont);
 
 /**
  *
  * changes pipeline state to PLAYING
- *
+ * @return FALSE when Failed. *
  **/
-    void startPipelinePlaying(Transaction tx);
+    TFuture<Boolean> startPipelinePlaying(Transaction tx);
 
 
 /**
  *
  * changes pipeline state from PLAYING to READY
- *
+ * @return FALSE when Failed. *
  **/
-  void stopPipelinePlaying();
+  boolean stopPipelinePlaying();
 
 /**
  *
@@ -56,25 +56,22 @@ public interface FrameSaverVideoFilter extends Filter {
  * @see FrameSaverVideoFilter#stopPipelinePlaying
  *
  **/
-    void stopPipelinePlaying(Continuation<Void> cont);
+    void stopPipelinePlaying(Continuation<Boolean> cont);
 
 /**
  *
  * changes pipeline state from PLAYING to READY
- *
+ * @return FALSE when Failed. *
  **/
-    void stopPipelinePlaying(Transaction tx);
+    TFuture<Boolean> stopPipelinePlaying(Transaction tx);
 
 
 /**
  *
  * gets a string of names of all elements separated by tabs.
- *
- * @param aElementsNamesSeparatedByTabs
- *       string of names of all elements separated by tabs.
- *
+ * @return names of all elements separated by tabs --- pipeline name is the first element *
  **/
-  void getElementsNamesList(@org.kurento.client.internal.server.Param("aElementsNamesSeparatedByTabs") String aElementsNamesSeparatedByTabs);
+  String getElementsNamesList();
 
 /**
  *
@@ -83,32 +80,48 @@ public interface FrameSaverVideoFilter extends Filter {
  * done. If an error occurs, {@link Continuation#onError} is called.
  * @see FrameSaverVideoFilter#getElementsNamesList
  *
- * @param aElementsNamesSeparatedByTabs
- *       string of names of all elements separated by tabs.
- *
  **/
-    void getElementsNamesList(@org.kurento.client.internal.server.Param("aElementsNamesSeparatedByTabs") String aElementsNamesSeparatedByTabs, Continuation<Void> cont);
+    void getElementsNamesList(Continuation<String> cont);
 
 /**
  *
  * gets a string of names of all elements separated by tabs.
+ * @return names of all elements separated by tabs --- pipeline name is the first element *
+ **/
+    TFuture<String> getElementsNamesList(Transaction tx);
+
+
+/**
  *
- * @param aElementsNamesSeparatedByTabs
- *       string of names of all elements separated by tabs.
+ * gets string of last error --- empty string when no error
+ * @return string of last error --- empty string when no error *
+ **/
+  String getLastError();
+
+/**
+ *
+ * Asynchronous version of getLastError:
+ * {@link Continuation#onSuccess} is called when the action is
+ * done. If an error occurs, {@link Continuation#onError} is called.
+ * @see FrameSaverVideoFilter#getLastError
  *
  **/
-    void getElementsNamesList(Transaction tx, @org.kurento.client.internal.server.Param("aElementsNamesSeparatedByTabs") String aElementsNamesSeparatedByTabs);
+    void getLastError(Continuation<String> cont);
+
+/**
+ *
+ * gets string of last error --- empty string when no error
+ * @return string of last error --- empty string when no error *
+ **/
+    TFuture<String> getLastError(Transaction tx);
 
 
 /**
  *
  * gets a string of all parameters separated by tabs.
- *
- * @param aCurrentParamsSeparatedByTabs
- *       string of all parameters separated by tabs.
- *
+ * @return all parameters separated by tabs --- each one is: name=value *
  **/
-  void getParamsList(@org.kurento.client.internal.server.Param("aCurrentParamsSeparatedByTabs") String aCurrentParamsSeparatedByTabs);
+  String getParamsList();
 
 /**
  *
@@ -117,21 +130,15 @@ public interface FrameSaverVideoFilter extends Filter {
  * done. If an error occurs, {@link Continuation#onError} is called.
  * @see FrameSaverVideoFilter#getParamsList
  *
- * @param aCurrentParamsSeparatedByTabs
- *       string of all parameters separated by tabs.
- *
  **/
-    void getParamsList(@org.kurento.client.internal.server.Param("aCurrentParamsSeparatedByTabs") String aCurrentParamsSeparatedByTabs, Continuation<Void> cont);
+    void getParamsList(Continuation<String> cont);
 
 /**
  *
  * gets a string of all parameters separated by tabs.
- *
- * @param aCurrentParamsSeparatedByTabs
- *       string of all parameters separated by tabs.
- *
+ * @return all parameters separated by tabs --- each one is: name=value *
  **/
-    void getParamsList(Transaction tx, @org.kurento.client.internal.server.Param("aCurrentParamsSeparatedByTabs") String aCurrentParamsSeparatedByTabs);
+    TFuture<String> getParamsList(Transaction tx);
 
 
 /**
@@ -140,11 +147,9 @@ public interface FrameSaverVideoFilter extends Filter {
  *
  * @param aParamName
  *       string with name of parameter.
- * @param aParamValue
- *       string for the current value of the parameter.
- *
+ * @return current value of named parameter --- empty if invalid name *
  **/
-  void getParam(@org.kurento.client.internal.server.Param("aParamName") String aParamName, @org.kurento.client.internal.server.Param("aParamValue") String aParamValue);
+  String getParam(@org.kurento.client.internal.server.Param("aParamName") String aParamName);
 
 /**
  *
@@ -155,11 +160,9 @@ public interface FrameSaverVideoFilter extends Filter {
  *
  * @param aParamName
  *       string with name of parameter.
- * @param aParamValue
- *       string for the current value of the parameter.
  *
  **/
-    void getParam(@org.kurento.client.internal.server.Param("aParamName") String aParamName, @org.kurento.client.internal.server.Param("aParamValue") String aParamValue, Continuation<Void> cont);
+    void getParam(@org.kurento.client.internal.server.Param("aParamName") String aParamName, Continuation<String> cont);
 
 /**
  *
@@ -167,11 +170,9 @@ public interface FrameSaverVideoFilter extends Filter {
  *
  * @param aParamName
  *       string with name of parameter.
- * @param aParamValue
- *       string for the current value of the parameter.
- *
+ * @return current value of named parameter --- empty if invalid name *
  **/
-    void getParam(Transaction tx, @org.kurento.client.internal.server.Param("aParamName") String aParamName, @org.kurento.client.internal.server.Param("aParamValue") String aParamValue);
+    TFuture<String> getParam(Transaction tx, @org.kurento.client.internal.server.Param("aParamName") String aParamName);
 
 
 /**
@@ -182,9 +183,9 @@ public interface FrameSaverVideoFilter extends Filter {
  *       string with name of parameter.
  * @param aNewParamValue
  *       string has the desired value of the parameter.
- *
+ * @return FALSE when Failed. *
  **/
-  void setParam(@org.kurento.client.internal.server.Param("aParamName") String aParamName, @org.kurento.client.internal.server.Param("aNewParamValue") String aNewParamValue);
+  boolean setParam(@org.kurento.client.internal.server.Param("aParamName") String aParamName, @org.kurento.client.internal.server.Param("aNewParamValue") String aNewParamValue);
 
 /**
  *
@@ -199,7 +200,7 @@ public interface FrameSaverVideoFilter extends Filter {
  *       string has the desired value of the parameter.
  *
  **/
-    void setParam(@org.kurento.client.internal.server.Param("aParamName") String aParamName, @org.kurento.client.internal.server.Param("aNewParamValue") String aNewParamValue, Continuation<Void> cont);
+    void setParam(@org.kurento.client.internal.server.Param("aParamName") String aParamName, @org.kurento.client.internal.server.Param("aNewParamValue") String aNewParamValue, Continuation<Boolean> cont);
 
 /**
  *
@@ -209,9 +210,9 @@ public interface FrameSaverVideoFilter extends Filter {
  *       string with name of parameter.
  * @param aNewParamValue
  *       string has the desired value of the parameter.
- *
+ * @return FALSE when Failed. *
  **/
-    void setParam(Transaction tx, @org.kurento.client.internal.server.Param("aParamName") String aParamName, @org.kurento.client.internal.server.Param("aNewParamValue") String aNewParamValue);
+    TFuture<Boolean> setParam(Transaction tx, @org.kurento.client.internal.server.Param("aParamName") String aParamName, @org.kurento.client.internal.server.Param("aNewParamValue") String aNewParamValue);
 
     
 

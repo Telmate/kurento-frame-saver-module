@@ -1,0 +1,146 @@
+{
+  "name": "framesaver",
+  "version": "6.6.1-dev",
+  "kurentoVersion": "^6.1.0",
+  "imports": [
+    {
+      "name": "core",
+      "version": "^6.1.0",
+      "mavenVersion": "[6.1.0,7.0.0-SNAPSHOT)",
+      "npmVersion": ">=6.1.0 <7.0.0"
+    },
+    {
+      "name": "elements",
+      "version": "^6.1.0",
+      "mavenVersion": "[6.1.0,7.0.0-SNAPSHOT)",
+      "npmVersion": ">=6.1.0 <7.0.0"
+    },
+    {
+      "name": "filters",
+      "version": "^6.1.0",
+      "mavenVersion": "[6.1.0,7.0.0-SNAPSHOT)",
+      "npmVersion": ">=6.1.0 <7.0.0"
+    }
+  ],
+  "code": {
+    "api": {
+      "js": {
+        "nodeName": "kurento-module-framesaver",
+        "npmDescription": "Frame Saver Filter",
+        "npmGit": "Kurento/kurento-module-framesaver-js",
+        "npmVersion": "Kurento/kurento-module-framesaver-js"
+      },
+      "java": {
+        "mavenGroupId": "org.kurento.module",
+        "mavenArtifactId": "framesaver",
+        "mavenVersion": "6.6.1-SNAPSHOT",
+        "packageName": "org.kurento.module.framesaver"
+      }
+    },
+    "implementation": {
+      "cppNamespace": "kurento::module::framesaver",
+      "lib": "libkmsframesaver"
+    }
+  },
+  "remoteClasses": [
+    {
+      "name": "FrameSaverVideoFilter",
+      "doc": "This type of :rom:cls:`Filter` --- saves frames as PNG files.",
+      "extends": "Filter",
+      "constructor": {
+        "params": [
+          {
+            "name": "mediaPipelineParent",
+            "doc": "the :rom:cls:`MediaPipeline` parent of this element",
+            "type": "MediaPipeline"
+          }
+        ],
+        "doc": "Builder for the :rom:cls:`FrameSaverVideoFilter`."
+      },
+      "methods": [
+        {
+          "params": [],
+          "return": {
+            "type": "boolean",
+            "doc": "FALSE when Failed."
+          },
+          "name": "startPipelinePlaying",
+          "doc": "changes pipeline state to PLAYING"
+        },
+        {
+          "params": [],
+          "return": {
+            "type": "boolean",
+            "doc": "FALSE when Failed."
+          },
+          "name": "stopPipelinePlaying",
+          "doc": "changes pipeline state from PLAYING to READY"
+        },
+        {
+          "params": [],
+          "return": {
+            "type": "String",
+            "doc": "names of all elements separated by tabs --- pipeline name is the first element"
+          },
+          "name": "getElementsNamesList",
+          "doc": "gets a string of names of all elements separated by tabs."
+        },
+        {
+          "params": [],
+          "return": {
+            "type": "String",
+            "doc": "string of last error --- empty string when no error"
+          },
+          "name": "getLastError",
+          "doc": "gets string of last error --- empty string when no error"
+        },
+        {
+          "params": [],
+          "return": {
+            "type": "String",
+            "doc": "all parameters separated by tabs --- each one is: name=value"
+          },
+          "name": "getParamsList",
+          "doc": "gets a string of all parameters separated by tabs."
+        },
+        {
+          "params": [
+            {
+              "name": "aParamName",
+              "doc": "string with name of parameter.",
+              "type": "String"
+            }
+          ],
+          "return": {
+            "type": "String",
+            "doc": "current value of named parameter --- empty if invalid name"
+          },
+          "name": "getParam",
+          "doc": "gets the current string value of one parameter."
+        },
+        {
+          "params": [
+            {
+              "name": "aParamName",
+              "doc": "string with name of parameter.",
+              "type": "String"
+            },
+            {
+              "name": "aNewParamValue",
+              "doc": "string has the desired value of the parameter.",
+              "type": "String"
+            }
+          ],
+          "return": {
+            "type": "boolean",
+            "doc": "FALSE when Failed."
+          },
+          "name": "setParam",
+          "doc": "sets the current string value of one parameter."
+        }
+      ]
+    }
+  ],
+  "complexTypes": [],
+  "events": []
+}

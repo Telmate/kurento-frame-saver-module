@@ -4,9 +4,9 @@
  */
 package org.kurento.module;
 
-public class Kms_frame_saver_video_filterModuleInfo {
+public class FramesaverModuleInfo {
 	public static String getPackageName () {
 
-		return "org.kurento.module.kms_frame_saver_video_filter";
+		return "org.kurento.module.framesaver";
 	}
 }

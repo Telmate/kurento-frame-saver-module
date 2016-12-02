@@ -1,5 +1,5 @@
-#ifndef __KMS_FRAME_SAVER_VIDEO_FILTER_CONFIG_H__
-#define __KMS_FRAME_SAVER_VIDEO_FILTER_CONFIG_H__
+#ifndef __KMS_ELEMENTS_CONFIG_H__
+#define __KMS_ELEMENTS_CONFIG_H__
 
 /* Version */
 #cmakedefine VERSION "@VERSION@"
@@ -10,7 +10,17 @@
 /* The gettext domain name */
 #cmakedefine GETTEXT_PACKAGE "@GETTEXT_PACKAGE@"
 
+/* Shared files install */
+#cmakedefine DATAROOTDIR "@DATAROOTDIR@"
+
+/* Tests will generate files for manual check if this macro is defined */
+#cmakedefine MANUAL_CHECK___________________NO
+
+/* Binary files directory */
+#cmakedefine BINARY_LOCATION "@BINARY_LOCATION@"
+
 /* Library installation directory */
 #cmakedefine KURENTO_MODULES_SO_DIR "@KURENTO_MODULES_SO_DIR@"
 
-#endif /* __KMS_FRAME_SAVER_VIDEO_FILTER_CONFIG_H__ */
+#endif /* __KMS_ELEMENTS_CONFIG_H__ */
+

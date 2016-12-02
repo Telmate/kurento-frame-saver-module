@@ -8,18 +8,19 @@ namespace kurento
 {
 namespace module
 {
-namespace kms_frame_saver_video_filter
+namespace framesaver
 {
 
-void dummyKms_frame_saver_video_filter ()
+void dummyFramesaver ()
 {
   {
     JsonSerializer s (true);
-    std::shared_ptr<FrameSaverVideoFilterImpl> object( FrameSaverVideoFilterImpl::getFirstInstancePtr() );   //? TODO-FIXED-JB
+    std::shared_ptr<FrameSaverVideoFilter> object;
+
     s.SerializeNVP (object);
   }
 }
 
-} /* kms_frame_saver_video_filter */
+} /* framesaver */
 } /* module */
 } /* kurento */
