@@ -1,0 +1,249 @@
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ ls -al
+total 8
+drwxr-xr-x 2 jonny jonny 4096 Dec  2 16:43 .
+drwxr-xr-x 6 jonny jonny 4096 Dec  2 16:28 ..
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ ls -al ..
+total 36
+drwxr-xr-x 6 jonny jonny 4096 Dec  2 16:28 .
+drwxr-xr-x 9 jonny jonny 4096 Dec  2 16:43 ..
+drwxr-xr-x 2 jonny jonny 4096 Dec  2 16:43 build
+-rw-r--r-- 1 jonny jonny 2277 Dec  2 16:23 CMakeLists.txt
+-rw-r--r-- 1 jonny jonny  426 Dec  2 16:23 config.h.cmake
+drwxr-xr-x 3 jonny jonny 4096 Dec  2 16:23 debian
+drwxr-xr-x 8 jonny jonny 4096 Dec  2 16:23 .git
+-rw-r--r-- 1 jonny jonny   39 Dec  2 16:23 .gitignore
+drwxr-xr-x 4 jonny jonny 4096 Dec  2 16:24 src
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ cmake .. -DCMAKE_INSTALL_PREFIX=/usr && make && sudo make install
+-- The C compiler identification is GNU 4.8.4
+-- The CXX compiler identification is GNU 4.8.4
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+If KurentoHelpers is not found, then it is necessary to install
+          kms-cmake-utils package from the kurento repository
+-- Found KurentoHelpers: 1.3.2 (found version "1.3.2") 
+-- Found Git: /usr/bin/git (found version "1.9.1") 
+If CodeGenerator is not found, then it is necessary to install
+          kms-core package from the kurento repository
+-- Found PkgConfig: /usr/bin/pkg-config (found version "0.26") 
+-- Found /usr/bin/kurento-module-creator
+-- Found /usr/bin/kurento-module-creator
+-- Found KurentoModuleCreator: 4.0.7 (found version "4.0.7") 
+-- Resolving KurentoModuleCreator version ^4.0.0 with 4.0.7
+-- Version got from git is 0.0.1~0.g0e18690
+-- checking for module 'gstreamer-1.5>=1.5.0'
+--   found gstreamer-1.5, version 1.8.1.1
+-- checking for module 'gstreamer-base-1.5>=1.5.0'
+--   found gstreamer-base-1.5, version 1.8.1.1
+-- checking for module 'gstreamer-video-1.5>=1.5.0'
+--   found gstreamer-video-1.5, version 1.8.1.1
+-- checking for module 'gstreamer-check-1.5>=1.5.0'
+--   found gstreamer-check-1.5, version 1.8.1.1
+-- checking for module 'kmscore'
+--   found kmscore, version 6.6.1
+-- checking for module 'opencv>=2.0.0'
+--   found opencv, version 2.4.8
+-- Compiling : frame-saver-video-filter-0.0.1~0.g0e18690
+-- KurentoModuleCreator Already found
+-- Including generated cmake framesavervideofilterDependencies.cmake
+-- KMSCORE Already found
+-- Looking for KMSELEMENTS: 6.6.1
+-- KMSCORE Already found
+-- Looking for KMSELEMENTS: 6.6.1
+-- KMSCORE Already found
+-- Found KMSELEMENTS: 6.6.1 (found version "6.6.1") 
+-- Resolving KMSELEMENTS version ^6.0.0 with 6.6.1
+-- Looking for KMSFILTERS: 6.6.1
+-- KMSCORE Already found
+-- KMSELEMENTS Already found
+-- checking for module 'opencv'
+--   found opencv, version 2.4.8
+-- Found opencv
+-- Looking for KMSFILTERS: 6.6.1
+-- KMSCORE Already found
+-- KMSELEMENTS Already found
+-- opencv Already found
+-- Found KMSFILTERS: 6.6.1 (found version "6.6.1") 
+-- Resolving KMSFILTERS version ^6.0.0 with 6.6.1
+-- Generated: kmsframesavervideofilter.pc.in
+-- Generated: FrameSaverVideoFilterImpl.cpp
+-- Generated: FrameSaverVideoFilterImpl.hpp
+-- Generated: FindKMSFRAMESAVERVIDEOFILTER.cmake.in
+-- Getting config files from /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/src/server/config
+-- No config files found
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build
+[  4%] Generating cpp_interface.generated, interface/generated-cpp/FrameSaverVideoFilter.cpp, interface/generated-cpp/FrameSaverVideoFilter.hpp
+Generation success
+[  9%] Generating cpp_interface_internal.generated, interface/generated-cpp/FrameSaverVideoFilterInternal.cpp, interface/generated-cpp/FrameSaverVideoFilterInternal.hpp
+Generation success
+Scanning dependencies of target kmsframesavervideofilterinterface
+[ 14%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterinterface.dir/interface/generated-cpp/FrameSaverVideoFilterInternal.cpp.o
+[ 19%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterinterface.dir/interface/generated-cpp/FrameSaverVideoFilter.cpp.o
+Linking CXX static library libkmsframesavervideofilterinterface.a
+[ 19%] Built target kmsframesavervideofilterinterface
+[ 23%] Generating cpp_server_internal.generated, implementation/generated-cpp/SerializerExpanderFramesavervideofilter.cpp, implementation/generated-cpp/FrameSaverVideoFilterImplInternal.cpp, implementation/generated-cpp/FrameSaverVideoFilterImplFactory.hpp
+Generation success
+Scanning dependencies of target kmsframesavervideofilterimpl
+[ 28%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterimpl.dir/implementation/objects/FrameSaverVideoFilterImpl.cpp.o
+[ 33%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterimpl.dir/implementation/generated-cpp/SerializerExpanderFramesavervideofilter.cpp.o
+[ 38%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterimpl.dir/implementation/generated-cpp/FrameSaverVideoFilterImplInternal.cpp.o
+Linking CXX shared library libkmsframesavervideofilterimpl.so
+[ 38%] Built target kmsframesavervideofilterimpl
+[ 42%] Generating framesavervideofilter.kmd.json
+Generation success
+[ 47%] Generating cpp_module.generated, implementation/generated-cpp/Module.cpp
+Generation success
+Scanning dependencies of target kmsframesavervideofiltermodule
+[ 52%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/implementation/generated-cpp/Module.cpp.o
+[ 57%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/module_version.cpp.o
+[ 61%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/module_name.cpp.o
+[ 66%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/module_descriptor.cpp.o
+[ 71%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/module_generation_time.cpp.o
+Linking CXX shared module libkmsframesavervideofiltermodule.so
+[ 71%] Built target kmsframesavervideofiltermodule
+Scanning dependencies of target kms_frame_saver_video_filter
+[ 76%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/gst_Frame_Saver_Video_Filter_Plugin.c.o
+[ 80%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/frame_saver_filter.c.o
+[ 85%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/frame_saver_filter_lib.c.o
+[ 90%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/frame_saver_params.c.o
+[ 95%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/save_frames_as_png.c.o
+[100%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/wrapped_natives.c.o
+Linking C shared module libkms_frame_saver_video_filter.so
+[100%] Built target kms_frame_saver_video_filter
+[sudo] password for jonny: 
+[ 19%] Built target kmsframesavervideofilterinterface
+[ 38%] Built target kmsframesavervideofilterimpl
+[ 71%] Built target kmsframesavervideofiltermodule
+[100%] Built target kms_frame_saver_video_filter
+Install the project...
+-- Install configuration: ""
+-- Installing: /usr/lib/x86_64-linux-gnu/libkmsframesavervideofilterinterface.a
+-- Installing: /usr/include/kurento/modules/framesavervideofilter/FrameSaverVideoFilter.hpp
+-- Installing: /usr/lib/x86_64-linux-gnu/pkgconfig/kmsframesavervideofilter.pc
+-- Installing: /usr/lib/x86_64-linux-gnu/libkmsframesavervideofilterimpl.so.0.0.1~0.g0e18690
+-- Installing: /usr/lib/x86_64-linux-gnu/libkmsframesavervideofilterimpl.so.0
+-- Installing: /usr/lib/x86_64-linux-gnu/libkmsframesavervideofilterimpl.so
+-- Installing: /usr/include/kurento/modules/framesavervideofilter/FrameSaverVideoFilterImpl.hpp
+-- Installing: /usr/include/kurento/modules/framesavervideofilter/FrameSaverVideoFilterImplFactory.hpp
+-- Installing: /usr/lib/x86_64-linux-gnu/kurento/modules/libkmsframesavervideofiltermodule.so
+-- Removed runtime path from "/usr/lib/x86_64-linux-gnu/kurento/modules/libkmsframesavervideofiltermodule.so"
+-- Installing: /usr/share/cmake-2.8/Modules/FindKMSFRAMESAVERVIDEOFILTER.cmake
+-- Installing: /usr/share/kurento/modules/framesavervideofilter.kmd.json
+-- Installing: /usr/lib/x86_64-linux-gnu/gstreamer-1.5/libkms_frame_saver_video_filter.so
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ cmake .. -DGENERATE_JAVA_CLIENT_PROJECT=TRUE
+If KurentoHelpers is not found, then it is necessary to install
+          kms-cmake-utils package from the kurento repository
+If CodeGenerator is not found, then it is necessary to install
+          kms-core package from the kurento repository
+-- KurentoModuleCreator Already found
+-- Version got from git is 0.0.1~0.g0e18690
+-- Compiling : frame-saver-video-filter-0.0.1~0.g0e18690
+-- KurentoModuleCreator Already found
+-- Including generated cmake framesavervideofilterDependencies.cmake
+-- KMSCORE Already found
+-- KMSELEMENTS Already found
+-- KMSFILTERS Already found
+-- Generated: kmsframesavervideofilter.pc.in
+-- Generated: FrameSaverVideoFilterImpl.cpp
+-- Generated: FrameSaverVideoFilterImpl.hpp
+-- Generated: FindKMSFRAMESAVERVIDEOFILTER.cmake.in
+-- Getting config files from /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/src/server/config
+-- No config files found
+-- Found Maven: /usr/bin/mvn  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ make java_install
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building framesavervideofilter 0.0.1-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- kurento-maven-plugin:2.0.2:generate-kurento-client (default) @ framesavervideofilter ---
+[INFO] Searching for kmd files in /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/src/main/kmd
+[INFO]   Found kmd file to generate code: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/src/main/kmd/framesavervideofilter.kmd.json
+[INFO] Searching for kurento dependencies:
+[INFO]   Found kurento dependency in artifact: org.kurento:kms-api-core:6.6.0
+[INFO]   Found kurento dependency in artifact: org.kurento:kms-api-elements:6.6.0
+[INFO]   Found kurento dependency in artifact: org.kurento:kms-api-filters:6.6.0
+[INFO]   Found kurento dependency in artifact: org.kurento.module:framesavervideofilter:0.0.1-SNAPSHOT
+[INFO] Preparing code generation tool:
+[INFO]   Adding kmd file to generate code: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/src/main/kmd/framesavervideofilter.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/core.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/framesavervideofilter.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/elements.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/filters.kmd.json
+[INFO] Searching for kurento dependencies:
+[INFO] Templates path: /templates
+[INFO] Generation success
+[INFO] 
+[INFO] --- maven-resources-plugin:2.3:resources (default-resources) @ framesavervideofilter ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/src/main/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:2.0.2:compile (default-compile) @ framesavervideofilter ---
+[INFO] Compiling 2 source files to /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/target/classes
+[INFO] 
+[INFO] --- maven-resources-plugin:2.3:testResources (default-testResources) @ framesavervideofilter ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/src/test/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:2.0.2:testCompile (default-testCompile) @ framesavervideofilter ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.10:test (default-test) @ framesavervideofilter ---
+[INFO] No tests to run.
+[INFO] Surefire report directory: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/target/surefire-reports
+
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+
+Results :
+
+Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+
+[INFO] 
+[INFO] --- maven-jar-plugin:2.2:jar (default-jar) @ framesavervideofilter ---
+[INFO] Building jar: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/target/framesavervideofilter-0.0.1-SNAPSHOT.jar
+[INFO] 
+[INFO] --- maven-install-plugin:2.3:install (default-install) @ framesavervideofilter ---
+[INFO] Installing /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/target/framesavervideofilter-0.0.1-SNAPSHOT.jar to /home/jonny/.m2/repository/org/kurento/module/framesavervideofilter/0.0.1-SNAPSHOT/framesavervideofilter-0.0.1-SNAPSHOT.jar
+[INFO] Installing /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build/java/pom.xml to /home/jonny/.m2/repository/org/kurento/module/framesavervideofilter/0.0.1-SNAPSHOT/framesavervideofilter-0.0.1-SNAPSHOT.pom
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 3.014s
+[INFO] Finished at: Fri Dec 02 16:57:00 PST 2016
+[INFO] Final Memory: 33M/546M
+[INFO] ------------------------------------------------------------------------
+Built target java_install
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/frame-saver-video-filter/build $ 
+
