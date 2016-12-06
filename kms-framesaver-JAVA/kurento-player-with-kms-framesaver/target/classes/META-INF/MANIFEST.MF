@@ -1,0 +1,24 @@
+Manifest-Version: 1.0
+Implementation-Title: Kurento Java Tutorial - Player
+Implementation-Version: 6.6.0
+Build-Timestamp: 
+Java-Version: 1.8.0_112
+Built-By: jonny
+Scm-Connection: scm:git:https://github.com/Kurento/kurento-tutorial-ja
+ va/kurento-player
+Specification-Vendor: Kurento
+Os-Arch: amd64
+Specification-Title: Kurento Java Tutorial - Player
+Implementation-Vendor-Id: org.kurento.tutorial
+Java-Vendor: Oracle Corporation
+Os-Name: Linux
+Scm-Url: https://github.com/Kurento/kurento-tutorial-java/kurento-play
+ er
+Implementation-Vendor: Kurento
+Os-Version: 3.19.0-32-generic
+Scm-Revision: 
+Build-Jdk: 1.8.0_112
+Specification-Version: 6.6.0
+Created-By: Maven Integration for Eclipse
+Implementation-URL: http://www.kurento.org/docs/6.6.0/kurento-player
+
