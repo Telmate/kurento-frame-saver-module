@@ -1,0 +1,413 @@
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ cmake .. -DCMAKE_INSTALL_PREFIX=/usr && make && sudo make install
+-- The C compiler identification is GNU 4.8.4
+-- The CXX compiler identification is GNU 4.8.4
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+If KurentoHelpers is not found, then it is necessary to install
+          kms-cmake-utils package from the kurento repository
+-- Found KurentoHelpers: 1.3.2 (found version "1.3.2") 
+-- Found Git: /usr/bin/git (found version "1.9.1") 
+If CodeGenerator is not found, then it is necessary to install
+          kms-core package from the kurento repository
+-- Found PkgConfig: /usr/bin/pkg-config (found version "0.26") 
+-- Found /usr/bin/kurento-module-creator
+-- Found /usr/bin/kurento-module-creator
+-- Found KurentoModuleCreator: 4.0.7 (found version "4.0.7") 
+-- Resolving KurentoModuleCreator version ^4.0.0 with 4.0.7
+-- Version got from git is 0.0.1~0.g69409c5
+-- checking for module 'gstreamer-1.5>=1.5.0'
+--   found gstreamer-1.5, version 1.8.1.1
+-- checking for module 'gstreamer-base-1.5>=1.5.0'
+--   found gstreamer-base-1.5, version 1.8.1.1
+-- checking for module 'gstreamer-video-1.5>=1.5.0'
+--   found gstreamer-video-1.5, version 1.8.1.1
+-- checking for module 'gstreamer-check-1.5>=1.5.0'
+--   found gstreamer-check-1.5, version 1.8.1.1
+-- checking for module 'kmscore'
+--   found kmscore, version 6.6.1
+-- checking for module 'opencv>=2.0.0'
+--   found opencv, version 2.4.8
+-- Compiling : kms-framesaver-0.0.1~0.g69409c5
+-- KurentoModuleCreator Already found
+-- Including generated cmake framesavervideofilterDependencies.cmake
+-- KMSCORE Already found
+-- Looking for KMSELEMENTS: 6.6.1
+-- KMSCORE Already found
+-- Looking for KMSELEMENTS: 6.6.1
+-- KMSCORE Already found
+-- Found KMSELEMENTS: 6.6.1 (found version "6.6.1") 
+-- Resolving KMSELEMENTS version ^6.0.0 with 6.6.1
+-- Looking for KMSFILTERS: 6.6.1
+-- KMSCORE Already found
+-- KMSELEMENTS Already found
+-- checking for module 'opencv'
+--   found opencv, version 2.4.8
+-- Found opencv
+-- Looking for KMSFILTERS: 6.6.1
+-- KMSCORE Already found
+-- KMSELEMENTS Already found
+-- opencv Already found
+-- Found KMSFILTERS: 6.6.1 (found version "6.6.1") 
+-- Resolving KMSFILTERS version ^6.0.0 with 6.6.1
+-- Generated: kmsframesavervideofilter.pc.in
+-- Generated: FrameSaverVideoFilterImpl.cpp
+-- Generated: FrameSaverVideoFilterImpl.hpp
+-- Generated: FindKMSFRAMESAVERVIDEOFILTER.cmake.in
+-- Getting config files from /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/src/server/config
+-- No config files found
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build
+[  4%] Generating cpp_interface.generated, interface/generated-cpp/FrameSaverVideoFilter.cpp, interface/generated-cpp/FrameSaverVideoFilter.hpp
+Generation success
+[  9%] Generating cpp_interface_internal.generated, interface/generated-cpp/FrameSaverVideoFilterInternal.cpp, interface/generated-cpp/FrameSaverVideoFilterInternal.hpp
+Generation success
+Scanning dependencies of target kmsframesavervideofilterinterface
+[ 14%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterinterface.dir/interface/generated-cpp/FrameSaverVideoFilterInternal.cpp.o
+[ 19%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterinterface.dir/interface/generated-cpp/FrameSaverVideoFilter.cpp.o
+Linking CXX static library libkmsframesavervideofilterinterface.a
+[ 19%] Built target kmsframesavervideofilterinterface
+[ 23%] Generating cpp_server_internal.generated, implementation/generated-cpp/SerializerExpanderFramesavervideofilter.cpp, implementation/generated-cpp/FrameSaverVideoFilterImplInternal.cpp, implementation/generated-cpp/FrameSaverVideoFilterImplFactory.hpp
+Generation success
+Scanning dependencies of target kmsframesavervideofilterimpl
+[ 28%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterimpl.dir/implementation/objects/FrameSaverVideoFilterImpl.cpp.o
+[ 33%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterimpl.dir/implementation/generated-cpp/SerializerExpanderFramesavervideofilter.cpp.o
+[ 38%] Building CXX object src/server/CMakeFiles/kmsframesavervideofilterimpl.dir/implementation/generated-cpp/FrameSaverVideoFilterImplInternal.cpp.o
+Linking CXX shared library libkmsframesavervideofilterimpl.so
+[ 38%] Built target kmsframesavervideofilterimpl
+[ 42%] Generating framesavervideofilter.kmd.json
+Generation success
+[ 47%] Generating cpp_module.generated, implementation/generated-cpp/Module.cpp
+Generation success
+Scanning dependencies of target kmsframesavervideofiltermodule
+[ 52%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/implementation/generated-cpp/Module.cpp.o
+[ 57%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/module_version.cpp.o
+[ 61%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/module_name.cpp.o
+[ 66%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/module_descriptor.cpp.o
+[ 71%] Building CXX object src/server/CMakeFiles/kmsframesavervideofiltermodule.dir/module_generation_time.cpp.o
+Linking CXX shared module libkmsframesavervideofiltermodule.so
+[ 71%] Built target kmsframesavervideofiltermodule
+Scanning dependencies of target kms_frame_saver_video_filter
+[ 76%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/gst_Frame_Saver_Video_Filter_Plugin.c.o
+[ 80%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/frame_saver_filter.c.o
+[ 85%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/frame_saver_filter_lib.c.o
+[ 90%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/frame_saver_params.c.o
+[ 95%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/save_frames_as_png.c.o
+[100%] Building C object src/gst-plugins/CMakeFiles/kms_frame_saver_video_filter.dir/frame_saver/wrapped_natives.c.o
+Linking C shared module libkms_frame_saver_video_filter.so
+[100%] Built target kms_frame_saver_video_filter
+[sudo] password for jonny: 
+[ 19%] Built target kmsframesavervideofilterinterface
+[ 38%] Built target kmsframesavervideofilterimpl
+[ 71%] Built target kmsframesavervideofiltermodule
+[100%] Built target kms_frame_saver_video_filter
+Install the project...
+-- Install configuration: ""
+-- Installing: /usr/lib/x86_64-linux-gnu/libkmsframesavervideofilterinterface.a
+-- Installing: /usr/include/kurento/modules/framesavervideofilter/FrameSaverVideoFilter.hpp
+-- Installing: /usr/lib/x86_64-linux-gnu/pkgconfig/kmsframesavervideofilter.pc
+-- Installing: /usr/lib/x86_64-linux-gnu/libkmsframesavervideofilterimpl.so.0.0.1~0.g69409c5
+-- Installing: /usr/lib/x86_64-linux-gnu/libkmsframesavervideofilterimpl.so.0
+-- Installing: /usr/lib/x86_64-linux-gnu/libkmsframesavervideofilterimpl.so
+-- Installing: /usr/include/kurento/modules/framesavervideofilter/FrameSaverVideoFilterImpl.hpp
+-- Installing: /usr/include/kurento/modules/framesavervideofilter/FrameSaverVideoFilterImplFactory.hpp
+-- Installing: /usr/lib/x86_64-linux-gnu/kurento/modules/libkmsframesavervideofiltermodule.so
+-- Removed runtime path from "/usr/lib/x86_64-linux-gnu/kurento/modules/libkmsframesavervideofiltermodule.so"
+-- Installing: /usr/share/cmake-2.8/Modules/FindKMSFRAMESAVERVIDEOFILTER.cmake
+-- Installing: /usr/share/kurento/modules/framesavervideofilter.kmd.json
+-- Installing: /usr/lib/x86_64-linux-gnu/gstreamer-1.5/libkms_frame_saver_video_filter.so
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ cmake .. -DGENERATE_JAVA_CLIENT_PROJECT=TRUE
+If KurentoHelpers is not found, then it is necessary to install
+          kms-cmake-utils package from the kurento repository
+If CodeGenerator is not found, then it is necessary to install
+          kms-core package from the kurento repository
+-- KurentoModuleCreator Already found
+-- Version got from git is 0.0.1~0.g69409c5
+-- Compiling : kms-framesaver-0.0.1~0.g69409c5
+-- KurentoModuleCreator Already found
+-- Including generated cmake framesavervideofilterDependencies.cmake
+-- KMSCORE Already found
+-- KMSELEMENTS Already found
+-- KMSFILTERS Already found
+-- Generated: kmsframesavervideofilter.pc.in
+-- Generated: FrameSaverVideoFilterImpl.cpp
+-- Generated: FrameSaverVideoFilterImpl.hpp
+-- Generated: FindKMSFRAMESAVERVIDEOFILTER.cmake.in
+-- Getting config files from /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/src/server/config
+-- No config files found
+-- Found Maven: /usr/bin/mvn  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ make java_install
+Scanning dependencies of target java_install
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building framesavervideofilter 0.0.1-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- kurento-maven-plugin:2.0.2:generate-kurento-client (default) @ framesavervideofilter ---
+[INFO] Searching for kmd files in /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/src/main/kmd
+[INFO]   Found kmd file to generate code: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/src/main/kmd/framesavervideofilter.kmd.json
+[INFO] Searching for kurento dependencies:
+[INFO]   Found kurento dependency in artifact: org.kurento:kms-api-core:6.6.0
+[INFO]   Found kurento dependency in artifact: org.kurento:kms-api-elements:6.6.0
+[INFO]   Found kurento dependency in artifact: org.kurento:kms-api-filters:6.6.0
+[INFO] Preparing code generation tool:
+[INFO]   Adding kmd file to generate code: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/src/main/kmd/framesavervideofilter.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/core.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/elements.kmd.json
+[INFO]   Adding dependency kmd file: /META-INF/kurento/filters.kmd.json
+[INFO] Searching for kurento dependencies:
+[INFO] Templates path: /templates
+[INFO] Generation success
+[INFO] 
+[INFO] --- maven-resources-plugin:2.3:resources (default-resources) @ framesavervideofilter ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/src/main/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:2.0.2:compile (default-compile) @ framesavervideofilter ---
+[INFO] Compiling 2 source files to /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/target/classes
+[INFO] 
+[INFO] --- maven-resources-plugin:2.3:testResources (default-testResources) @ framesavervideofilter ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/src/test/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:2.0.2:testCompile (default-testCompile) @ framesavervideofilter ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.10:test (default-test) @ framesavervideofilter ---
+[INFO] No tests to run.
+[INFO] Surefire report directory: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/target/surefire-reports
+
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+
+Results :
+
+Tests run: 0, Failures: 0, Errors: 0, Skipped: 0
+
+[INFO] 
+[INFO] --- maven-jar-plugin:2.2:jar (default-jar) @ framesavervideofilter ---
+[INFO] Building jar: /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/target/framesavervideofilter-0.0.1-SNAPSHOT.jar
+[INFO] 
+[INFO] --- maven-install-plugin:2.3:install (default-install) @ framesavervideofilter ---
+[INFO] Installing /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/target/framesavervideofilter-0.0.1-SNAPSHOT.jar to /home/jonny/.m2/repository/org/kurento/module/framesavervideofilter/0.0.1-SNAPSHOT/framesavervideofilter-0.0.1-SNAPSHOT.jar
+[INFO] Installing /home/jonny/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build/java/pom.xml to /home/jonny/.m2/repository/org/kurento/module/framesavervideofilter/0.0.1-SNAPSHOT/framesavervideofilter-0.0.1-SNAPSHOT.pom
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 2.830s
+[INFO] Finished at: Tue Dec 06 11:30:17 PST 2016
+[INFO] Final Memory: 32M/513M
+[INFO] ------------------------------------------------------------------------
+Built target java_install
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/KmsModule_FrameSaverMediaPipelineAndVideoFilter/kms-framesaver/build $ 
+
+
+
+
+
+###################################################################################################
+###################################################################################################
+###################################################################################################
+###################################################################################################
+###################################################################################################
+###################################################################################################
+###################################################################################################
+###################################################################################################
+###################################################################################################
+
+
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ sudo service kurento-media-server-6.0 stop
+[sudo] password for jonny: 
+ * Stop Kurento Media Server daemon                                                                                                                                                                                            [ OK ] 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ sudo service kurento-media-server-6.0 start
+ * Starting Kurento Media Server                                                                                                                                                                                               [ OK ] 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ kurento-media-server -v
+Version: 6.6.1
+Found modules:
+	Module: 'core' version '6.6.1'
+	Module: 'elements' version '6.6.1'
+	Module: 'filters' version '6.6.1'
+	Module: 'framesavervideofilter' version '0.0.1~0.g69409c5'
+	Module: 'pointerdetector' version '6.6.0'
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ ls -al
+total 68
+drwxr-xr-x  6 jonny jonny  4096 Dec  5 23:34 .
+drwxr-xr-x 24 jonny jonny  4096 Dec  6 11:33 ..
+-rw-r--r--  1 jonny jonny    46 Nov 29 15:40 .bowerrc
+-rw-r--r--  1 jonny jonny  1093 Dec  5 23:35 .classpath
+-rw-r--r--  1 jonny jonny     9 Nov 29 15:40 .gitignore
+-rw-r--r--  1 jonny jonny 11357 Nov 29 15:40 LICENSE
+drwxr-xr-x  4 jonny jonny  4096 Nov 29 15:40 package
+-rw-r--r--  1 jonny jonny  4634 Nov 30 08:31 pom.xml
+-rw-r--r--  1 jonny jonny   543 Dec  5 23:34 .project
+-rw-r--r--  1 jonny jonny  5154 Nov 29 15:40 README.md
+drwxr-xr-x  2 jonny jonny  4096 Dec  5 23:34 .settings
+drwxr-xr-x  4 jonny jonny  4096 Nov 29 15:40 src
+drwxr-xr-x  6 jonny jonny  4096 Dec  5 23:34 target
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ mvn compile
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Kurento Java Tutorial - Player 6.6.0
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-enforcer-plugin:1.4.1:enforce (enforce-java-version) @ kurento-player ---
+[INFO] 
+[INFO] --- maven-enforcer-plugin:1.4.1:enforce (enforce-maven-version) @ kurento-player ---
+[INFO] 
+[INFO] --- maven-enforcer-plugin:1.4.1:enforce (enforce-bytecode-version) @ kurento-player ---
+[INFO] 
+[INFO] --- buildnumber-maven-plugin:1.4:create-timestamp (get-build-timestamp) @ kurento-player ---
+[INFO] 
+[INFO] --- buildnumber-maven-plugin:1.4:create (get-scm-revision) @ kurento-player ---
+[INFO] Executing: /bin/sh -c cd '/home/jonny/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver' && 'git' 'rev-parse' '--verify' 'HEAD'
+[INFO] Working directory: /home/jonny/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver
+[INFO] Storing buildNumber: 46b428871d0f26378f3b2592fab70a6723dfaac4 at timestamp: 1481053115067
+[WARNING] Cannot get the branch information from the git repository: 
+Detecting the current branch failed: fatal: ref HEAD is not a symbolic ref
+
+[INFO] Executing: /bin/sh -c cd '/home/jonny/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver' && 'git' 'rev-parse' '--verify' 'HEAD'
+[INFO] Working directory: /home/jonny/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver
+[INFO] Storing buildScmBranch: UNKNOWN
+[INFO] 
+[INFO] --- maven-resources-plugin:2.7:resources (default-resources) @ kurento-player ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Copying 14 resources
+[INFO] Copying 1 resource
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.3:compile (default-compile) @ kurento-player ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 6 source files to /home/jonny/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver/target/classes
+[WARNING] bootstrap class path not set in conjunction with -source 1.7
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 3.295s
+[INFO] Finished at: Tue Dec 06 11:38:36 PST 2016
+[INFO] Final Memory: 33M/607M
+[INFO] ------------------------------------------------------------------------
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ 
+jonny@XPS-15-JB1-LNX17 ~/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver $ mvn exec:java
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Kurento Java Tutorial - Player 6.6.0
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- exec-maven-plugin:1.4.0:java (default-cli) @ kurento-player ---
+
+   .------------------------------------.
+   |                                    |
+   |   | |/ /  _ _ _ ___ _ _| |_ ___    |
+   |   | ' < || | '_/ -_) ' \  _/ _ \   |
+   |   |_|\_\_,_|_| \___|_||_\__\___/   |
+   |                                    |
+   '------------------------------------'
+       Kurento Java Tutorial - Player
+       Version 6.6.0
+
+2016-12-06 11:38:48.421  INFO 12288 --- [layerApp.main()] org.kurento.tutorial.player.PlayerApp    : Starting PlayerApp on XPS-15-JB1-LNX17 with PID 12288 (/home/jonny/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver/target/classes started by jonny in /home/jonny/Work/TELMATE/Validation/kurento-tutorial-java/kurento-player-with-kms-framesaver)
+2016-12-06 11:38:48.427  INFO 12288 --- [layerApp.main()] org.kurento.tutorial.player.PlayerApp    : No active profile set, falling back to default profiles: default
+2016-12-06 11:38:48.591  INFO 12288 --- [layerApp.main()] ationConfigEmbeddedWebApplicationContext : Refreshing org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@21cd18fd: startup date [Tue Dec 06 11:38:48 PST 2016]; root of context hierarchy
+2016-12-06 11:38:49.177  INFO 12288 --- [layerApp.main()] f.a.AutowiredAnnotationBeanPostProcessor : JSR-330 'javax.inject.Inject' annotation found and supported for autowiring
+2016-12-06 11:38:49.449  INFO 12288 --- [layerApp.main()] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat initialized with port(s): 8443 (https)
+2016-12-06 11:38:49.459  INFO 12288 --- [layerApp.main()] o.apache.catalina.core.StandardService   : Starting service Tomcat
+2016-12-06 11:38:49.460  INFO 12288 --- [layerApp.main()] org.apache.catalina.core.StandardEngine  : Starting Servlet Engine: Apache Tomcat/8.0.28
+2016-12-06 11:38:49.515  INFO 12288 --- [ost-startStop-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2016-12-06 11:38:49.515  INFO 12288 --- [ost-startStop-1] o.s.web.context.ContextLoader            : Root WebApplicationContext: initialization completed in 927 ms
+2016-12-06 11:38:49.690  INFO 12288 --- [ost-startStop-1] o.s.b.c.e.ServletRegistrationBean        : Mapping servlet: 'dispatcherServlet' to [/]
+2016-12-06 11:38:49.693  INFO 12288 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'characterEncodingFilter' to: [/*]
+2016-12-06 11:38:49.693  INFO 12288 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2016-12-06 11:38:49.694  INFO 12288 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'httpPutFormContentFilter' to: [/*]
+2016-12-06 11:38:49.694  INFO 12288 --- [ost-startStop-1] o.s.b.c.embedded.FilterRegistrationBean  : Mapping filter: 'requestContextFilter' to: [/*]
+2016-12-06 11:38:49.735  INFO 12288 --- [layerApp.main()] o.s.s.c.ThreadPoolTaskScheduler          : Initializing ExecutorService  'defaultSockJsTaskScheduler'
+2016-12-06 11:38:49.861  INFO 12288 --- [layerApp.main()] org.eclipse.jetty.util.log               : Logging initialized @3562ms
+2016-12-06 11:38:50.003  INFO 12288 --- [ntLoopGroup-2-1] o.k.j.c.JsonRpcClientNettyWebSocket      : [KurentoClient]  Inititating new Netty channel. Will create new handler too!
+2016-12-06 11:38:50.101  INFO 12288 --- [layerApp.main()] o.s.w.s.s.s.WebSocketHandlerMapping      : Mapped URL path [/player] onto handler of type [class org.springframework.web.socket.server.support.WebSocketHttpRequestHandler]
+2016-12-06 11:38:50.218  INFO 12288 --- [layerApp.main()] s.w.s.m.m.a.RequestMappingHandlerAdapter : Looking for @ControllerAdvice: org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@21cd18fd: startup date [Tue Dec 06 11:38:48 PST 2016]; root of context hierarchy
+2016-12-06 11:38:50.260  INFO 12288 --- [layerApp.main()] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/error],produces=[text/html]}" onto public org.springframework.web.servlet.ModelAndView org.springframework.boot.autoconfigure.web.BasicErrorController.errorHtml(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)
+2016-12-06 11:38:50.261  INFO 12288 --- [layerApp.main()] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped "{[/error]}" onto public org.springframework.http.ResponseEntity<java.util.Map<java.lang.String, java.lang.Object>> org.springframework.boot.autoconfigure.web.BasicErrorController.error(javax.servlet.http.HttpServletRequest)
+2016-12-06 11:38:50.263  INFO 12288 --- [layerApp.main()] o.s.w.s.c.a.WebMvcConfigurerAdapter      : Adding welcome page: class path resource [static/index.html]
+2016-12-06 11:38:50.269  INFO 12288 --- [layerApp.main()] o.s.w.s.handler.SimpleUrlHandlerMapping  : Root mapping to handler of type [class org.springframework.web.servlet.mvc.ParameterizableViewController]
+2016-12-06 11:38:50.331  INFO 12288 --- [layerApp.main()] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/webjars/**] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
+2016-12-06 11:38:50.332  INFO 12288 --- [layerApp.main()] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/**] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
+2016-12-06 11:38:50.356  INFO 12288 --- [layerApp.main()] o.s.w.s.handler.SimpleUrlHandlerMapping  : Mapped URL path [/**/favicon.ico] onto handler of type [class org.springframework.web.servlet.resource.ResourceHttpRequestHandler]
+2016-12-06 11:38:50.425  INFO 12288 --- [layerApp.main()] o.s.j.e.a.AnnotationMBeanExporter        : Registering beans for JMX exposure on startup
+2016-12-06 11:38:50.431  INFO 12288 --- [layerApp.main()] o.s.c.support.DefaultLifecycleProcessor  : Starting beans in phase 2147483647
+2016-12-06 11:38:50.582  INFO 12288 --- [layerApp.main()] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8443 (https)
+2016-12-06 11:38:50.586  INFO 12288 --- [layerApp.main()] org.kurento.tutorial.player.PlayerApp    : Started PlayerApp in 2.362 seconds (JVM running for 4.29)
+2016-12-06 11:39:02.064  INFO 12288 --- [nio-8443-exec-8] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring FrameworkServlet 'dispatcherServlet'
+2016-12-06 11:39:02.064  INFO 12288 --- [nio-8443-exec-8] o.s.web.servlet.DispatcherServlet        : FrameworkServlet 'dispatcherServlet': initialization started
+2016-12-06 11:39:02.072  INFO 12288 --- [nio-8443-exec-8] o.s.web.servlet.DispatcherServlet        : FrameworkServlet 'dispatcherServlet': initialization completed in 8 ms
+
+
+2016-12-06 11:39:04.959  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"start","sdpOffer":"v=0\r\no=mozilla...THIS_IS_SDPARTA-50.0.2 4994456577812385107 0 IN IP4 0.0.0.0\r\ns=-\r\nt=0 0\r\na=sendrecv\r\na=fingerprint:sha-256 5B:F2:AE:CD:AD:43:20:F3:D8:58:5B:8E:CC:2C:B9:BB:E5:B2:00:B6:27:BE:F5:55:85:F8:AC:0C:03:A9:1A:1B\r\na=group:BUNDLE sdparta_0 sdparta_1\r\na=ice-options:trickle\r\na=msid-semantic:WMS *\r\nm=audio 9 UDP/TLS/RTP/SAVPF 109 9 0 8\r\nc=IN IP4 0.0.0.0\r\na=recvonly\r\na=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level\r\na=fmtp:109 maxplaybackrate=48000;stereo=1;useinbandfec=1\r\na=ice-pwd:d50524f3065bc6733d0a7e590474d448\r\na=ice-ufrag:3384ceff\r\na=mid:sdparta_0\r\na=rtcp-mux\r\na=rtpmap:109 opus/48000/2\r\na=rtpmap:9 G722/8000/1\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=setup:actpass\r\na=ssrc:2608664598 cname:{5576fb87-a188-4993-95d7-c5c510b3e676}\r\nm=video 9 UDP/TLS/RTP/SAVPF 120 126 97\r\nc=IN IP4 0.0.0.0\r\na=recvonly\r\na=fmtp:120 max-fs=12288;max-fr=60\r\na=fmtp:126 profile-level-id=42e01f;level-asymmetry-allowed=1;packetization-mode=1\r\na=fmtp:97 profile-level-id=42e01f;level-asymmetry-allowed=1\r\na=ice-pwd:d50524f3065bc6733d0a7e590474d448\r\na=ice-ufrag:3384ceff\r\na=mid:sdparta_1\r\na=rtcp-fb:120 nack\r\na=rtcp-fb:120 nack pli\r\na=rtcp-fb:120 ccm fir\r\na=rtcp-fb:120 goog-remb\r\na=rtcp-fb:126 nack\r\na=rtcp-fb:126 nack pli\r\na=rtcp-fb:126 ccm fir\r\na=rtcp-fb:126 goog-remb\r\na=rtcp-fb:97 nack\r\na=rtcp-fb:97 nack pli\r\na=rtcp-fb:97 ccm fir\r\na=rtcp-fb:97 goog-remb\r\na=rtcp-mux\r\na=rtpmap:120 VP8/90000\r\na=rtpmap:126 H264/90000\r\na=rtpmap:97 H264/90000\r\na=setup:actpass\r\na=ssrc:696003127 cname:{5576fb87-a188-4993-95d7-c5c510b3e676}\r\n","videourl":"http://192.168.0.9/http/videos/sintel.webm"} --- From Session-ID 0
+
+
+2016-12-06 11:39:04.959  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Video-URL is http://192.168.0.9/http/videos/sintel.webm --- Session-ID is 0
+
+
+2016-12-06 11:39:05.101  INFO 12288 --- [nio-8443-exec-8] o.k.t.player.FrameSaverPluginProxy       : Calling FrameSaverVideoFilter.Builder(aPipeline).build()
+
+
+2016-12-06 11:39:05.106  INFO 12288 --- [nio-8443-exec-8] o.k.t.player.FrameSaverPluginProxy       : EXCEPTION: Media Object KurentoFrameSaverVideoFilterImpl not available (Code:40108, Type:null, Data: {"type":"MEDIA_OBJECT_NOT_AVAILABLE"})
+
+
+2016-12-06 11:39:05.106  INFO 12288 --- [nio-8443-exec-8] o.k.t.player.FrameSaverPluginProxy       : Failed Using Factory.Build for new FrameSaverVideoFilter
+
+
+2016-12-06 11:39:05.106  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : mFrameSaverProxy isUsable=false
+
+
+
+2016-12-06 11:39:05.363  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:0 1 UDP 2122252543 192.168.0.9 39511 typ host","sdpMid":"sdparta_0","sdpMLineIndex":0}} --- From Session-ID 0
+2016-12-06 11:39:05.367  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:0 2 UDP 2122252542 192.168.0.9 57790 typ host","sdpMid":"sdparta_0","sdpMLineIndex":0}} --- From Session-ID 0
+2016-12-06 11:39:05.369  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:0 1 UDP 2122252543 192.168.0.9 40586 typ host","sdpMid":"sdparta_1","sdpMLineIndex":1}} --- From Session-ID 0
+2016-12-06 11:39:05.371  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:0 2 UDP 2122252542 192.168.0.9 36449 typ host","sdpMid":"sdparta_1","sdpMLineIndex":1}} --- From Session-ID 0
+2016-12-06 11:39:05.373  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:2 1 UDP 1686052607 66.75.56.26 39511 typ srflx raddr 192.168.0.9 rport 39511","sdpMid":"sdparta_0","sdpMLineIndex":0}} --- From Session-ID 0
+2016-12-06 11:39:05.375  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:2 2 UDP 1686052606 66.75.56.26 57790 typ srflx raddr 192.168.0.9 rport 57790","sdpMid":"sdparta_0","sdpMLineIndex":0}} --- From Session-ID 0
+2016-12-06 11:39:05.378  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:2 1 UDP 1686052607 66.75.56.26 40586 typ srflx raddr 192.168.0.9 rport 40586","sdpMid":"sdparta_1","sdpMLineIndex":1}} --- From Session-ID 0
+2016-12-06 11:39:05.380  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:1 1 UDP 1686052863 66.75.56.26 39511 typ srflx raddr 192.168.0.9 rport 39511","sdpMid":"sdparta_0","sdpMLineIndex":0}} --- From Session-ID 0
+2016-12-06 11:39:05.383  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:2 2 UDP 1686052606 66.75.56.26 36449 typ srflx raddr 192.168.0.9 rport 36449","sdpMid":"sdparta_1","sdpMLineIndex":1}} --- From Session-ID 0
+2016-12-06 11:39:05.385  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:1 2 UDP 1686052862 66.75.56.26 57790 typ srflx raddr 192.168.0.9 rport 57790","sdpMid":"sdparta_0","sdpMLineIndex":0}} --- From Session-ID 0
+2016-12-06 11:39:05.389  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:1 1 UDP 1686052863 66.75.56.26 40586 typ srflx raddr 192.168.0.9 rport 40586","sdpMid":"sdparta_1","sdpMLineIndex":1}} --- From Session-ID 0
+2016-12-06 11:39:05.392  INFO 12288 --- [nio-8443-exec-8] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"onIceCandidate","candidate":{"candidate":"candidate:1 2 UDP 1686052862 66.75.56.26 36449 typ srflx raddr 192.168.0.9 rport 36449","sdpMid":"sdparta_1","sdpMLineIndex":1}} --- From Session-ID 0
+2016-12-06 11:39:12.763  INFO 12288 --- [io-8443-exec-10] o.kurento.tutorial.player.PlayerHandler  : Incoming Message {"id":"stop"} --- From Session-ID 0
+
+ 06 11:38:48 PST 2016]; root of context hierarchy
+2016-12-06 11:41:38.759  INFO 12288 --- [       Thread-2] o.s.c.support.DefaultLifecycleProcessor  : Stopping beans in phase 2147483647
+2016-12-06 11:41:38.761  INFO 12288 --- [       Thread-2] o.s.j.e.a.AnnotationMBeanExporter        : Unregistering JMX-exposed beans on shutdown
+2016-12-06 11:41:38.771  INFO 12288 --- [ntLoopGroup-2-1] o.k.j.c.JsonRpcClientNettyWebSocket      : [KurentoClient]  channel closed
+2016-12-06 11:41:38.775  INFO 12288 --- [       Thread-2] o.s.s.c.ThreadPoolTaskScheduler          : Shutting down ExecutorService 'defaultSockJsTaskScheduler'
+
+
