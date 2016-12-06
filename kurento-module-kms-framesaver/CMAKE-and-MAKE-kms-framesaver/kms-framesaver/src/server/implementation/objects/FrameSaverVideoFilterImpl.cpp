@@ -18,7 +18,7 @@
 
 #define GST_CAT_DEFAULT     kurento_frame_saver_video_filter_impl
 GST_DEBUG_CATEGORY_STATIC   (GST_CAT_DEFAULT);
-#define GST_DEFAULT_NAME    "KurentoFrameSaverVideoFilterImpl"
+#define GST_DEFAULT_NAME    "framesavervideofilter"
 
 
 
@@ -268,14 +268,15 @@ bool FrameSaverVideoFilterImpl::initializeInstance(bool isNewInstance)
 
     mLastErrorDetails.assign("");
 
+    g_object_set (element, "filter-factory", GST_DEFAULT_NAME, NULL);
+
     g_object_get (G_OBJECT (element), "filter", & mGstreamElementPtr, NULL);
 
     if (mGstreamElementPtr == NULL) 
     {
-        throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE, "Media Object " GST_DEFAULT_NAME " not available");
+        throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE, "Media Object " GST_DEFAULT_NAME "  not available");
     }
 
-    g_object_set (element, "filter-factory", GST_DEFAULT_NAME, NULL);
 
     g_object_unref (mGstreamElementPtr);    // pointer remains valid
 

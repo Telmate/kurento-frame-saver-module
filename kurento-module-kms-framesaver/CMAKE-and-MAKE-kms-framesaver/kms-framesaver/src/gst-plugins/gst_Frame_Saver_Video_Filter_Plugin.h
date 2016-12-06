@@ -21,7 +21,7 @@
     #undef THIS_PLUGIN_NAME
 #endif
 
-#define THIS_PLUGIN_NAME  "FrameSaverVideoFilterPlugin"
+#define THIS_PLUGIN_NAME  "framesavervideofilter"
 
 #define  _SAVE_IMAGE_FRAMES_
 
