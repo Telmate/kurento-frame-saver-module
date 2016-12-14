@@ -2,8 +2,8 @@
  * =================================================================================================
  * File:        FrameSaverVideoFilterImpl.hpp
  *
- * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-12-02   JBendor     Updated
+ * History:     1. 2016-11-25   JBendor     Created a a class derived from kurento::FilterImpl
+ *              2. 2016-12-13   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -13,15 +13,18 @@
 #ifndef __FRAME_SAVER_VIDEO_FILTER_IMPL_HPP__
 #define __FRAME_SAVER_VIDEO_FILTER_IMPL_HPP__
 
+#include "FilterType.hpp"
 #include "FilterImpl.hpp"
-#include "FrameSaverVideoFilter.hpp"                // auto-generated class: FrameSaverVideoFilter
-#include <FrameSaverVideoFilterImplFactory.hpp>     // auto-generated class: FrameSaverVideoFilterImplFactory
+#include "FrameSaverVideoFilter.hpp"
 
 #include <boost/property_tree/ptree.hpp>
 #include <jsonrpc/JsonSerializer.hpp>
 #include <KurentoException.hpp>
 #include <EventHandler.hpp>
 #include <mutex>
+
+
+
 
 
 namespace kurento
@@ -66,26 +69,24 @@ public:
 
     virtual ~FrameSaverVideoFilterImpl();                                   // virtual d'tor
 
-    static FrameSaverVideoFilterImpl * getFirstInstancePtr();               // the first instance
+    bool startPipelinePlaying();                                    // starts pipeline PLAYING
 
-    virtual bool startPipelinePlaying();                                    // starts pipeline PLAYING
+    bool stopPipelinePlaying();                                     // changes PLAYING to READY
 
-    virtual bool stopPipelinePlaying();                                     // changes PLAYING to READY
+    std::string getLastError();                                     // returns non-empty for errors
 
-    virtual std::string getLastError();                                     // returns non-empty for errors
+    std::string getElementsNamesList();                             // returns NamesSeparatedByTabs
 
-    virtual std::string getElementsNamesList();                             // returns NamesSeparatedByTabs
+    std::string getParamsList();                                    // returns ParamsSeparatedByTabs
 
-    virtual std::string getParamsList();                                    // returns ParamsSeparatedByTabs
+    std::string getParam(const std::string & rParamName);           // returns empty if invalid name
 
-    virtual std::string getParam(const std::string & rParamName);           // returns empty if invalid name
-
-    virtual bool setParam(const std::string & rParamName, const std::string & rNewValue); // FALSE if failed
+    bool setParam(const std::string & rParamName, const std::string & rNewValue); // FALSE if failed
 
     // The bodies of next three methods are automatically implemented by the code generator
+    virtual void Serialize (JsonSerializer &serializer);
     virtual bool connect (const std::string &eventType,  std::shared_ptr<EventHandler> handler);
     virtual void invoke (std::shared_ptr<MediaObjectImpl> obj, const std::string &methodName, const Json::Value &params, Json::Value &response);
-    virtual void Serialize (JsonSerializer &serializer);
 
 protected:
     virtual void postConstructor ();
@@ -97,7 +98,10 @@ protected:
 private:
     std::recursive_mutex    mRecursiveMutex;
     std::string             mLastErrorDetails;
-    GstElement            * mGstreamElementPtr;
+    GstElement            * mNativeElementPtr;
+    gulong                  mBusHandler;
+
+    void busMessage (GstMessage *message);
 
     class StaticConstructor
     {
