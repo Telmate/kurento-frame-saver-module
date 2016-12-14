@@ -69,19 +69,19 @@ public:
 
     virtual ~FrameSaverVideoFilterImpl();                                   // virtual d'tor
 
-    virtual bool startPipelinePlaying();                                    // starts pipeline PLAYING
+    bool startPipelinePlaying();                                    // starts pipeline PLAYING
 
-    virtual bool stopPipelinePlaying();                                     // changes PLAYING to READY
+    bool stopPipelinePlaying();                                     // changes PLAYING to READY
 
-    virtual std::string getLastError();                                     // returns non-empty for errors
+    std::string getLastError();                                     // returns non-empty for errors
 
-    virtual std::string getElementsNamesList();                             // returns NamesSeparatedByTabs
+    std::string getElementsNamesList();                             // returns NamesSeparatedByTabs
 
-    virtual std::string getParamsList();                                    // returns ParamsSeparatedByTabs
+    std::string getParamsList();                                    // returns ParamsSeparatedByTabs
 
-    virtual std::string getParam(const std::string & rParamName);           // returns empty if invalid name
+    std::string getParam(const std::string & rParamName);           // returns empty if invalid name
 
-    virtual bool setParam(const std::string & rParamName, const std::string & rNewValue); // FALSE if failed
+    bool setParam(const std::string & rParamName, const std::string & rNewValue); // FALSE if failed
 
     // The bodies of next three methods are automatically implemented by the code generator
     virtual void Serialize (JsonSerializer &serializer);
@@ -98,7 +98,10 @@ protected:
 private:
     std::recursive_mutex    mRecursiveMutex;
     std::string             mLastErrorDetails;
-    GstElement            * mGstreamElementPtr;
+    GstElement            * mNativeElementPtr;
+    gulong                  mBusHandler;
+
+    void busMessage (GstMessage *message);
 
     class StaticConstructor
     {
@@ -117,3 +120,4 @@ private:
 } // ends namespace: kurento
 
 #endif //  __FRAME_SAVER_VIDEO_FILTER_IMPL_HPP__
+

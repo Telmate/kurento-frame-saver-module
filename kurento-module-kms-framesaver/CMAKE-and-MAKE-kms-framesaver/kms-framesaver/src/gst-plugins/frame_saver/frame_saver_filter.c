@@ -6,7 +6,7 @@
  *              2. 2016-10-28   JBendor     Updated
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
  *              4. 2016-11-04   JBendor     Support for making custom pipelines
- *              5. 2016-11-24   JBendor     Support the actual Gstreamer plugin
+ *              5. 2016-12-08   JBendor     Support the actual Gstreamer plugin
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -1708,11 +1708,11 @@ int Frame_Saver_Filter_Detach(GstElement * aPluginPtr)
 
 
 //=======================================================================================
-// synopsis: result = Frame_Saver_Filter_Receive(aPluginPtr, aBufferPtr)
+// synopsis: result = Frame_Saver_Filter_Receive_Buffer(aPluginPtr, aBufferPtr)
 //
 // called at by the actual plugin upon buffer arrival --- returns GST_FLOW_OK
 //=======================================================================================
-int Frame_Saver_Filter_Receive(GstElement * aPluginPtr, gpointer aBufferPtr)
+int Frame_Saver_Filter_Receive_Buffer(GstElement * aPluginPtr, gpointer aBufferPtr)
 {
     int result = (int) GST_FLOW_ERROR;
 

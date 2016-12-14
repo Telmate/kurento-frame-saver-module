@@ -43,7 +43,7 @@ typedef enum
     e_PROP_PADS,    // "pads=ProducerOut,ConsumerInput,ConsumerOut"
     e_PROP_PATH,    // "path=PathForWorkingFolderForSavedImageFiles"
     e_PROP_NOTE,    // "note=none or note=MostRecentError"
-    e_PROP_SILENT,  // silent=0 or silent=1 --- 1 disables messages
+    e_PROP_SILENT,   // silent=0 or silent=1 --- 1 disables messages
 
     e_PROP_SHOW_DEBUG_INFO,
     e_PROP_WINDOWS_LAYOUT,
@@ -77,9 +77,11 @@ typedef struct _KmsFrameSaverPluginPrivate
 
 } KmsFrameSaverPluginPrivate;
 
-
 #define VIDEO_SRC_CAPS      GST_VIDEO_CAPS_MAKE("{ BGR }")
 #define VIDEO_SINK_CAPS     GST_VIDEO_CAPS_MAKE("{ BGR }")
+
+extern GType    kms_frame_saver_plugin_get_type(void);     // body defined by macro: G_DEFINE_TYPE
+static void     kms_frame_saver_plugin_init (KmsFrameSaverPlugin * aPluginPtr);  // initialize instance
 
 
 G_DEFINE_TYPE_WITH_CODE (KmsFrameSaverPlugin,                                               \
@@ -584,21 +586,12 @@ static gboolean register_this_plugin(GstPlugin * aPluginPtr)
 
 
 // gstreamer looks for this structure to register plugins
-#if 1
 GST_PLUGIN_DEFINE ( GST_VERSION_MAJOR, 
                     GST_VERSION_MINOR,
                     FrameSaverPlugin, 
                     "saves-image-frames", 
                     register_this_plugin,
-                    FRAME_SAVER_VERSION, "LGPL", "GStreamer", "http://gstreamer.net/")
-#else
-GST_PLUGIN_DEFINE ( GST_VERSION_MAJOR, 
-                    GST_VERSION_MINOR,
-                    PointerDetectixVideoFilter, 
-                    "Kurento-Pointer-Detectix", 
-                    register_this_plugin, 
-                    VERSION, GST_LICENSE_UNKNOWN, "Kurento", "http://kurento.com/" )
-#endif
+                    PLUGIN_VERSION, "LGPL", "GStreamer", "http://gstreamer.net/")
 
 
 static void initialize_plugin_instance(KmsFrameSaverPlugin * aPluginPtr, KmsFrameSaverPluginPrivate * aPrivatePtr)
@@ -786,3 +779,4 @@ static GstStateChangeReturn kms_frame_saver_plugin_change_state(GstElement *elem
 #endif // _IS_KURENTO_FILTER_
 
 // ends file:  "kms_frame_saver_plugin_video_filter.c"
+

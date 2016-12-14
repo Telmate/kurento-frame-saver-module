@@ -84,11 +84,6 @@ typedef struct _KmsFrameSaverPluginPrivate      KmsFrameSaverPluginPrivate;
 #endif
 
 
-extern GType kms_frame_saver_plugin_get_type(void);     // body defined by macro: G_DEFINE_TYPE
-
-static void kms_frame_saver_plugin_init (KmsFrameSaverPlugin * aPluginPtr);  // initialize instance
-
-
 G_END_DECLS
 
 
@@ -113,7 +108,7 @@ G_END_DECLS
 
     #define BUILD_DATETIME  "(" __DATE__ "  " __TIME__ ")"
 
-    #define FRAME_SAVER_VERSION ( "1.0.0"  " " BUILD_TYPE  "." BUILD_TOOL " " BUILD_DATETIME  " name=" THIS_PLUGIN_NAME )
+    #define PLUGIN_VERSION ( "1.0.0"  " " BUILD_TYPE  "." BUILD_TOOL " " BUILD_DATETIME  " name=" THIS_PLUGIN_NAME )
 
 #endif
 
@@ -123,8 +118,9 @@ G_END_DECLS
 #endif
 
 #ifndef VERSION
-    #define VERSION     FRAME_SAVER_VERSION
+    #define VERSION     PLUGIN_VERSION
 #endif
 
 
 #endif  // _GST_FRAME_SAVER_VIDEO_FILTER_PLUGIN_H_
+
