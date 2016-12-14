@@ -2,8 +2,8 @@
  * =================================================================================================
  * File:        FrameSaverVideoFilterImpl.hpp
  *
- * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-12-06   JBendor     Updated
+ * History:     1. 2016-11-25   JBendor     Created a a class derived from kurento::FilterImpl
+ *              2. 2016-12-13   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -84,9 +84,9 @@ public:
     virtual bool setParam(const std::string & rParamName, const std::string & rNewValue); // FALSE if failed
 
     // The bodies of next three methods are automatically implemented by the code generator
+    virtual void Serialize (JsonSerializer &serializer);
     virtual bool connect (const std::string &eventType,  std::shared_ptr<EventHandler> handler);
     virtual void invoke (std::shared_ptr<MediaObjectImpl> obj, const std::string &methodName, const Json::Value &params, Json::Value &response);
-    virtual void Serialize (JsonSerializer &serializer);
 
 protected:
     virtual void postConstructor ();
@@ -117,4 +117,3 @@ private:
 } // ends namespace: kurento
 
 #endif //  __FRAME_SAVER_VIDEO_FILTER_IMPL_HPP__
-

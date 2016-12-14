@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImpl.cpp
  *
  * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-12-06   JBendor     Updated
+ *              2. 2016-12-13   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -33,13 +33,9 @@ namespace module
 namespace framesavervideofilter
 {
 
-std::string The_Empty_Command;
-
-
 FrameSaverVideoFilterImpl::FrameSaverVideoFilterImpl (const boost::property_tree::ptree & ref_config, 
                                                       std::shared_ptr<MediaPipeline>      ptr_Pipeline)
                          : FilterImpl (ref_config, std::dynamic_pointer_cast<MediaPipelineImpl> (ptr_Pipeline) ) 
-                                       // The_Empty_Command, std::make_shared <FilterType> (FilterType::VIDEO) )
 {
     mGstreamElementPtr = NULL;
 
@@ -313,4 +309,3 @@ FrameSaverVideoFilterImpl::StaticConstructor::StaticConstructor()
 } // ends namespace: module
 
 } // ends namespace: kurento
-
