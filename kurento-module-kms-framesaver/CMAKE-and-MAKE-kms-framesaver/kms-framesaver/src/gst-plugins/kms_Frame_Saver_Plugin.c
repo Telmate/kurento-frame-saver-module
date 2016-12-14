@@ -1,93 +1,104 @@
 /*
  * ======================================================================================
- * File:        gst_Frame_Saver_Video_Filter_Plugin.c
+ * File:        kms_Frame_Saver_Plugin.c
  *
  * Purpose:     Kurento+Gstreamer plugin-filter --- uses "Frame-Saver" for full behavior.
  *
  * History:     1. 2016-11-25   JBendor     Created as copy of "gst_Frame_Saver_Plugin.c"
- *              2. 2016-11-25   JBendor     Adapted to _VIDEO_FILTER_TYPE_ being defined
- *              3. 2016-11-28   JBendor     Updated
+ *              2. 2016-11-25   JBendor     Adapted to _IS_KURENTO_FILTER_ being defined
+ *              3. 2016-12-13   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
  * ======================================================================================
  */
 
-#include <gst_Frame_Saver_Video_Filter_Plugin.h>
 
 
-#ifndef FRAME_SAVER_PLUGIN_VERSION_INFO
 
-    #ifdef _DEBUG
-        #define BUILD_TYPE  "BUILD.DEBUG"
-    #else
-        #define BUILD_TYPE  "BUILD.RELEASE"
-    #endif
 
-    #ifdef _MSC_VER
-        #define BUILD_TOOL  "MSC.WINDOWS"
-    #else
-        #define BUILD_TOOL  "GCC.LINUX"
-    #endif
-
-    #ifdef _CYGWIN
-        #undef  BUILD_TOOL
-        #define BUILD_TOOL  "GCC.CYGWIN"
-    #endif
-
-    #define BUILD_DATETIME  "(" __DATE__ "  " __TIME__ ")"
-
-    #define FRAME_SAVER_PLUGIN_VERSION_INFO ( "1.0.0"  " " BUILD_TYPE  "." BUILD_TOOL " " BUILD_DATETIME  " name=" THIS_PLUGIN_NAME )
-
+#ifdef HAVE_CONFIG_H
+    #include "config.h"
 #endif
 
-
-#ifndef PACKAGE
-    #define PACKAGE "frame_saver_plugin_package"
-#endif
-
-
-#ifdef _CYGWIN
-    int cygwin_static_assert(int is_true)  { return is_true; }
-    #define G_STATIC_ASSERT(condition)  cygwin_static_assert( (condition) )
-    #define __GI_SCANNER__           // prevent CYGWIN's compiler warnings
-#endif
-
-
-#include <stdio.h>
+#include "kms_Frame_Saver_Plugin.h"
 #include <string.h>
 #include <gst/gst.h>
+#include <gst/video/video.h>
+#include <gst/video/gstvideofilter.h>
+#include <glib/gstdio.h>
 
 
-// stubs needed when gst-launch loads our plugin and appsink version is old
-#ifdef _PROVIDE_APPSINK_STUBS_
-    #include <gst/app/gstappsink.h>
-    GType gst_app_sink_get_type(void) { return 0xFEED1BAD; }
-    GstSample* gst_app_sink_pull_sample(GstAppSink *appsink) { return NULL; }
-#endif
+GST_DEBUG_CATEGORY_STATIC       (kms_frame_saver_plugin_debug_category);
+#define GST_CAT_DEFAULT         kms_frame_saver_plugin_debug_category
 
 
-#ifdef __ALLOW_DYNAMIC_PARAMS__
-    // These headers are needed for Dynamic-Controllable-Parameters
-    // The controller allows changing Gobject properties while streaming
-    // Applications must link to the shared library "gstreamer-controller"
-    #include <gst/controller/gstargbcontrolbinding.h>
-    #include <gst/controller/gstdirectcontrolbinding.h>
-    #include <gst/controller/gsttimedvaluecontrolsource.h>
-    #include <gst/controller/gstinterpolationcontrolsource.h>
-    #include <gst/controller/gsttriggercontrolsource.h>
-    #include <gst/controller/gstlfocontrolsource.h>
+typedef enum
+{
+    e_PROP_0,
 
-    #define NANOS_PER_MILLISEC  ((guint64) (1000 * 1000))
-    #define DYNAMIC_SYNC_NANOS  (NANOS_PER_MILLISEC * 1000)
-#endif
+    e_PROP_WAIT,    // "wait=MillisWaitBeforeNextFrameSnap"
+    e_PROP_SNAP,    // "snap=MillisIntervals,MaxNumSnaps,MaxNumFails"
+    e_PROP_LINK,    // "link=PipelineName,ProducerName,ConsumerName"
+    e_PROP_PADS,    // "pads=ProducerOut,ConsumerInput,ConsumerOut"
+    e_PROP_PATH,    // "path=PathForWorkingFolderForSavedImageFiles"
+    e_PROP_NOTE,    // "note=none or note=MostRecentError"
+    e_PROP_SILENT,  // silent=0 or silent=1 --- 1 disables messages
+
+    e_PROP_SHOW_DEBUG_INFO,
+    e_PROP_WINDOWS_LAYOUT,
+    e_PROP_MESSAGE,
+    e_PROP_SHOW_WINDOWS_LAYOUT,
+    e_PROP_CALIBRATION_AREA
+
+} PLUGIN_PARAMS_e;
+
+
+enum
+{
+    e_FIRST_SIGNAL = 0,
+    e_FINAL_SIGNAL
+
+} PLUGIN_SIGNALS_e;
+
+
+typedef struct _KmsFrameSaverPluginPrivate
+{
+    gboolean     is_silent, show_debug_info, putMessage, show_windows_layout;
+    guint        num_buffs;
+    guint        num_drops;
+    guint        num_notes;
+    gchar        sz_wait[30],
+                 sz_snap[30],
+                 sz_link[90],
+                 sz_pads[90],
+                 sz_path[400],
+                 sz_note[200];
+
+} KmsFrameSaverPluginPrivate;
+
+
+#define VIDEO_SRC_CAPS      GST_VIDEO_CAPS_MAKE("{ BGR }")
+#define VIDEO_SINK_CAPS     GST_VIDEO_CAPS_MAKE("{ BGR }")
+
+
+G_DEFINE_TYPE_WITH_CODE (KmsFrameSaverPlugin,                                               \
+                         kms_frame_saver_plugin,                                            \
+                         GST_TYPE_VIDEO_FILTER,                                             \
+                         GST_DEBUG_CATEGORY_INIT (kms_frame_saver_plugin_debug_category,    \
+                                                  THIS_PLUGIN_NAME, 0,                      \
+                                                  "debug category for FrameSaverPlugin element"));
+
+#define GET_PRIVATE_STRUCT_PTR(obj)    (G_TYPE_INSTANCE_GET_PRIVATE((obj),                       \
+                                                                    KMS_TYPE_FRAME_SAVER_PLUGIN, \
+                                                                    KmsFrameSaverPluginPrivate))
 
 
 #ifdef _SAVE_IMAGE_FRAMES_
 
     extern int Frame_Saver_Filter_Attach(GstElement * pluginPtr);
     extern int Frame_Saver_Filter_Detach(GstElement * pluginPtr);
-    extern int Frame_Saver_Filter_Receive(GstElement * pluginPtr, GstBuffer * aBufferPtr);
+    extern int Frame_Saver_Filter_Receive_Buffer(GstElement * pluginPtr, GstBuffer * aBufferPtr);
     extern int Frame_Saver_Filter_Transition(GstElement * pluginPtr, GstStateChange aTransition) ;
     extern int Frame_Saver_Filter_Set_Params(GstElement * pluginPtr, const gchar * aNewValuePtr, gchar * aPrvSpecsPtr);
 
@@ -95,259 +106,104 @@
 
     static int Frame_Saver_Filter_Attach(GstElement * pluginPtr)
     {
+        g_print("%s --- %s \n", THIS_PLUGIN_NAME, __func__);
         return 0;
     }
     static int Frame_Saver_Filter_Detach(GstElement * pluginPtr)
     {
+        g_print("%s --- %s \n", THIS_PLUGIN_NAME, __func__);
         return 0;
     }
-    static int Frame_Saver_Filter_Receive(GstElement * pluginPtr, GstBuffer * aBufferPtr)
+    static int Frame_Saver_Filter_Receive_Buffer(GstElement * pluginPtr, GstBuffer * aBufferPtr)
     {
+        g_print("%s --- %s \n", THIS_PLUGIN_NAME, __func__);
         return 0;
     }
     static int Frame_Saver_Filter_Transition(GstElement * pluginPtr, GstStateChange aTransition)
     {
+        g_print("%s --- %s \n", THIS_PLUGIN_NAME, __func__);
         return 0;
     }
     static int Frame_Saver_Filter_Set_Params(GstElement * pluginPtr, const gchar * aNewValuePtr, gchar * aPrvSpecsPtr)
     {
+        g_print("%s --- %s \n", THIS_PLUGIN_NAME, __func__);
         return 0;
     }
 
 #endif
 
 
-enum
+static void initialize_plugin_instance(KmsFrameSaverPlugin * aPluginPtr, KmsFrameSaverPluginPrivate * aPrivatePtr);
+
+
+static GstClock      * The_Sys_Clock_Ptr = NULL;
+static GstClockTime    The_Startup_Nanos = 0;
+
+
+static guint64 Get_Runtime_Nanosec()
 {
-	e_FIRST_SIGNAL = 0,
-	e_FINAL_SIGNAL
-
-} PLUGIN_SIGNALS_e;
-
-
-enum
-{
-	e_PROP_0,
-	e_PROP_WAIT,    // "wait=MillisWaitBeforeNextFrameSnap"
-	e_PROP_SNAP,    // "snap=MillisIntervals,MaxNumSnaps,MaxNumFails"
-	e_PROP_LINK,    // "link=PipelineName,ProducerName,ConsumerName"
-	e_PROP_PADS,    // "pads=ProducerOut,ConsumerInput,ConsumerOut"
-	e_PROP_PATH,    // "path=PathForWorkingFolderForSavedImageFiles"
-	e_PROP_NOTE,    // "note=none or note=MostRecentError"
-	e_PROP_SILENT   // silent=0 or silent=1 --- 1 disables messages
-
-} PLUGIN_PARAMS_e;
-
-
-GST_DEBUG_CATEGORY_STATIC       (gst_frame_saver_plugin_debug_category);
-
-#define GST_CAT_DEFAULT         gst_frame_saver_plugin_debug_category
-
-extern GType gst_frame_saver_plugin_get_type(void);     // body defined by G_DEFINE_TYPE
-
-#ifdef _VIDEO_FILTER_TYPE_
-
-	#include <gst/video/video.h>
-	#include <gst/video/gstvideofilter.h>
-
-	typedef struct _GstFrameSaverPluginPrivate
-	{
-		GstElement   element;
-		GstPad     * sinkpad;
-		GstPad     * srcpad;
-		guint        num_buffs;
-		guint        num_drops;
-		guint        num_notes;
-		gboolean     is_silent;
-		gchar        sz_wait[30],
-					 sz_snap[30],
-					 sz_link[90],
-					 sz_pads[90],
-					 sz_path[400],
-					 sz_note[200];
-
-	} GstFrameSaverPluginPrivate;
-
-	typedef struct _GstFrameSaverPlugin
-	{
-		GstVideoFilter                base;
-		GstFrameSaverPluginPrivate  * priv;
-	} GstFrameSaverPlugin;
-
-	typedef struct _GstFrameSaverPluginClass
-	{
-		GstVideoFilterClass 	parent_class;
-	} GstFrameSaverPluginClass;
-
-	static GstFlowReturn gst_frame_saver_plugin_transform_frame_ip (GstVideoFilter *filter, GstVideoFrame *frame)
-	{
-		return GST_FLOW_OK;
-	}
-
-	static void gst_frame_saver_plugin_init (GstFrameSaverPlugin * aPluginPtr);  /* initializes plugin instance */
-
-	#ifdef _MSC_VER
-		#include "gst_frame_saver_plugin.ms.freeze.__c" /* parsing G_DEFINE_TYPE freezes VS-2015 */
-	#else
-		G_DEFINE_TYPE(GstFrameSaverPlugin, gst_frame_saver_plugin, GST_TYPE_VIDEO_FILTER);
-
-        //? G_DEFINE_TYPE_WITH_CODE (GstFrameSaverPlugin, gst_frame_saver_plugin, GST_TYPE_VIDEO_FILTER,
-        //? GST_DEBUG_CATEGORY_INIT(gst_frame_saver_plugin_debug_category, THIS_PLUGIN_NAME, 0, "debug category for this element") );
-
-        //? unused-kurento-pad-template: ("src",  GST_PAD_SRC,  GST_PAD_ALWAYS, gst_caps_from_string(VIDEO_SRC_CAPS))
-        //? unused-kurento-pad-template: ("sink", GST_PAD_SINK, GST_PAD_ALWAYS, gst_caps_from_string(VIDEO_SINK_CAPS)
-	#endif
-
-	#define GST_GET_PRIVATE(obj)    (G_TYPE_INSTANCE_GET_PRIVATE((obj), GST_TYPE_OF_FRAME_SAVER_PLUGIN, GstFrameSaverPluginPrivate))
-
-    #define GST_TYPE_OF_FRAME_SAVER_PLUGIN            (gst_frame_saver_plugin_get_type())
-    #define GST_FRAME_SAVER_PLUGIN(obj)               (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_OF_FRAME_SAVER_PLUGIN, GstFrameSaverPlugin))
-    #define GST_FRAME_SAVER_PLUGIN_CLASS(klass)       (G_TYPE_CHECK_CLASS_CAST((klass),  GST_TYPE_OF_FRAME_SAVER_PLUGIN, GstFrameSaverPluginClass))
-    #define GST_IS_FRAME_SAVER_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_OF_FRAME_SAVER_PLUGIN))
-    #define GST_IS_FRAME_SAVER_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_TYPE((klass),  GST_TYPE_OF_FRAMES_AVER_PLUGIN))
-
-#else
-
-	typedef struct _GstFrameSaverPlugin
-	{
-		GstElement   element;
-		GstPad     * sinkpad;
-		GstPad     * srcpad;
-		guint        num_buffs;
-		guint        num_drops;
-		guint        num_notes;
-		gboolean     is_silent;
-		gchar        sz_wait[30],
-					 sz_snap[30],
-					 sz_link[90],
-					 sz_pads[90],
-					 sz_path[400],
-					 sz_note[200];
-
-	} GstFrameSaverPlugin, GstFrameSaverPluginPrivate;
-
-	typedef struct _GstFrameSaverPluginClass
-	{
-	    GstElementClass parent_class;
-	} GstFrameSaverPluginClass;
-
-	static void gst_frame_saver_plugin_init (GstFrameSaverPlugin * aPluginPtr);  /* initializes plugin instance */
-
-	#ifdef _MSC_VER
-		#include "gst_frame_saver_plugin.ms.freeze.__c" /* parsing G_DEFINE_TYPE freezes VS-2015 */
-	#else
-		G_DEFINE_TYPE(GstFrameSaverPlugin, gst_frame_saver_plugin, GST_TYPE_ELEMENT);
-	#endif
-
-    #define GST_GET_PRIVATE(obj)    ((GstFrameSaverPluginPrivate *) (obj))
-
-    #define GST_TYPE_OF_FRAME_SAVER_PLUGIN            (gst_frame_saver_plugin_get_type())
-    #define GST_FRAME_SAVER_PLUGIN(obj)               (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_OF_FRAME_SAVER_PLUGIN, GstFrameSaverPlugin))
-    #define GST_FRAME_SAVER_PLUGIN_CLASS(klass)       (G_TYPE_CHECK_CLASS_CAST((klass),  GST_TYPE_OF_FRAME_SAVER_PLUGIN, GstFrameSaverPluginClass))
-    #define GST_IS_FRAME_SAVER_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_OF_FRAME_SAVER_PLUGIN))
-    #define GST_IS_FRAME_SAVER_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_TYPE((klass),  GST_TYPE_OF_FRAMES_AVER_PLUGIN))
-
-#endif  //  _VIDEO_FILTER_TYPE_
-
-
-/* the capabilities of the inputs and outputs. describe the real formats here. */
-static GstStaticPadTemplate gst_frame_saver_plugin_sink_template =
-                            GST_STATIC_PAD_TEMPLATE( "sink",
-                                                     GST_PAD_SINK,
-                                                     GST_PAD_ALWAYS,
-                                                     GST_STATIC_CAPS ("ANY") );
-
-static GstStaticPadTemplate gst_frame_saver_plugin_src_template =
-                            GST_STATIC_PAD_TEMPLATE( "src",
-                                                     GST_PAD_SRC,
-                                                     GST_PAD_ALWAYS,
-                                                     GST_STATIC_CAPS ("ANY") );
-
-
-static void gst_frame_saver_plugin_set_property(GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec);
-
-static void gst_frame_saver_plugin_get_property(GObject * object, guint prop_id, GValue * value, GParamSpec * pspec);
-
-static gboolean gst_frame_saver_plugin_sink_event(GstPad * pad, GstObject * parent, GstEvent * event);
-
-static GstFlowReturn gst_frame_saver_plugin_chain(GstPad * pad, GstObject * parent, GstBuffer * buf);
-
-static GstStateChangeReturn gst_frame_saver_plugin_change_state(GstElement *element, GstStateChange transition);
-
-static GstElementClass * This_Plugin_Element_Class_ptr = NULL;
-
-static GstElementClass * This_Plugin_Element_Parent_Class_ptr = NULL;
-
-
-static gboolean gst_my_filter_src_query(GstPad *pad, GstObject *parent, GstQuery *query)
-{
-    gboolean ret;
-
-    switch (GST_QUERY_TYPE(query))
+    if (The_Sys_Clock_Ptr == NULL)
     {
-    case GST_QUERY_CAPS: /* report the supported caps here */
-    default:
-        ret = gst_pad_query_default(pad, parent, query);
-        break;
+        The_Sys_Clock_Ptr = gst_system_clock_obtain();
+
+        The_Startup_Nanos = gst_clock_get_time (The_Sys_Clock_Ptr);
+
+        g_printf("\n%s\n", THIS_PLUGIN_NAME);
     }
-    return ret;
+
+    GstClockTime  now_nanos = gst_clock_get_time( The_Sys_Clock_Ptr );
+
+    GstClockTime elapsed_ns = now_nanos -The_Startup_Nanos;
+
+    return (guint64) elapsed_ns;
 }
 
 
-static GstStateChangeReturn gst_frame_saver_plugin_change_state(GstElement *element, GstStateChange transition)
+static guint Get_Runtime_Millisec()
 {
-    GstStateChangeReturn             ret_val = GST_STATE_CHANGE_SUCCESS;
+    #define  NANOS_PER_MILLISEC  ((guint64) (1000L * 1000L))
 
-    GstFrameSaverPlugin             * filter = GST_FRAME_SAVER_PLUGIN(element);
-
-    GstFrameSaverPluginPrivate * ptr_private = GST_GET_PRIVATE(filter);
-
-    gboolean                  is_frame_saver = (ptr_private->sz_snap[5] > '0');
-        
-    if (is_frame_saver)
-    {
-        if (transition == GST_STATE_CHANGE_NULL_TO_READY)
-        {
-            if ( Frame_Saver_Filter_Attach(element) == 0 )
-            {
-                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_wait, ptr_private->sz_wait);
-                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_snap, ptr_private->sz_snap);
-                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_link, ptr_private->sz_link);
-                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_pads, ptr_private->sz_pads);
-                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_path, ptr_private->sz_path);                
-            }
-        }
-
-        Frame_Saver_Filter_Transition(element, transition);
-    }
-
-    if (This_Plugin_Element_Parent_Class_ptr->change_state != NULL)
-    {
-        ret_val = This_Plugin_Element_Parent_Class_ptr->change_state(element, transition);
-    }
-
-    if (ret_val != GST_STATE_CHANGE_FAILURE)
-    {
-        if (transition == GST_STATE_CHANGE_READY_TO_NULL)
-        {
-            Frame_Saver_Filter_Detach(element);
-        }
-    }
-
-    return ret_val;
+    return (guint) (Get_Runtime_Nanosec() / NANOS_PER_MILLISEC);
 }
 
 
-static void gst_frame_saver_plugin_set_property(GObject      * object,
-                                                guint          prop_id,
-                                                const GValue * value,
-                                                GParamSpec   * pspec)
+static guint DBG_Print(const gchar * aTextPtr, gint aValue)
+{
+    guint elapsed_ms = Get_Runtime_Millisec();
+
+    if (aTextPtr != NULL)
+    {
+        g_printf("%-7d --- %s --- %s --- (%d)", elapsed_ms, THIS_PLUGIN_NAME, aTextPtr, aValue);
+    }
+
+    g_printf("\n");
+
+    return elapsed_ms;
+}
+
+
+static void kms_frame_saver_plugin_init(KmsFrameSaverPlugin * aPluginPtr)
+{
+    The_Sys_Clock_Ptr = NULL;
+    DBG_Print( __func__, 0 );
+
+    initialize_plugin_instance(aPluginPtr, GET_PRIVATE_STRUCT_PTR(aPluginPtr));
+
+    return;
+}
+
+
+static void kms_frame_saver_plugin_set_property(GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec)
 {
     const gchar * psz_now = NULL;
 
-    GstFrameSaverPlugin * filter = GST_FRAME_SAVER_PLUGIN(object);
+    KmsFrameSaverPlugin        *  ptr_filter = KMS_FRAME_SAVER_PLUGIN(object);
 
-    GstFrameSaverPluginPrivate * ptr_private = GST_GET_PRIVATE(filter);
+    KmsFrameSaverPluginPrivate * ptr_private = GET_PRIVATE_STRUCT_PTR(ptr_filter);
+
+    DBG_Print( __func__, prop_id );
+
+    GST_OBJECT_LOCK(ptr_filter);
 
     switch (prop_id)
     {
@@ -381,6 +237,24 @@ static void gst_frame_saver_plugin_set_property(GObject      * object,
         psz_now = ptr_private->sz_path;
         break;
 
+    case e_PROP_SHOW_DEBUG_INFO:
+        ptr_private->show_debug_info = g_value_get_boolean (value);
+        break;
+
+    case e_PROP_WINDOWS_LAYOUT:
+        break;
+
+    case e_PROP_MESSAGE:
+        ptr_private->putMessage = g_value_get_boolean (value);
+        break;
+
+    case e_PROP_SHOW_WINDOWS_LAYOUT:
+        ptr_private->show_windows_layout = g_value_get_boolean (value);
+        break;
+
+    case e_PROP_CALIBRATION_AREA:
+        break;
+
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -395,95 +269,443 @@ static void gst_frame_saver_plugin_set_property(GObject      * object,
         ptr_private->num_notes = 0;
     }
 
+    GST_OBJECT_UNLOCK(ptr_filter);
+
     return;
 }
 
 
-static void gst_frame_saver_plugin_get_property(GObject * object, guint prop_id, GValue * value, GParamSpec * pspec)
+static void kms_frame_saver_plugin_get_property(GObject * object, guint prop_id, GValue * value, GParamSpec * pspec)
 {
-    GstFrameSaverPlugin * filter = GST_FRAME_SAVER_PLUGIN(object);
+    KmsFrameSaverPlugin        * ptr_filter = KMS_FRAME_SAVER_PLUGIN(object);
 
-    GstFrameSaverPluginPrivate * ptr_private = GST_GET_PRIVATE(filter);
+    KmsFrameSaverPluginPrivate * ptr_private = GET_PRIVATE_STRUCT_PTR(ptr_filter);
+
+    DBG_Print( __func__, prop_id );
+
+    GST_OBJECT_LOCK(ptr_filter);
 
     switch (prop_id)
     {
-    case e_PROP_SILENT:
-        g_value_set_boolean(value, ptr_private->is_silent);
-        break;
+        case e_PROP_SILENT:
+            g_value_set_boolean(value, ptr_private->is_silent);
+            break;
 
-    case e_PROP_WAIT:
-        g_value_set_string(value, ptr_private->sz_wait);
-        break;
+        case e_PROP_WAIT:
+            g_value_set_string(value, ptr_private->sz_wait);
+            break;
 
-    case e_PROP_SNAP:
-        g_value_set_string(value, ptr_private->sz_snap);
-        break;
+        case e_PROP_SNAP:
+            g_value_set_string(value, ptr_private->sz_snap);
+            break;
 
-    case e_PROP_LINK:
-        g_value_set_string(value, ptr_private->sz_link);
-        break;
+        case e_PROP_LINK:
+            g_value_set_string(value, ptr_private->sz_link);
+            break;
 
-    case e_PROP_PADS:
-        g_value_set_string(value, ptr_private->sz_pads);
-        break;
+        case e_PROP_PADS:
+            g_value_set_string(value, ptr_private->sz_pads);
+            break;
 
-    case e_PROP_PATH:
-        g_value_set_string(value, ptr_private->sz_path);
-        break;
+        case e_PROP_PATH:
+            g_value_set_string(value, ptr_private->sz_path);
+            break;
 
-    case e_PROP_NOTE:
-        g_value_set_string(value, ptr_private->sz_note);
-        strcpy(ptr_private->sz_note, "note=none");
-        break;
+        case e_PROP_NOTE:
+            g_value_set_string(value, ptr_private->sz_note);
+            strcpy(ptr_private->sz_note, "note=none");
+            break;
 
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
+        case e_PROP_SHOW_DEBUG_INFO:
+            g_value_set_boolean (value, ptr_private->show_debug_info);
+            break;
+
+        case e_PROP_WINDOWS_LAYOUT:
+            break;
+
+        case e_PROP_MESSAGE:
+            g_value_set_boolean (value, ptr_private->putMessage);
+            break;
+
+        case e_PROP_SHOW_WINDOWS_LAYOUT:
+            g_value_set_boolean (value, ptr_private->show_windows_layout);
+            break;
+
+        case e_PROP_CALIBRATION_AREA:
+            break;
+
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+            break;
     }
+
+    GST_OBJECT_UNLOCK(ptr_filter);
 
     return;
 }
 
 
-static gboolean gst_frame_saver_plugin_sink_event(GstPad * pad, GstObject * parent, GstEvent * event)
+static void kms_frame_saver_plugin_finalize (GObject *object)
 {
-    gboolean ret;
-    GstCaps * caps;
-    GstFrameSaverPlugin * filter = GST_FRAME_SAVER_PLUGIN(parent);
+    DBG_Print( __func__, 0 );    DBG_Print( NULL, 0 );
 
-    GST_LOG_OBJECT(filter, "Received Event (%s) : %" GST_PTR_FORMAT, GST_EVENT_TYPE_NAME (event), event);
+    G_OBJECT_CLASS (kms_frame_saver_plugin_parent_class)->finalize(object);
 
-    switch (GST_EVENT_TYPE(event))
-    {
-    case GST_EVENT_CAPS: /* do something with the caps --- forward */
-        gst_event_parse_caps(event, &caps);
-        ret = gst_pad_event_default(pad, parent, event);
-        break;
-
-    case GST_EVENT_EOS: /* end-of-stream, close down all stream leftovers here */
-        ret = gst_pad_event_default(pad, parent, event);
-        break;
-
-    default:
-        ret = gst_pad_event_default(pad, parent, event);
-        break;
-    }
-    return ret;
+    return;
 }
 
 
-/* chain function --- this function does the actual processing */
-static GstFlowReturn gst_frame_saver_plugin_chain(GstPad * pad, GstObject * parent, GstBuffer * buf)
+static gboolean KMS_frame_saver_plugin_start (GstBaseTransform * aTransPtr)
 {
-    GstFrameSaverPlugin             * filter = GST_FRAME_SAVER_PLUGIN(parent);
+    KmsFrameSaverPlugin * ptr_filter = KMS_FRAME_SAVER_PLUGIN(aTransPtr);
 
-    GstFrameSaverPluginPrivate * ptr_private = GST_GET_PRIVATE(filter);
+    DBG_Print( __func__, 0 );
 
-    GstFlowReturn                     result = gst_pad_push(ptr_private->srcpad, buf);
+    GST_DEBUG_OBJECT (ptr_filter, "start");
+
+    return TRUE;
+}
+
+
+static gboolean KMS_frame_saver_plugin_stop (GstBaseTransform * aTransPtr)
+{
+    KmsFrameSaverPlugin * ptr_filter = KMS_FRAME_SAVER_PLUGIN(aTransPtr);
+
+    DBG_Print( __func__, 0 );
+
+    GST_DEBUG_OBJECT (ptr_filter, "stop");
+
+    return TRUE;
+}
+
+
+static gboolean KMS_frame_saver_plugin_set_info ( GstVideoFilter  * aFilterPtr, 
+                                                  GstCaps         * in_caps_ptr,  
+                                                  GstVideoInfo    * in_info_ptr, 
+                                                  GstCaps         * out_caps_ptr, 
+                                                  GstVideoInfo    * out_info_ptr )
+{
+    KmsFrameSaverPlugin * ptr_filter = KMS_FRAME_SAVER_PLUGIN(aFilterPtr);
+
+    DBG_Print( __func__, 0 );
+
+    GST_DEBUG_OBJECT (ptr_filter, "set_info");
+
+    return TRUE;
+}
+
+
+static GstFlowReturn KMS_frame_saver_plugin_transform_frame_ip(GstVideoFilter * aFilterPtr, GstVideoFrame * aFramePtr)
+{
+    static gint  num_frames = 0;
+
+    DBG_Print( __func__, (aFramePtr == NULL) ? 0 : ++num_frames );
+
+    return GST_FLOW_OK;
+}
+
+
+static void kms_frame_saver_plugin_class_init(KmsFrameSaverPluginClass * klass)
+{
+    #define PARAM_ATTRIBUTES (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)
+
+    #ifdef _ALLOW_DYNAMIC_PARAMS_
+        GParamFlags param_flags = (GParamFlags) (PARAM_ATTRIBUTES | GST_PARAM_CONTROLLABLE);
+    #else
+        GParamFlags param_flags = (GParamFlags) (PARAM_ATTRIBUTES);
+    #endif
+
+    GObjectClass            *        gobject_class_ptr = G_OBJECT_CLASS(klass);
+    GstVideoFilterClass     *   video_filter_class_ptr = GST_VIDEO_FILTER_CLASS(klass);
+    GstBaseTransformClass   * base_transform_class_ptr = GST_BASE_TRANSFORM_CLASS(klass);
+
+    The_Sys_Clock_Ptr = NULL;    DBG_Print( __func__, 0 );
+
+    gobject_class_ptr->set_property = kms_frame_saver_plugin_set_property;
+    gobject_class_ptr->get_property = kms_frame_saver_plugin_get_property;
+    gobject_class_ptr->finalize     = kms_frame_saver_plugin_finalize;
+
+    base_transform_class_ptr->start = GST_DEBUG_FUNCPTR (KMS_frame_saver_plugin_start);
+    base_transform_class_ptr->stop  = GST_DEBUG_FUNCPTR (KMS_frame_saver_plugin_stop);
+
+    video_filter_class_ptr->set_info = GST_DEBUG_FUNCPTR (KMS_frame_saver_plugin_set_info);
+    video_filter_class_ptr->transform_frame_ip = GST_DEBUG_FUNCPTR (KMS_frame_saver_plugin_transform_frame_ip);
+
+    gst_element_class_add_pad_template (GST_ELEMENT_CLASS (klass),
+                                        gst_pad_template_new ("src", 
+                                                              GST_PAD_SRC, 
+                                                              GST_PAD_ALWAYS,
+                                                              gst_caps_from_string (VIDEO_SRC_CAPS)));
+
+    gst_element_class_add_pad_template (GST_ELEMENT_CLASS (klass),
+                                        gst_pad_template_new ("sink", 
+                                                              GST_PAD_SINK, 
+                                                              GST_PAD_ALWAYS,
+                                                              gst_caps_from_string (VIDEO_SINK_CAPS)));
+
+    g_object_class_install_property(gobject_class_ptr,
+                                    e_PROP_WAIT,
+                                    g_param_spec_string("wait",
+                                                        "wait=MillisWaitBeforeNextFrameSnap",
+                                                        "wait before snapping another frame",
+                                                        "3000",
+                                                        param_flags));
+
+    g_object_class_install_property(gobject_class_ptr,
+                                    e_PROP_SNAP,
+                                    g_param_spec_string("snap",
+                                                        "snap=millisecInterval,maxNumSnaps,maxNumFails",
+                                                        "snap and save frames as RGB images in PNG files",
+                                                        "1000,0,0",
+                                                        param_flags));
+
+    g_object_class_install_property(gobject_class_ptr,
+                                    e_PROP_LINK,
+                                    g_param_spec_string("link",
+                                                        "link=pipelineName,producerName,consumerName",
+                                                        "insert TEE between producer and consumer elements",
+                                                        "auto,auto,auto",
+                                                        param_flags));
+
+    g_object_class_install_property(gobject_class_ptr,
+                                    e_PROP_PADS,
+                                    g_param_spec_string("pads",
+                                                        "pads=producerOut,consumerInput,consumerOut",
+                                                        "pads used by the producer and consumer elements",
+                                                        "src,sink,src",
+                                                        param_flags));
+
+    g_object_class_install_property(gobject_class_ptr,
+                                    e_PROP_PATH,
+                                    g_param_spec_string("path",
+                                                        "path=path-of-working-folder-for-saved-images",
+                                                        "path of working folder for saved image files",
+                                                        "auto",
+                                                        param_flags));
+
+    g_object_class_install_property(gobject_class_ptr,
+                                    e_PROP_NOTE,
+                                    g_param_spec_string("note",
+                                                        "note=MostRecentErrorCodition",
+                                                        "most recent error",
+                                                        "none",
+                                                        G_PARAM_READABLE));
+
+    g_object_class_install_property(gobject_class_ptr,
+                                    e_PROP_SILENT,
+                                    g_param_spec_boolean("silent",
+                                                         "Silent or Verbose",
+                                                         "Silent is 1/True --- Verbose is 0/False",
+                                                         FALSE,
+                                                         G_PARAM_READWRITE));
+
+    g_object_class_install_property (gobject_class_ptr, 
+                                     e_PROP_SHOW_DEBUG_INFO,
+                                     g_param_spec_boolean ("show-debug-region", 
+                                                           "show debug region",
+                                                           "show evaluation regions over the image", 
+                                                           FALSE, 
+                                                           G_PARAM_READWRITE));
+
+    g_object_class_install_property (gobject_class_ptr, 
+                                     e_PROP_WINDOWS_LAYOUT,
+                                     g_param_spec_boxed ("windows-layout", 
+                                                         "windows layout",
+                                                         "supply the positions and dimensions of windows into the main window",
+                                                         GST_TYPE_STRUCTURE, 
+                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+    g_object_class_install_property (gobject_class_ptr, 
+                                     e_PROP_MESSAGE,
+                                     g_param_spec_boolean ("message", 
+                                                           "message",
+                                                           "Put a window-in or window-out message in the bus if " "an object enters o leaves a window", 
+                                                           TRUE, 
+                                                           G_PARAM_READWRITE));
+
+    g_object_class_install_property (gobject_class_ptr, 
+                                     e_PROP_SHOW_WINDOWS_LAYOUT,
+                                     g_param_spec_boolean ("show-windows-layout", 
+                                                           "show windows layout",
+                                                           "show windows layout over the image", 
+                                                           TRUE, 
+                                                           G_PARAM_READWRITE));
+
+    g_object_class_install_property (gobject_class_ptr, 
+                                     e_PROP_CALIBRATION_AREA,
+                                     g_param_spec_boxed ("calibration-area", 
+                                                         "calibration area",
+                                                         "define the window used to calibrate the color to track",
+                                                         GST_TYPE_STRUCTURE, 
+                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+      
+    gst_element_class_set_details_simple(GST_ELEMENT_CLASS(klass),
+                                         THIS_PLUGIN_NAME,                  // name to launch
+                                         "Frame-Saver-Video-Filter",        // classification
+                                         "Saves Frames (Can Insert TEE)",   // description
+                                         "Author <<a.TODO@hostname.org>>"); // author info
+
+    #ifdef _IS_KURENTO_FILTER_
+
+        g_type_class_add_private (klass, sizeof (KmsFrameSaverPluginPrivate));
+        
+    #else   // regular Gstreamer plugin --- create static pads --- set callbacks
+
+        gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass), gst_static_pad_template_get(&The_Src_Pad_Template));
+
+        gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass), gst_static_pad_template_get(&The_Sink_Pad_Template));
+
+        GST_ELEMENT_CLASS(kms_frame_saver_plugin_parent_class)->change_state = kms_frame_saver_plugin_change_state;
+
+        GST_ELEMENT_CLASS(klass)->change_state = kms_frame_saver_plugin_change_state;
+        
+    #endif  // _IS_KURENTO_FILTER_
+
+    return;
+}
+
+
+/*
+ * entry point to initialize the plug-in
+ * initialize the plug-in itself
+ * register the element factories and other features
+ */
+static gboolean register_this_plugin(GstPlugin * aPluginPtr)
+{
+    The_Sys_Clock_Ptr = NULL;
+    DBG_Print( __func__, 0 );
+
+    #ifdef _ALLOW_DYNAMIC_PARAMS_
+        gst_controller_init (NULL, NULL);
+    #endif
+
+    return gst_element_register (aPluginPtr, THIS_PLUGIN_NAME, GST_RANK_NONE, KMS_TYPE_FRAME_SAVER_PLUGIN);
+}
+
+
+// gstreamer looks for this structure to register plugins
+#if 1
+GST_PLUGIN_DEFINE ( GST_VERSION_MAJOR, 
+                    GST_VERSION_MINOR,
+                    FrameSaverPlugin, 
+                    "saves-image-frames", 
+                    register_this_plugin,
+                    FRAME_SAVER_VERSION, "LGPL", "GStreamer", "http://gstreamer.net/")
+#else
+GST_PLUGIN_DEFINE ( GST_VERSION_MAJOR, 
+                    GST_VERSION_MINOR,
+                    PointerDetectixVideoFilter, 
+                    "Kurento-Pointer-Detectix", 
+                    register_this_plugin, 
+                    VERSION, GST_LICENSE_UNKNOWN, "Kurento", "http://kurento.com/" )
+#endif
+
+
+static void initialize_plugin_instance(KmsFrameSaverPlugin * aPluginPtr, KmsFrameSaverPluginPrivate * aPrivatePtr)
+{
+    strcpy(aPrivatePtr->sz_wait, "wait=2000");
+    strcpy(aPrivatePtr->sz_snap, "snap=0,0,0");
+    strcpy(aPrivatePtr->sz_link, "link=Live,auto,auto");
+    strcpy(aPrivatePtr->sz_pads, "pads=auto,auto,auto");
+    strcpy(aPrivatePtr->sz_path, "path=auto");
+    strcpy(aPrivatePtr->sz_note, "note=none");
     
+    aPrivatePtr->num_buffs = 0;
+    aPrivatePtr->num_drops = 0;    
+    aPrivatePtr->num_notes = 0;
+    aPrivatePtr->is_silent = TRUE;
+
+    aPrivatePtr->show_debug_info    = FALSE;
+    aPrivatePtr->putMessage         = TRUE;
+    aPrivatePtr->show_windows_layout= TRUE;
+
+    #ifdef _IS_KURENTO_FILTER_
+
+        aPluginPtr->priv = aPrivatePtr;
+
+    #else   // regular Gstreamer plugin --- create pads --- set callbacks --- set video properties
+
+        ptr_private->srcpad  = gst_pad_new_from_static_template( &The_Src_Pad_Template, "src" );        
+        ptr_private->sinkpad = gst_pad_new_from_static_template( &The_Sink_Pad_Template, "sink" );
+
+        gst_pad_set_event_function(ptr_private->sinkpad, GST_DEBUG_FUNCPTR(kms_frame_saver_plugin_sink_event));
+        gst_pad_set_chain_function(ptr_private->sinkpad, GST_DEBUG_FUNCPTR(kms_frame_saver_plugin_chain));
+        gst_pad_set_query_function(ptr_private->sinkpad, GST_DEBUG_FUNCPTR(kms_frame_saver_plugin_src_query));
+
+        GST_PAD_SET_PROXY_CAPS(ptr_private->sinkpad);
+        GST_PAD_SET_PROXY_CAPS(ptr_private->srcpad);
+
+    #endif
+
+    if (aPluginPtr == NULL)    // always FALSE, suppress warnings on unused statics
+    {
+        Frame_Saver_Filter_Attach(NULL);
+        Frame_Saver_Filter_Detach(NULL);
+        Frame_Saver_Filter_Transition(NULL, 0) ;
+        Frame_Saver_Filter_Receive_Buffer(NULL, NULL);
+        Frame_Saver_Filter_Set_Params(NULL, NULL, NULL);
+        
+        KMS_frame_saver_plugin_transform_frame_ip(NULL, NULL);
+
+        #ifndef _IS_KURENTO_FILTER_
+            kms_frame_saver_plugin_src_query(NULL, NULL, NULL);
+            kms_frame_saver_plugin_chain(NULL, NULL, NULL);
+            kms_frame_saver_plugin_sink_event(NULL, NULL, NULL);
+            kms_frame_saver_plugin_change_state(NULL, GST_STATE_CHANGE_READY_TO_NULL);
+        #endif
+    }  
+
+    return;
+}
+
+
+#ifndef _IS_KURENTO_FILTER_
+
+static gboolean kms_frame_saver_plugin_sink_event(GstPad * pad, GstObject * parent, GstEvent * aEventPtr)
+{
+    gboolean is_ok;
+    
+    GstCaps * ptr_caps;
+
+    DBG_Print( __func__, (gint) GST_EVENT_TYPE(aEventPtr) );
+
+    switch (GST_EVENT_TYPE(aEventPtr))
+    {
+    case GST_EVENT_CAPS: // do something with the caps --- forward
+        gst_event_parse_caps(aEventPtr, & ptr_caps);
+        is_ok = gst_pad_event_default(pad, parent, aEventPtr);
+        break;
+
+    case GST_EVENT_EOS: // end-of-stream, close down all stream leftovers here
+        is_ok = gst_pad_event_default(pad, parent, aEventPtr);
+        break;
+
+    default:
+        is_ok = gst_pad_event_default(pad, parent, aEventPtr);
+        break;
+    }
+
+    return is_ok;
+}
+
+
+// Gstreamer chain function --- this function does the actual processing
+static GstFlowReturn kms_frame_saver_plugin_chain(GstPad * pad, GstObject * parent, GstBuffer * buf)
+{
+    KmsFrameSaverPlugin        *  ptr_filter = KMS_FRAME_SAVER_PLUGIN(parent);
+
+    KmsFrameSaverPluginPrivate * ptr_private = GET_PRIVATE_STRUCT_PTR(ptr_filter);
+
+    #ifdef _IS_KURENTO_FILTER_
+        GstFlowReturn  result = GST_FLOW_OK;
+    #else
+        GstFlowReturn  result = gst_pad_push(ptr_private->srcpad, buf);
+    #endif
+
+    ptr_private->num_drops += (result == GST_FLOW_OK) ? 0 : 1;    
     ptr_private->num_buffs += 1;
 
-    ptr_private->num_drops += (result == GST_FLOW_OK) ? 0 : 1;
+    DBG_Print( __func__, (gint) ptr_private->num_buffs );
 
     if (ptr_private->is_silent == FALSE)
     {
@@ -492,220 +714,75 @@ static GstFlowReturn gst_frame_saver_plugin_chain(GstPad * pad, GstObject * pare
     
     if ( ptr_private->sz_snap[5] > '0')  // is_frame_saver)
     {
-        Frame_Saver_Filter_Receive(GST_ELEMENT(filter), buf);
+        Frame_Saver_Filter_Receive_Buffer(GST_ELEMENT(ptr_filter), buf);
     }
     
-    return result;  // anythin except GST_FLOW_OK could halt the flow in the pipeline
+    return result;  // anythin except GST_FLOW_OK could halt flow in the pipeline
 }
 
 
-static void gst_frame_saver_plugin_dispose (GObject *object)
+static gboolean kms_frame_saver_plugin_src_query(GstPad *pad, GstObject *parent, GstQuery *query)
 {
-    return;
-}
+    gboolean ret;
 
+    DBG_Print( __func__, (gint) GST_QUERY_TYPE(query) );
 
-static void gst_frame_saver_plugin_finalize (GObject *object)
-{
-    return;
-}
-
-
-/* initialize the new element
- * instantiate pads and add them to element
- * set pad callback functions
- * initialize instance structure
- */
-static void gst_frame_saver_plugin_init(GstFrameSaverPlugin * filter)
-{
-    GstFrameSaverPluginPrivate * ptr_private = GST_GET_PRIVATE(filter);
-
-    #ifdef _VIDEO_FILTER_TYPE_
-        filter->priv = ptr_private;
-        ptr_private->sinkpad = filter->base.element.sinkpad;
-        ptr_private->srcpad = filter->base.element.srcpad;
-    #else
-        ptr_private->sinkpad = gst_pad_new_from_static_template(&gst_frame_saver_plugin_sink_template, "sink");
-        ptr_private->srcpad = gst_pad_new_from_static_template(&gst_frame_saver_plugin_src_template, "src");
-    #endif
-
-    gst_pad_set_event_function(ptr_private->sinkpad, GST_DEBUG_FUNCPTR(gst_frame_saver_plugin_sink_event));
-    gst_pad_set_chain_function(ptr_private->sinkpad, GST_DEBUG_FUNCPTR(gst_frame_saver_plugin_chain));
-    gst_pad_set_query_function(ptr_private->sinkpad, gst_my_filter_src_query);
-
-    GST_PAD_SET_PROXY_CAPS(ptr_private->sinkpad);
-    GST_PAD_SET_PROXY_CAPS(ptr_private->srcpad);
-
-	#ifndef _VIDEO_FILTER_TYPE_
-        gst_element_add_pad(GST_ELEMENT(filter), ptr_private->sinkpad);
-        gst_element_add_pad(GST_ELEMENT(filter), ptr_private->srcpad);
-    #endif 
-
-    strcpy(ptr_private->sz_wait, "wait=2000");
-    strcpy(ptr_private->sz_snap, "snap=0,0,0");
-    strcpy(ptr_private->sz_link, "link=Live,auto,auto");
-    strcpy(ptr_private->sz_pads, "pads=auto,auto,auto");
-    strcpy(ptr_private->sz_path, "path=auto");
-    strcpy(ptr_private->sz_note, "note=none");
-    
-    ptr_private->is_silent = TRUE;
-
-    ptr_private->num_buffs = 0;
-    ptr_private->num_drops = 0;    
-    ptr_private->num_notes = 0;
-
-    return;
-}
-
-
-/* initialize the frame-saver-plugin-class */
-static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
-{
-    int  params_attributes_flags = G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY;
-
-    GObjectClass * gobject_class = (GObjectClass *) klass;
-
-    gobject_class->set_property = gst_frame_saver_plugin_set_property;
-
-    gobject_class->get_property = gst_frame_saver_plugin_get_property;
-
-    gobject_class->finalize     = gst_frame_saver_plugin_finalize;
-
-    gobject_class->dispose      = gst_frame_saver_plugin_dispose;
-
-    // possibly --- first time here
-    if (This_Plugin_Element_Class_ptr == NULL)
+    switch (GST_QUERY_TYPE(query))
     {
-        GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, THIS_PLUGIN_NAME, 0, THIS_PLUGIN_NAME);
-
-        This_Plugin_Element_Class_ptr = GST_ELEMENT_CLASS(klass);
-
-        This_Plugin_Element_Parent_Class_ptr = GST_ELEMENT_CLASS(gst_frame_saver_plugin_parent_class);
-
-        This_Plugin_Element_Class_ptr->change_state = gst_frame_saver_plugin_change_state;
-
-		#ifdef _VIDEO_FILTER_TYPE_
-			gst_element_class_set_static_metadata (GST_ELEMENT_CLASS (klass),
-												   "element definition",
-												   "Video/Filter",
-												   "Filter doc",
-												   "Developer");
-
-			GstVideoFilterClass *video_filter_class = GST_VIDEO_FILTER_CLASS (klass);
-
-			video_filter_class->transform_frame_ip = GST_DEBUG_FUNCPTR (gst_frame_saver_plugin_transform_frame_ip);
-
-            g_type_class_add_private (klass, sizeof (GstFrameSaverPluginPrivate));
-		#endif
+    case GST_QUERY_CAPS: /* report the supported caps here */
+    default:
+        ret = gst_pad_query_default(pad, parent, query);
+        break;
     }
-    else if (This_Plugin_Element_Class_ptr != (GstElementClass *) klass)
+    return ret;
+}
+
+
+static GstStateChangeReturn kms_frame_saver_plugin_change_state(GstElement *element, GstStateChange transition)
+{
+    GstStateChangeReturn             ret_val = GST_STATE_CHANGE_SUCCESS;
+
+    KmsFrameSaverPlugin         * ptr_filter = KMS_FRAME_SAVER_PLUGIN(element);
+
+    KmsFrameSaverPluginPrivate * ptr_private = GET_PRIVATE_STRUCT_PTR(ptr_filter);
+
+    gboolean                  is_frame_saver = (ptr_private->sz_snap[5] > '0');
+
+    DBG_Print( __func__ , (guint) transition );
+        
+    if (is_frame_saver)
     {
-        // should be impossible to reach here ... just suppress "unused_static" warnings
-    	params_attributes_flags += gobject_class  ? 0 : 0;
+        if (transition == GST_STATE_CHANGE_NULL_TO_READY)
+        {
+            if ( Frame_Saver_Filter_Attach(element) == 0 )
+            {
+                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_wait, ptr_private->sz_wait);
+                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_snap, ptr_private->sz_snap);
+                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_link, ptr_private->sz_link);
+                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_pads, ptr_private->sz_pads);
+                Frame_Saver_Filter_Set_Params(element, ptr_private->sz_path, ptr_private->sz_path);                
+            }
+        }
+
+        Frame_Saver_Filter_Transition(element, transition);
     }
 
-    gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass),
-                                       gst_static_pad_template_get(&gst_frame_saver_plugin_src_template));
+    if (GST_ELEMENT_CLASS(kms_frame_saver_plugin_parent_class)->change_state != NULL)
+    {
+        ret_val = GST_ELEMENT_CLASS(kms_frame_saver_plugin_parent_class)->change_state(element, transition);
+    }
 
-    gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass),
-                                       gst_static_pad_template_get(&gst_frame_saver_plugin_sink_template));
+    if (ret_val != GST_STATE_CHANGE_FAILURE)
+    {
+        if (transition == GST_STATE_CHANGE_READY_TO_NULL)
+        {
+            Frame_Saver_Filter_Detach(element);
+        }
+    }
 
-    GParamFlags param_flags = (GParamFlags) params_attributes_flags;
-
-    #ifdef _ALLOW_DYNAMIC_PARAMS_
-        param_flags |= GST_PARAM_CONTROLLABLE;
-    #endif
-
-    g_object_class_install_property(gobject_class,
-                                    e_PROP_WAIT,
-                                    g_param_spec_string("wait",
-                                                        "wait=MillisWaitBeforeNextFrameSnap",
-                                                        "wait before snapping another frame",
-                                                        "3000",
-                                                        param_flags));
-
-    g_object_class_install_property(gobject_class,
-                                    e_PROP_SNAP,
-                                    g_param_spec_string("snap",
-                                                        "snap=millisecInterval,maxNumSnaps,maxNumFails",
-                                                        "snap and save frames as RGB images in PNG files",
-                                                        "1000,0,0",
-                                                        param_flags));
-
-    g_object_class_install_property(gobject_class,
-                                    e_PROP_LINK,
-                                    g_param_spec_string("link",
-                                                        "link=pipelineName,producerName,consumerName",
-                                                        "insert TEE between producer and consumer elements",
-                                                        "auto,auto,auto",
-                                                        param_flags));
-
-    g_object_class_install_property(gobject_class,
-                                    e_PROP_PADS,
-                                    g_param_spec_string("pads",
-                                                        "pads=producerOut,consumerInput,consumerOut",
-                                                        "pads used by the producer and consumer elements",
-                                                        "src,sink,src",
-                                                        param_flags));
-
-    g_object_class_install_property(gobject_class,
-                                    e_PROP_PATH,
-                                    g_param_spec_string("path",
-                                                        "path=path-of-working-folder-for-saved-images",
-                                                        "path of working folder for saved image files",
-                                                        "auto",
-                                                        param_flags));
-
-    g_object_class_install_property(gobject_class,
-                                    e_PROP_NOTE,
-                                    g_param_spec_string("note",
-                                                        "note=MostRecentErrorCodition",
-                                                        "most recent error",
-                                                        "none",
-                                                        G_PARAM_READABLE));
-
-    g_object_class_install_property(gobject_class,
-                                    e_PROP_SILENT,
-                                    g_param_spec_boolean("silent",
-                                                         "Silent or Verbose",
-                                                         "Silent is 1/True --- Verbose is 0/False",
-                                                         FALSE,
-                                                         G_PARAM_READWRITE));
-
-    gst_element_class_set_details_simple(GST_ELEMENT_CLASS(klass),
-                                         THIS_PLUGIN_NAME,                  // name to launch
-                                         "Pipeline-Splicer",                // classification
-                                         "Inserts TEE and Saves Frames",    // description
-                                         "Author <<author@hostname.org>>"); // author info --- TODO
-
-    return;
+    return ret_val;
 }
 
+#endif // _IS_KURENTO_FILTER_
 
-/* entry point to initialize the plug-in
- * initialize the plug-in itself
- * register the element factories and other features
- */
-static gboolean frame_saver_plugin_register(GstPlugin * aPluginPtr)
-{
-    #ifdef _ALLOW_DYNAMIC_PARAMS_
-        gst_controller_init (NULL, NULL);
-    #endif
-
-    return gst_element_register (aPluginPtr, THIS_PLUGIN_NAME, GST_RANK_NONE, GST_TYPE_OF_FRAME_SAVER_PLUGIN);
-}
-
-
-/* gstreamer looks for this structure to register plugins */
-GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
-                  GST_VERSION_MINOR,
-                  FrameSaverVideoFilterPlugin,
-                  THIS_PLUGIN_NAME " --- Inserts TEE and saves image frames",
-				  frame_saver_plugin_register,
-                  FRAME_SAVER_PLUGIN_VERSION_INFO,
-                  "LGPL",
-                  "GStreamer",
-                  "http://gstreamer.net/")
-
-// ends file:  "gst_frame_saver_plugin_video_filter.c"
-
+// ends file:  "kms_frame_saver_plugin_video_filter.c"
