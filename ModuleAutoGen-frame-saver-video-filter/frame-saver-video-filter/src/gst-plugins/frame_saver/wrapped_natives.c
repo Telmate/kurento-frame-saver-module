@@ -6,7 +6,7 @@
  *
  * History:     1. 2016-11-05   JBendor     created from base
  *              2. 2016-11-06   JBendor     updated copyright 
- *              3. 2016-11-24   JBendor     updated
+ *              3. 2016-12-14   JBendor     updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -217,6 +217,32 @@ int nativeRenameFile( const char * pszPathNow, const char * pszNewPath )
    int error_code = rename(pszPathNow, pszNewPath);
 
    return error_code;
+}
+
+
+//=======================================================================================
+// nativeGetTempPath() --- returns 0 iff failed
+//=======================================================================================
+int nativeGetTempPath( char * pszFolderPath, int maxPathLength )
+{
+    int length = 0;
+
+    if ( (pszFolderPath != NULL) && (maxPathLength > 9) )
+    {
+        #ifdef WIN32
+            length = (int) GetTempPath( (UINT) (maxPathLength - 1), pszFolderPath );
+            if ((length > 0) && (pszFolderPath[length-1] != '\\'))
+            {
+                pszFolderPath[length-1] = '\\';    pszFolderPath[++length] = 0;
+            }
+        #endif
+
+        #ifdef _LINUX_   
+            length = sprintf(pszFolderPath, "%s", "/tmp/");
+        #endif
+    }
+
+    return ( (length > 1) ? length : 0 );
 }
 
 

@@ -9,6 +9,7 @@
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
  *              5. 2016-11-24   JBendor     Support dynamic params update
+ *              5. 2016-12-06   JBendor     Changed max lengths of names
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -29,6 +30,7 @@
     #include <direct.h>
     #include <limits.h>
 
+    #define MK_RW_DIR(path)     mkdir( (path) )
     #define MK_RWX_DIR(path)    mkdir( (path) )
     #define GET_CWD(buf,lng)    _getcwd( (buf),(lng) )
     #define ABS_PATH(p,b,l)     _fullpath( (b), (p), (l) )
@@ -43,8 +45,8 @@
 
     extern char *realpath (const char * path_ptr, char * buff_ptr);
 
-    #define MKDIR_MODE          (S_IRWXU | S_IRWXG | S_IRWXO)
-    #define MK_RWX_DIR(path)    mkdir( (path), MKDIR_MODE )
+    #define MK_RW_DIR(path)     mkdir( (path), (S_IRWXU | S_IRWXG) )
+    #define MK_RWX_DIR(path)    mkdir( (path), (S_IRWXU | S_IRWXG | S_IRWXO) )
     #define GET_CWD(buf,lng)    getcwd( (buf), (lng) )
     #define ABS_PATH(p,b,l)     realpath( (p), (b) )
     #define PATH_DELIMITER      '/'
@@ -58,8 +60,8 @@
 #define  NANOS_PER_DAY                  (NANOS_PER_HOUR * 24)
 
 #define  MIN_TICKS_MILLISEC             (100)
-#define  MAX_PAD_NAME_LNG               (20)
-#define  MAX_ELEMENT_NAME_LNG           (30)
+#define  MAX_PAD_NAME_LNG               (100)
+#define  MAX_ELEMENT_NAME_LNG           (100)
 #define  MAX_PIPELINE_CFG_LNG           (900)
 #define  MAX_PARAMS_SPECS_LNG           (4000)
 #define  MAX_PARAMS_ARRAY_LNG           (20)

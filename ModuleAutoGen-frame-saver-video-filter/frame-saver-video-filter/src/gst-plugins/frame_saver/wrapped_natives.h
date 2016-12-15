@@ -6,7 +6,7 @@
  *
  * History:     1. 2016-11-05   JBendor     created from base
  *              2. 2016-11-07   JBendor     updated copyright 
- *              3. 2016-11-29   JBendor     updated
+ *              3. 2016-12-14   JBendor     updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -199,6 +199,8 @@ int      nativeSetFileMode( const char * pszPath, const char * pszRW );         
 int      nativeRemoveFile( const char * pszPath, int maxNumRetries );           // returns 0 iff success
 
 int      nativeRenameFile( const char * pszPathNow, const char * pszNewPath );  // returns 0 iff success
+
+int      nativeGetTempPath( char * pszFolderPath, int maxPathLength );          // returns 0 iff failed
 
 int      nativeSleepMillies( int numThreadSleepMillies );                       // returns 0 iff success
 

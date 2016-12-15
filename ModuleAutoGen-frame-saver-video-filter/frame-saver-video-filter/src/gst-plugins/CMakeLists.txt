@@ -29,8 +29,8 @@ set(KMS_FRAME_SAVER_EXTRA_LIBS
 
 
 set(KMS_FRAME_SAVER_VIDEO_FILTER_SOURCES
-    kms_Frame_Saver_Plugin.c 
-    kms_Frame_Saver_Plugin.h
+    gst_Frame_Saver_Video_Filter_Plugin.c 
+    gst_Frame_Saver_Video_Filter_Plugin.h
     ${KMS_FRAME_SAVER_EXTRA_SOURCES}
 )
 
@@ -40,7 +40,6 @@ target_link_libraries(kms_frame_saver_video_filter
     ${GSTREAMER_LIBRARIES}
     ${GSTREAMER_VIDEO_LIBRARIES}
     ${OPENCV_LIBRARIES}
-    ${libsoup-2.4_LIBRARIES}
     ${KMS_FRAME_SAVER_EXTRA_LIBS}
 )
 
