@@ -5,7 +5,7 @@
  * Purpose:     Kurento+Gstreamer plugin-filter --- uses "Frame-Saver" for full behavior.
  *
  * History:     1. 2016-11-25   JBendor     Created as copy of "gst_Frame_Saver_Plugin.h"
- *              2. 2016-12-14   JBendor     Updated
+ *              2. 2016-12-15   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -105,7 +105,7 @@ G_END_DECLS
 
     #define BUILD_DATETIME  "(" __DATE__ "  " __TIME__ ")"
 
-    #define PLUGIN_VERSION  ( "1.0.0"  " " BUILD_TYPE  "." BUILD_TOOL " " BUILD_DATETIME  " name=" THIS_PLUGIN_NAME )
+    #define PLUGIN_VERSION  ( "1.0.1"  " " BUILD_TYPE  "." BUILD_TOOL " " BUILD_DATETIME  " name=" THIS_PLUGIN_NAME )
 
 #endif
 

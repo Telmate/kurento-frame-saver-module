@@ -6,7 +6,7 @@
  *
  * History:     1. 2016-11-25   JBendor     Created as copy of "gst_Frame_Saver_Plugin.c"
  *              2. 2016-11-25   JBendor     Adapted to _IS_KURENTO_FILTER_ being defined
- *              3. 2016-12-14   JBendor     Updated
+ *              3. 2016-12-15   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -75,10 +75,11 @@ typedef struct _GstFrameSaverPluginPrivate
     guint        num_notes;
     gchar        sz_wait[30],
                  sz_snap[30],
-                 sz_link[90],
-                 sz_pads[90],
-                 sz_path[400],
-                 sz_note[200];
+                 sz_link[100],
+                 sz_pads[100],
+                 sz_path[300],
+                 sz_note[300],
+                 sz_caps[300];
 
 } GstFrameSaverPluginPrivate;
 
@@ -104,7 +105,7 @@ G_DEFINE_TYPE_WITH_CODE (GstFrameSaverPlugin,                                   
 
     extern int Frame_Saver_Filter_Detach(GstElement * pluginPtr);
     extern int Frame_Saver_Filter_Attach(GstElement * pluginPtr);
-    extern int Frame_Saver_Filter_Receive_Buffer(GstElement * pluginPtr, GstBuffer * aBufferPtr);
+    extern int Frame_Saver_Filter_Receive_Buffer(GstElement * pluginPtr, GstBuffer * aBufferPtr, const char * aCapsTextPtr);
     extern int Frame_Saver_Filter_Transition(GstElement * pluginPtr, GstStateChange aTransition) ;
     extern int Frame_Saver_Filter_Set_Params(GstElement * pluginPtr, const gchar * aNewValuePtr, gchar * aPrvSpecsPtr);
 
@@ -120,7 +121,7 @@ G_DEFINE_TYPE_WITH_CODE (GstFrameSaverPlugin,                                   
         g_print("%s --- %s \n", THIS_PLUGIN_NAME, __func__);
         return 0;
     }
-    static int Frame_Saver_Filter_Receive_Buffer(GstElement * pluginPtr, GstBuffer * aBufferPtr)
+    static int Frame_Saver_Filter_Receive_Buffer(GstElement * pluginPtr, GstBuffer * aBufferPtr, const char * aCapsTextPtr)
     {
         g_print("%s --- %s \n", THIS_PLUGIN_NAME, __func__);
         return 0;
@@ -181,7 +182,7 @@ static guint DBG1_Print(DebugLevel_e severityLevel, const gchar * aTextPtr, gint
 
         if (aTextPtr != NULL)
         {
-            g_printf("%-7d --- %s --- %s --- (%d)", elapsed_ms, THIS_PLUGIN_NAME, aTextPtr, aValue);
+            g_printf("@%d --- %s --- %s --- (%d)", elapsed_ms, THIS_PLUGIN_NAME, aTextPtr, aValue);
         }
 
         g_printf("\n");
@@ -193,7 +194,9 @@ static guint DBG1_Print(DebugLevel_e severityLevel, const gchar * aTextPtr, gint
 
 static void gst_frame_saver_plugin_init(GstFrameSaverPlugin * aPluginPtr)
 {
-    The_Sys_Clock_Ptr = NULL;    DBG1_Print( e_DBG_MUST, __func__, 0 );
+    The_Sys_Clock_Ptr = NULL;    
+
+    DBG1_Print( e_DBG_MUST, __func__, 0 );
 
     initialize_instance(aPluginPtr, GET_PRIVATE_STRUCT_PTR(aPluginPtr));
 
@@ -210,8 +213,6 @@ static void gst_frame_saver_plugin_set_property(GObject * object, guint prop_id,
     GstFrameSaverPlugin        *  ptr_filter = GST_FRAME_SAVER_PLUGIN(object);
 
     GstFrameSaverPluginPrivate * ptr_private = GET_PRIVATE_STRUCT_PTR(ptr_filter);
-
-    DBG1_Print( e_DBG_RARE, __func__, prop_id );
 
     GST_OBJECT_LOCK(ptr_filter);
 
@@ -265,6 +266,8 @@ static void gst_frame_saver_plugin_set_property(GObject * object, guint prop_id,
 
     GST_OBJECT_UNLOCK(ptr_filter);
 
+    DBG1_Print( e_DBG_RARE, __func__, prop_id );
+
     return;
 }
 
@@ -274,8 +277,6 @@ static void gst_frame_saver_plugin_get_property(GObject * object, guint prop_id,
     GstFrameSaverPlugin        *  ptr_filter = GST_FRAME_SAVER_PLUGIN(object);
 
     GstFrameSaverPluginPrivate * ptr_private = GET_PRIVATE_STRUCT_PTR(ptr_filter);
-
-    DBG1_Print( e_DBG_RARE, __func__, prop_id );
 
     GST_OBJECT_LOCK(ptr_filter);
 
@@ -317,18 +318,36 @@ static void gst_frame_saver_plugin_get_property(GObject * object, guint prop_id,
 
     GST_OBJECT_UNLOCK(ptr_filter);
 
+    DBG1_Print( e_DBG_RARE, __func__, prop_id );
+
     return;
 }
 
 
-static void gst_frame_saver_plugin_finalize (GObject *object)
+static void gst_frame_saver_plugin_finalize (GObject * object)
 {
-    DBG1_Print( e_DBG_MUST, __func__, 0 );    
-
     Frame_Saver_Filter_Detach( GST_ELEMENT(object) );
 
     G_OBJECT_CLASS (gst_frame_saver_plugin_parent_class)->finalize(object);
 
+    GST_DEBUG_OBJECT (GST_FRAME_SAVER_PLUGIN(object), "finalize");
+
+    DBG1_Print( e_DBG_MUST, __func__, 0 );    
+    DBG1_Print( e_DBG_MUST, NULL, 0 );
+
+    return;
+}
+
+
+static void gst_frame_saver_plugin_dispose (GObject * object)
+{
+    Frame_Saver_Filter_Detach( GST_ELEMENT(object) );
+
+    G_OBJECT_CLASS (gst_frame_saver_plugin_parent_class)->dispose(object);
+
+    GST_DEBUG_OBJECT (GST_FRAME_SAVER_PLUGIN(object), "dispose");
+
+    DBG1_Print( e_DBG_MUST, __func__, 0 );    
     DBG1_Print( e_DBG_MUST, NULL, 0 );
 
     return;
@@ -338,8 +357,6 @@ static void gst_frame_saver_plugin_finalize (GObject *object)
 static gboolean KMS_frame_saver_plugin_start (GstBaseTransform * aTransPtr)
 {
     GstElement * ptr_element = (GstElement *) GST_ELEMENT(aTransPtr);
-
-    DBG1_Print( e_DBG_MUST, __func__, 0 );
 
     if ( Frame_Saver_Filter_Attach(ptr_element) == 0 )
     {
@@ -358,31 +375,48 @@ static gboolean KMS_frame_saver_plugin_start (GstBaseTransform * aTransPtr)
 
     GST_DEBUG_OBJECT (GST_FRAME_SAVER_PLUGIN(aTransPtr), "start");
 
+    DBG1_Print( e_DBG_MUST, __func__, 0 );
+    DBG1_Print( e_DBG_MUST, NULL, 0 );
+
     return TRUE;    // must return TRUE to receive frames
 }
 
 
 static gboolean KMS_frame_saver_plugin_stop (GstBaseTransform * aTransPtr)
 {
-    DBG1_Print( e_DBG_MUST, __func__, 0 );
+    Frame_Saver_Filter_Detach( GST_ELEMENT(aTransPtr) );
 
     GST_DEBUG_OBJECT (GST_FRAME_SAVER_PLUGIN(aTransPtr), "stop");
+
+    DBG1_Print( e_DBG_MUST, __func__, 0 );
+    DBG1_Print( e_DBG_MUST, NULL, 0 );
 
     return TRUE;
 }
 
 
 static gboolean KMS_frame_saver_plugin_set_info ( GstVideoFilter  * aFilterPtr, 
-                                                  GstCaps         * in_caps_ptr,  
+                                                  GstCaps         * in_caps_ptr,
                                                   GstVideoInfo    * in_info_ptr, 
                                                   GstCaps         * out_caps_ptr, 
                                                   GstVideoInfo    * out_info_ptr )
 {
-    DBG1_Print( e_DBG_MUST, __func__, 0 );
+    GstFrameSaverPlugin        *  ptr_filter = GST_FRAME_SAVER_PLUGIN(aFilterPtr);
+
+    GstFrameSaverPluginPrivate * ptr_private = GET_PRIVATE_STRUCT_PTR(ptr_filter);
+
+    gchar                      * psz_in_caps = in_caps_ptr ? gst_caps_to_string(in_caps_ptr) : NULL;
+
+    snprintf( ptr_private->sz_caps, sizeof(ptr_private->sz_caps), "%s", (psz_in_caps ? psz_in_caps : "") );
+
+    g_free(psz_in_caps);
+
+    Frame_Saver_Filter_Transition( GST_ELEMENT(aFilterPtr), GST_STATE_CHANGE_NULL_TO_READY );
 
     GST_DEBUG_OBJECT (GST_FRAME_SAVER_PLUGIN(aFilterPtr), "set_info");
 
-    Frame_Saver_Filter_Transition( GST_ELEMENT(aFilterPtr), GST_STATE_CHANGE_NULL_TO_READY );
+    DBG1_Print( e_DBG_MUST, __func__, 0 );
+    DBG1_Print( e_DBG_MUST, NULL, 0 );
 
     return TRUE;
 }
@@ -390,11 +424,28 @@ static gboolean KMS_frame_saver_plugin_set_info ( GstVideoFilter  * aFilterPtr,
 
 static GstFlowReturn KMS_frame_saver_plugin_transform_frame_ip(GstVideoFilter * aFilterPtr, GstVideoFrame * aFramePtr)
 {
-    static gint  num_frames = 0;
+    GstFrameSaverPlugin        *  ptr_filter = GST_FRAME_SAVER_PLUGIN(aFilterPtr);
 
-    DBG1_Print( e_DBG_RARE, __func__, ++num_frames );
+    GstFrameSaverPluginPrivate * ptr_private = GET_PRIVATE_STRUCT_PTR(ptr_filter);
 
-    Frame_Saver_Filter_Receive_Buffer( GST_ELEMENT(aFilterPtr), aFramePtr->buffer );
+    if ( ptr_private->sz_caps[0] == 0 )
+    {   
+        GstCaps * caps_ptr = gst_video_info_to_caps ( &aFramePtr->info );
+
+        gchar   * psz_caps = caps_ptr ? gst_caps_to_string(caps_ptr) : NULL;
+
+        g_free(caps_ptr);
+
+        snprintf( ptr_private->sz_caps, sizeof(ptr_private->sz_caps), "%s", (psz_caps ? psz_caps : "") );
+
+        g_free(psz_caps);
+    }
+
+    ptr_private->num_buffs += 1;
+
+    DBG1_Print( e_DBG_RARE, __func__, ptr_private->num_buffs);
+
+    Frame_Saver_Filter_Receive_Buffer( GST_ELEMENT(aFilterPtr), aFramePtr->buffer, ptr_private->sz_caps );
 
     return GST_FLOW_OK;
 }
@@ -408,11 +459,10 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
     GstVideoFilterClass     *   video_filter_class_ptr = GST_VIDEO_FILTER_CLASS(klass);
     GstBaseTransformClass   * base_transform_class_ptr = GST_BASE_TRANSFORM_CLASS(klass);
 
-    The_Sys_Clock_Ptr = NULL;    DBG1_Print( e_DBG_MUST, __func__, 0 );
-
     gobject_class_ptr->set_property = gst_frame_saver_plugin_set_property;
     gobject_class_ptr->get_property = gst_frame_saver_plugin_get_property;
     gobject_class_ptr->finalize     = gst_frame_saver_plugin_finalize;
+    gobject_class_ptr->dispose      = gst_frame_saver_plugin_dispose;
 
     base_transform_class_ptr->start = GST_DEBUG_FUNCPTR (KMS_frame_saver_plugin_start);
     base_transform_class_ptr->stop  = GST_DEBUG_FUNCPTR (KMS_frame_saver_plugin_stop);
@@ -510,6 +560,11 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
         
     #endif  // _IS_KURENTO_FILTER_
 
+
+    The_Sys_Clock_Ptr = NULL;    
+
+    DBG1_Print( e_DBG_MUST, __func__, 0 );
+
     return;
 }
 
@@ -521,7 +576,9 @@ static void gst_frame_saver_plugin_class_init(GstFrameSaverPluginClass * klass)
  */
 static gboolean register_this_plugin(GstPlugin * aPluginPtr)
 {
-    The_Sys_Clock_Ptr = NULL;    DBG1_Print( e_DBG_MUST, __func__, 0 );
+    The_Sys_Clock_Ptr = NULL;    
+
+    DBG1_Print( e_DBG_MUST, __func__, 0 );
 
     return gst_element_register (aPluginPtr, THIS_PLUGIN_NAME, GST_RANK_NONE, GST_TYPE_OF_FRAME_SAVER_PLUGIN);
 }
@@ -544,6 +601,7 @@ static void initialize_instance(GstFrameSaverPlugin * aPluginPtr, GstFrameSaverP
     strcpy(aPrivatePtr->sz_pads, "pads=auto,auto,auto");
     strcpy(aPrivatePtr->sz_path, "path=auto");
     strcpy(aPrivatePtr->sz_note, "note=none");
+    strcpy(aPrivatePtr->sz_caps, "");
     
     aPrivatePtr->num_buffs = 0;
     aPrivatePtr->num_drops = 0;    
@@ -639,7 +697,20 @@ static GstFlowReturn gst_frame_saver_plugin_chain(GstPad * pad, GstObject * pare
     
     if (ptr_private->sz_snap[5] > '0')  // is_frame_saver)
     {
-        Frame_Saver_Filter_Receive_Buffer(GST_ELEMENT(ptr_filter), buf);
+        if ( ptr_private->sz_caps[0] == 0 )
+        {
+            GstCaps * caps_ptr = gst_pad_get_current_caps (pad);
+
+            gchar   * psz_caps = caps_ptr ? gst_caps_to_string(caps_ptr) : NULL;
+
+            snpritf(ptr_private->sz_caps, sizeof(ptr_private->sz_caps), "%s", psz_caps ? psz_caps : "");
+
+            gst_object_unref(caps_ptr);
+
+            g_free(psz_caps);
+        }
+
+        Frame_Saver_Filter_Receive_Buffer(GST_ELEMENT(ptr_filter), buf, ptr_private->sz_caps);
     }
     
     return result;  // anythin except GST_FLOW_OK could halt flow in the pipeline

@@ -7,7 +7,7 @@
  * History:     1. 2016-10-29   JBendor     Created    
  *              2. 2016-11-04   JBendor     Updated 
  *              3. 2016-12-08   JBendor     Support the actual Gstreamer plugin
- *              4. 2016-12-14   JBendor     Updated 
+ *              4. 2016-12-15   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -53,11 +53,13 @@ extern int Frame_Saver_Filter_Detach(GstElement * aPluginPtr);
 
 
 //=======================================================================================
-// synopsis: result = Frame_Saver_Filter_Receive_Buffer(aPluginPtr, aBufferPtr)
+// synopsis: result = Frame_Saver_Filter_Receive_Buffer(aPluginPtr, aBufferPtr, aCapsTextPtr)
 //
 // called at by the actual plugin upon buffer arrival --- returns GST_FLOW_OK
 //=======================================================================================
-extern int Frame_Saver_Filter_Receive_Buffer(GstElement * aPluginPtr, gpointer aBufferPtr);
+extern int Frame_Saver_Filter_Receive_Buffer(GstElement * aPluginPtr, 
+                                             GstBuffer  * aBufferPtr, 
+                                             const char * aCapsTextPtr);
 
 
 //=======================================================================================

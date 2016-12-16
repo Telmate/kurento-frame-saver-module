@@ -7,7 +7,8 @@
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
  *              5. 2016-11-24   JBendor     Support dynamic params update
- *              6. 2016-12-14   JBendor     Updated
+ *              6. 2016-12-08   JBendor     Support the actual Gstreamer plugin
+ *              7. 2016-12-15   JBendor     Updated
  *
  * Description: implements parameters used by the Frame_Saver_Filter
  *
@@ -691,7 +692,7 @@ gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char 
             }
 
             // verify reasonable working folder path --- and space for image file name
-            is_ok = (lng > 0) && (sizeof(aParamsPtr->folder_path) > lng + 30);
+            is_ok = (lng > 3) && (sizeof(aParamsPtr->folder_path) > lng + 30);
 
             continue;
         }

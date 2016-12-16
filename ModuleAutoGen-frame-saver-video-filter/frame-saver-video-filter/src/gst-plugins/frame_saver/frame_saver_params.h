@@ -9,7 +9,8 @@
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
  *              5. 2016-11-24   JBendor     Support dynamic params update
- *              5. 2016-12-06   JBendor     Changed max lengths of names
+ *              6. 2016-12-08   JBendor     Support the actual Gstreamer plugin
+ *              7. 2016-12-15   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -39,14 +40,15 @@
 #endif
 
 #ifdef _LINUX
+    #include <glib.h>
     #include <unistd.h>
     #include <sys/stat.h>
     #include <linux/limits.h>
 
     extern char *realpath (const char * path_ptr, char * buff_ptr);
 
-    #define MK_RW_DIR(path)     mkdir( (path), (S_IRWXU | S_IRWXG) )
-    #define MK_RWX_DIR(path)    mkdir( (path), (S_IRWXU | S_IRWXG | S_IRWXO) )
+    #define MK_RW_DIR(path)     g_mkdir_with_parents( (path), (S_IRWXU | S_IRWXG) )
+    #define MK_RWX_DIR(path)    g_mkdir_with_parents( (path), ALLPERMS )
     #define GET_CWD(buf,lng)    getcwd( (buf), (lng) )
     #define ABS_PATH(p,b,l)     realpath( (p), (b) )
     #define PATH_DELIMITER      '/'
@@ -68,7 +70,7 @@
 
 #define DEFAULT_VID_SRC_NAME            ("videotestsrc0")
 #define DEFAULT_VID_CVT_NAME            ("videoconvert0")
-#define DEFAULT_PIPELINE_NAME           ("FSL_DEFAULT_PIPELINE")
+#define DEFAULT_PIPELINE_NAME           ("untitledPipe0")
 
 
 //=======================================================================================
