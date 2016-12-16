@@ -10,7 +10,7 @@ Copyright © 2013-2016 [Kurento]. Licensed under [Apache 2.0 License].
 kurento-player
 ==============
 
-Kurento Java Tutorial: Plays of a video through WebRTC, and Saves Frames As PNG Files.
+Kurento Java Tutorial: Play of a video through WebRTC.
 
 Running this tutorial
 ---------------------

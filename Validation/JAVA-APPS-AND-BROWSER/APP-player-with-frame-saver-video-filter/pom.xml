@@ -8,11 +8,11 @@
 		<version>6.6.0</version>
 	</parent>
 
-	<artifactId>kurento-player-frame-saver</artifactId>
+	<artifactId>kurento-player</artifactId>
 	<packaging>jar</packaging>
 
-	<name>Kurento Java Tutorial --- Player-Frame-Saver</name>
-	<description>Play of a video through WebRTC, And Saves Frames As PNG Files</description>
+	<name>Kurento Java Tutorial - Player</name>
+	<description>Play of a video through WebRTC</description>
 
 	<licenses>
 		<license>
@@ -23,19 +23,27 @@
 	</licenses>
 
 	<organization>
+		<name>Kurento</name>
+		<url>http://www.kurento.org</url>
 	</organization>
 
 	<scm>
 	</scm>
 
 	<developers>
+		<developer>
+			<id>kurento.org</id>
+			<name>-kurento.org Community</name>
+			<organization>Kurento.org</organization>
+			<organizationUrl>http://www.kurento.org</organizationUrl>
+		</developer>
 	</developers>
 
 	<properties>
 		<demo.port>8087</demo.port>
 
 		<!-- Main class -->
-		<start-class>org.kurento.tutorial.player.PlayerFrameSaverApp</start-class>
+		<start-class>org.kurento.tutorial.player.PlayerApp</start-class>
 
 	</properties>
 
@@ -175,4 +183,3 @@
 		</profile>
 	</profiles>
 </project>
-

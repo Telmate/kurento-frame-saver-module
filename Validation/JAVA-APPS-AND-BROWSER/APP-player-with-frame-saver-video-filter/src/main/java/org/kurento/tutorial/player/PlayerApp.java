@@ -26,18 +26,18 @@ import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
 /**
- * Plays a video file through WebRTC and Saves Frames as PNG files.
+ * Play of a video through WebRTC (main).
  *
  * @author Boni Garcia (bgarcia@gsyc.es)
  * @since 6.1.1
  */
 @EnableWebSocket
 @SpringBootApplication
-public class PlayerFrameSaverApp implements WebSocketConfigurer {
+public class PlayerApp implements WebSocketConfigurer {
 
   @Bean
-  public PlayerFrameSaverHandler handler() {
-    return new PlayerFrameSaverHandler();
+  public PlayerHandler handler() {
+    return new PlayerHandler();
   }
 
   @Bean
@@ -51,6 +51,6 @@ public class PlayerFrameSaverApp implements WebSocketConfigurer {
   }
 
   public static void main(String[] args) throws Exception {
-    new SpringApplication(PlayerFrameSaverApp.class).run(args);
+    new SpringApplication(PlayerApp.class).run(args);
   }
 }
