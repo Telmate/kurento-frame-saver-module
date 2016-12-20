@@ -7,6 +7,8 @@
  *              3. 2016-11-04   JBendor     Support for custom pipelines
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
  *              5. 2016-11-24   JBendor     Support dynamic params update
+ *              6. 2016-12-08   JBendor     Support the actual Gstreamer plugin
+ *              7. 2016-12-20   JBendor     Updated
  *
  * Description: implements parameters used by the Frame_Saver_Filter
  *
@@ -15,40 +17,8 @@
  * ======================================================================================
  */
 
+#include "wrapped_natives.h"
 #include "frame_saver_params.h"
-
-
-#ifdef _CYGWIN
-
-char * realpath( const char *aPathPtr, char * aBuffPtr )
-{
-    int lng = (int) strlen( GET_CWD(aBuffPtr, PATH_MAX) );
-
-    if (aPathPtr[0] == PATH_DELIMITER)
-    {
-        sprintf(aBuffPtr, "%s", aPathPtr);  return (aBuffPtr);
-    }
-
-    while ((lng > 0) && (aPathPtr[0] == '.') && (aPathPtr[1] == '.') && (aPathPtr[2] == PATH_DELIMITER))
-    {
-        while ((--lng > 0) && (aBuffPtr[lng] != PATH_DELIMITER))
-        {
-            ; // next step back
-        }
-        aPathPtr += 3;
-    }
-
-    if ((aPathPtr[0] == '.') && (aPathPtr[1] == PATH_DELIMITER))
-    {
-        lng += sprintf(aBuffPtr+lng, "%s", ++aPathPtr);   return (aBuffPtr);
-    }
-
-    lng += sprintf(aBuffPtr+lng, "%s", aPathPtr);
-
-    return (aBuffPtr);  // may need more work
-}
-
-#endif // _CYGWIN
 
 
 //=======================================================================================
@@ -681,14 +651,16 @@ gboolean frame_saver_params_parse_from_array(SplicerParams_t * aParamsPtr, char 
 
             if (strncmp(aParamsPtr->folder_path, "auto", 4) == 0)
             {
-                char * ptr = GET_CWD(aParamsPtr->folder_path, sizeof(aParamsPtr->folder_path));
+                lng = nativeGetTempPath(aParamsPtr->folder_path, sizeof(aParamsPtr->folder_path));
 
-                lng = (ptr == NULL) ? 0 : (int) strlen(aParamsPtr->folder_path);
+                if (lng > 0)
+                {
+                    lng += sprintf(aParamsPtr->folder_path + lng, "%s", "FrameSaver");
+                }
             }
 
             // verify reasonable working folder path --- and space for image file name
-            is_ok = ((sizeof(aParamsPtr->folder_path) > lng + 30)) &&
-                     (strchr(aParamsPtr->folder_path, PATH_DELIMITER) != NULL) && (lng > 4);
+            is_ok = (lng > 3) && (sizeof(aParamsPtr->folder_path) > lng + 30);
 
             continue;
         }
@@ -772,3 +744,4 @@ gboolean frame_saver_params_parse_from_text(SplicerParams_t * aParamsPtr, char *
 
     return is_ok;
 }
+
