@@ -7,7 +7,7 @@
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
  *              4. 2016-11-04   JBendor     Support for making custom pipelines
  *              5. 2016-12-08   JBendor     Support the actual Gstreamer plugin
- *              6. 2016-12-20   JBendor     Updated
+ *              6. 2016-12-21   JBendor     Updated
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
  *
@@ -392,12 +392,24 @@ static GstPadProbeReturn do_appsink_callback_probe_inp_pad_EOS(GstPad          *
 
 
 //=======================================================================================
+// synopsis: error = do_create_folder_for_saved_frames(elapsedPlaytimeMillis)
+//
+// creates folder with unique name for saved frames --- returns 0 on success
+//=======================================================================================
+static int do_create_folder_for_saved_frames(uint32_t elapsedPlaytimeMillis)
+{
+}
+
+
+//=======================================================================================
 // synopsis: is_ok = do_appsink_trigger_next_frame_snap(elapsedPlaytimeMillis)
 //
 // triggers frame snaps --- returns TRUE iff more snaps are allowed
 //=======================================================================================
 static gboolean do_appsink_trigger_next_frame_snap(uint32_t elapsedPlaytimeMillis)
 {
+    static guint The_Folders_Counter = 0;
+
     GstClockTime next_snap_nanos = NANOS_PER_MILLISEC * mySplicer.params.one_snap_ms;
 
     // establish a desired time for next frame snap
@@ -412,16 +424,16 @@ static gboolean do_appsink_trigger_next_frame_snap(uint32_t elapsedPlaytimeMilli
 
         int length = (int) strlen(mySniffer.work_folder_path);
 
-        sprintf(&mySniffer.work_folder_path[length],
-                "%c%s%04d%02d%02d_%02d%02d%02d",
-                PATH_DELIMITER,
-                "IMAGES_",
-                tm_ptr->tm_year + 1900,
-                tm_ptr->tm_mon + 1,
-                tm_ptr->tm_mday,
-                tm_ptr->tm_hour,
-                tm_ptr->tm_min,
-                tm_ptr->tm_sec);
+        sprintf( &mySniffer.work_folder_path[length],
+                 "%cIMAGES_%04d%02d%02d_%02d%02d%02d_%d",
+                 PATH_DELIMITER,
+                 tm_ptr->tm_year + 1900,
+                 tm_ptr->tm_mon + 1,
+                 tm_ptr->tm_mday,
+                 tm_ptr->tm_hour,
+                 tm_ptr->tm_min,
+                 tm_ptr->tm_sec,
+                 ++The_Folders_Counter );
 
         int error = MK_RWX_DIR(mySniffer.work_folder_path);
 
