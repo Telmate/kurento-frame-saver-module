@@ -10,7 +10,7 @@
  *              4. 2016-11-06   JBendor     Defined and used MKDIR_MODE
  *              5. 2016-11-24   JBendor     Support dynamic params update
  *              6. 2016-12-08   JBendor     Support the actual Gstreamer plugin
- *              7. 2016-12-20   JBendor     Updated
+ *              7. 2016-12-15   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -21,15 +21,45 @@
 
 #define __Frame_Saver_Params_H__
 
+#include "wrapped_natives.h"
+
 #include <gst/gst.h>
+
+
+#ifdef _WIN32
+
+    #include <direct.h>
+    #include <limits.h>
+
+    #define MK_RW_DIR(path)     mkdir( (path) )
+    #define MK_RWX_DIR(path)    mkdir( (path) )
+    #define GET_CWD(buf,lng)    _getcwd( (buf),(lng) )
+    #define ABS_PATH(p,b,l)     _fullpath( (b), (p), (l) )
+    #define PATH_DELIMITER      '\\' 
+    #define PATH_MAX            (260)
+#endif
+
+#ifdef _LINUX
+    #include <glib.h>
+    #include <unistd.h>
+    #include <sys/stat.h>
+    #include <linux/limits.h>
+
+    extern char *realpath (const char * path_ptr, char * buff_ptr);
+
+    #define MK_RW_DIR(path)     g_mkdir_with_parents( (path), (S_IRWXU | S_IRWXG) )
+    #define MK_RWX_DIR(path)    g_mkdir_with_parents( (path), ALLPERMS )
+    #define GET_CWD(buf,lng)    getcwd( (buf), (lng) )
+    #define ABS_PATH(p,b,l)     realpath( (p), (b) )
+    #define PATH_DELIMITER      '/'
+#endif
+
 
 #define  NANOS_PER_MILLISEC             ((guint64) (1000L * 1000L))
 #define  NANOS_PER_SECOND               (NANOS_PER_MILLISEC * 1000)
 #define  NANOS_PER_MINUTE               (NANOS_PER_SECOND * 60)
 #define  NANOS_PER_HOUR                 (NANOS_PER_MINUTE * 60)
 #define  NANOS_PER_DAY                  (NANOS_PER_HOUR * 24)
-#define  NANOS_PER_YEAR                 (NANOS_PER_DAY * 365)
-#define  NANOS_PER_MONTH                (NANOS_PER_YEAR / 12)
 
 #define  MIN_TICKS_MILLISEC             (100)
 #define  MAX_PAD_NAME_LNG               (100)

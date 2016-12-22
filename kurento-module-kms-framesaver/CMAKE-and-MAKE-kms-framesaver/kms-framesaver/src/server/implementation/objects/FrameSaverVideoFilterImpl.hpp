@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImpl.hpp
  *
  * History:     1. 2016-11-25   JBendor     Created a a class derived from kurento::FilterImpl
- *              2. 2016-12-13   JBendor     Updated
+ *              2. 2016-12-15   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -22,9 +22,6 @@
 #include <KurentoException.hpp>
 #include <EventHandler.hpp>
 #include <mutex>
-
-
-
 
 
 namespace kurento
@@ -67,21 +64,21 @@ public:
 
     FrameSaverVideoFilterImpl (const boost::property_tree::ptree & ref_config, std::shared_ptr<MediaPipeline> ptr_Pipeline);
 
-    virtual ~FrameSaverVideoFilterImpl();                                   // virtual d'tor
+    virtual ~FrameSaverVideoFilterImpl();                           // virtual d'tor
 
-    bool startPipelinePlaying();                                    // starts pipeline PLAYING
+    virtual bool startPipelinePlaying();                                    // starts pipeline PLAYING
 
-    bool stopPipelinePlaying();                                     // changes PLAYING to READY
+    virtual bool stopPipelinePlaying();                                     // changes PLAYING to READY
 
-    std::string getLastError();                                     // returns non-empty for errors
+    virtual std::string getLastError();                                     // returns non-empty for errors
 
-    std::string getElementsNamesList();                             // returns NamesSeparatedByTabs
+    virtual std::string getElementsNamesList();                             // returns NamesSeparatedByTabs
 
-    std::string getParamsList();                                    // returns ParamsSeparatedByTabs
+    virtual std::string getParamsList();                                    // returns ParamsSeparatedByTabs
 
-    std::string getParam(const std::string & rParamName);           // returns empty if invalid name
+    virtual std::string getParam(const std::string & rParamName);           // returns empty if invalid name
 
-    bool setParam(const std::string & rParamName, const std::string & rNewValue); // FALSE if failed
+    virtual bool setParam(const std::string & rParamName, const std::string & rNewValue); // FALSE if failed
 
     // The bodies of next three methods are automatically implemented by the code generator
     virtual void Serialize (JsonSerializer &serializer);
@@ -98,10 +95,7 @@ protected:
 private:
     std::recursive_mutex    mRecursiveMutex;
     std::string             mLastErrorDetails;
-    GstElement            * mNativeElementPtr;
-    gulong                  mBusHandler;
-
-    void busMessage (GstMessage *message);
+    GstElement            * mGstreamElementPtr;
 
     class StaticConstructor
     {

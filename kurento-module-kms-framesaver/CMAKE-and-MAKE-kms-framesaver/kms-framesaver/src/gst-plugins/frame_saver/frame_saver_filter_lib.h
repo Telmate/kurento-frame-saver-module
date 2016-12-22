@@ -5,7 +5,7 @@
  * Purpose:     external interface (API) for Frame_Saver_Filter_Library (aka FSL)
  * 
  * History:     1. 2016-10-14   JBendor     Created    
- *              2. 2016-12-20   JBendor     Updated
+ *              2. 2016-11-24   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -15,12 +15,6 @@
 #ifndef __Frame_Saver_Filter_Lib_H__
 
 #define __Frame_Saver_Filter_Lib_H__
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif  // __cplusplus
-
 
 #if defined _MSC_VER && defined _USRDLL
     #ifdef _USRDLL
@@ -39,11 +33,16 @@ extern "C" {
 #include <stdint.h>
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
+
 //=======================================================================================
 // custom types
 //=======================================================================================
 typedef void    *fsl_handle_t;
-typedef uint8_t  fsl_bool_t;
+typedef int8_t   fsl_bool_t;
 typedef int32_t  fsl_error_t;
 
 
@@ -69,7 +68,7 @@ API_LINKAGE const char * fsl_get_version();
 //
 // initializes the library --- returns 0 on success, else error
 //=======================================================================================
-API_LINKAGE int32_t fsl_initialize();
+API_LINKAGE int fsl_initialize();
 
 
 //=======================================================================================
@@ -77,7 +76,7 @@ API_LINKAGE int32_t fsl_initialize();
 //
 // performs a self-test on the library --- returns 0
 //=======================================================================================
-API_LINKAGE int32_t fsl_main_test(int32_t argc, char** argv);
+API_LINKAGE int fsl_main_test(int argc, char** argv);
 
 
 #ifdef __cplusplus

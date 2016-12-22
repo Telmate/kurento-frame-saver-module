@@ -3,7 +3,7 @@
  * File:        FrameSaverVideoFilterImpl.cpp
  *
  * History:     1. 2016-11-25   JBendor     Created as a class derived from kurento::FilterImpl
- *              2. 2016-12-13   JBendor     Updated
+ *              2. 2016-12-15   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -15,10 +15,7 @@
 #include "MediaPipelineImpl.hpp"
 #include <FrameSaverVideoFilterImplFactory.hpp>
 #include "FrameSaverVideoFilterImpl.hpp"
-#include <jsonrpc/JsonSerializer.hpp>
-#include <KurentoException.hpp>
-#include <gst/gst.h>
-#include "SignalHandler.hpp"
+
 
 #define GST_CAT_DEFAULT     kurento_frame_saver_video_filter_impl
 GST_DEBUG_CATEGORY_STATIC   (GST_CAT_DEFAULT);
@@ -32,26 +29,10 @@ namespace module
 namespace framesavervideofilter
 {
 
-void FrameSaverVideoFilterImpl::busMessage (GstMessage *message)
-{
-    return;
-}
-
 
 void FrameSaverVideoFilterImpl::postConstructor ()
 {
     FilterImpl::postConstructor ();
-
-    std::shared_ptr<MediaPipelineImpl> pipe = std::dynamic_pointer_cast<MediaPipelineImpl> (getMediaPipeline() );
-
-    GstBus* bus = gst_pipeline_get_bus ( GST_PIPELINE (pipe->getPipeline() ) );
-
-    mBusHandler = register_signal_handler ( G_OBJECT (bus), 
-                                            "message",
-                                            std::function <void (GstElement *, GstMessage *) > (std::bind (&FrameSaverVideoFilterImpl::busMessage, this, std::placeholders::_2) ),
-                                            std::dynamic_pointer_cast<FrameSaverVideoFilterImpl> (shared_from_this() ) );
-
-    g_object_unref (bus);
 }
 
 
@@ -59,23 +40,7 @@ FrameSaverVideoFilterImpl::FrameSaverVideoFilterImpl (const boost::property_tree
                                                       std::shared_ptr<MediaPipeline> mediaPipeline)
                           : FilterImpl (config, std::dynamic_pointer_cast<MediaPipelineImpl> (mediaPipeline) )
 {
-    mBusHandler = 0;
-
-    mNativeElementPtr = NULL;
-
-    mLastErrorDetails.assign("");
-
-    g_object_set (element, "filter-factory", GST_DEFAULT_NAME, NULL);
-
-    g_object_get (G_OBJECT (element), "filter", &mNativeElementPtr, NULL);
-
-    if (mNativeElementPtr == NULL) 
-    {
-        throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE, "Media Object not available");
-    }
-
-    // There is no need to reference the element because its life cycle is the same as the filter's
-    g_object_unref (mNativeElementPtr);
+    mGstreamElementPtr = NULL;
 
     initializeInstance(true);
 }
@@ -83,19 +48,6 @@ FrameSaverVideoFilterImpl::FrameSaverVideoFilterImpl (const boost::property_tree
 
 FrameSaverVideoFilterImpl::~FrameSaverVideoFilterImpl()
 {
-    if (mBusHandler > 0) 
-    {
-        std::shared_ptr<MediaPipelineImpl> pipe;
-
-        pipe = std::dynamic_pointer_cast<MediaPipelineImpl> (getMediaPipeline() );
-
-        GstBus *bus = gst_pipeline_get_bus ( GST_PIPELINE (pipe->getPipeline() ) );
-
-        unregister_signal_handler (bus, mBusHandler);
-
-        g_object_unref (bus);
-    }
-
     releaseResources(true);
 }
 
@@ -104,11 +56,11 @@ bool FrameSaverVideoFilterImpl::startPipelinePlaying()
 {
     std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
 
-    bool is_ok = FALSE;     // (mNativeElementPtr != NULL);
+    bool is_ok = FALSE;     // (mGstreamElementPtr != NULL);
 
     if (is_ok)
     {
-        GstElement * pipeline_ptr = (GstElement *) gst_element_get_parent( mNativeElementPtr );
+        GstElement * pipeline_ptr = (GstElement *) gst_element_get_parent( mGstreamElementPtr );
 
         if (pipeline_ptr != NULL)
         {
@@ -137,11 +89,11 @@ bool FrameSaverVideoFilterImpl::stopPipelinePlaying()
 {
     std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
 
-    bool is_ok = FALSE; // (mNativeElementPtr != NULL);
+    bool is_ok = FALSE; // (mGstreamElementPtr != NULL);
 
     if (is_ok)
     {
-        GstElement * pipeline_ptr = (GstElement *) gst_element_get_parent( mNativeElementPtr );
+        GstElement * pipeline_ptr = (GstElement *) gst_element_get_parent( mGstreamElementPtr );
 
         if (pipeline_ptr != NULL)
         {
@@ -184,9 +136,9 @@ std::string FrameSaverVideoFilterImpl::getElementsNamesList()
 
     std::string  names_separated_by_tabs;
 
-    bool is_ok = (mNativeElementPtr != NULL);
+    bool is_ok = (mGstreamElementPtr != NULL);
 
-    GstElement * pipeline_ptr = is_ok ? (GstElement *) gst_element_get_parent(mNativeElementPtr) : NULL;
+    GstElement * pipeline_ptr = is_ok ? (GstElement *) gst_element_get_parent(mGstreamElementPtr) : NULL;
 
     GstIterator * iterate_ptr = pipeline_ptr ? gst_bin_iterate_elements(GST_BIN(pipeline_ptr)) : NULL;
 
@@ -263,11 +215,11 @@ std::string FrameSaverVideoFilterImpl::getParam(const std::string & rParamName)
 
     gchar * text_ptr = NULL;
 
-    bool is_ok = (mNativeElementPtr != NULL);
+    bool is_ok = (mGstreamElementPtr != NULL);
 
     if (is_ok)
     {
-        g_object_get( G_OBJECT(mNativeElementPtr), rParamName.c_str(), & text_ptr, NULL );
+        g_object_get( G_OBJECT(mGstreamElementPtr), rParamName.c_str(), & text_ptr, NULL );
 
         is_ok = (text_ptr != NULL);
     }
@@ -290,7 +242,7 @@ bool FrameSaverVideoFilterImpl::setParam(const std::string & rParamName, const s
 
     if (is_ok)
     {
-        g_object_set( G_OBJECT(mNativeElementPtr), rParamName.c_str(), rNewValue.c_str(), NULL );
+        g_object_set( G_OBJECT(mGstreamElementPtr), rParamName.c_str(), rNewValue.c_str(), NULL );
     }
 
     mLastErrorDetails.assign( is_ok ? "" : "ERROR" );
@@ -301,12 +253,30 @@ bool FrameSaverVideoFilterImpl::setParam(const std::string & rParamName, const s
 
 bool FrameSaverVideoFilterImpl::initializeInstance(bool isNewInstance)
 {
+    std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
+
+    mLastErrorDetails.assign("");
+
+    g_object_set (element, "filter-factory", GST_DEFAULT_NAME, NULL);
+
+    g_object_get (G_OBJECT (element), "filter", &mGstreamElementPtr, NULL);
+
+    if (mGstreamElementPtr == NULL) 
+    {
+        throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE, "Media Object " GST_DEFAULT_NAME " not available");
+    }
+
+    // There is no need to reference the element because its life cycle is the same as the filter's
+    g_object_unref (mGstreamElementPtr);
+
     return true;
 }
 
 
 bool FrameSaverVideoFilterImpl::releaseResources(bool isDelete)
 { 
+    std::unique_lock <std::recursive_mutex>  locker (mRecursiveMutex);
+
     return true;
 }
 

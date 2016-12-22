@@ -6,7 +6,7 @@
  *
  * History:     1. 2016-11-05   JBendor     created from base
  *              2. 2016-11-06   JBendor     updated copyright 
- *              3. 2016-12-20   JBendor     updated
+ *              3. 2016-12-14   JBendor     updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -244,40 +244,6 @@ int nativeGetTempPath( char * pszFolderPath, int maxPathLength )
 
     return ( (length > 1) ? length : 0 );
 }
-
-
-#ifdef _CYGWIN
-//=======================================================================================
-// realpath() --- returns NULL iff failed
-//=======================================================================================
-char * realpath( const char *aPathPtr, char * aBuffPtr )
-{
-    int lng = (int) strlen( GET_CWD(aBuffPtr, PATH_MAX) );
-
-    if (aPathPtr[0] == PATH_DELIMITER)
-    {
-        sprintf(aBuffPtr, "%s", aPathPtr);  return (aBuffPtr);
-    }
-
-    while ((lng > 0) && (aPathPtr[0] == '.') && (aPathPtr[1] == '.') && (aPathPtr[2] == PATH_DELIMITER))
-    {
-        while ((--lng > 0) && (aBuffPtr[lng] != PATH_DELIMITER))
-        {
-            ; // next step back
-        }
-        aPathPtr += 3;
-    }
-
-    if ((aPathPtr[0] == '.') && (aPathPtr[1] == PATH_DELIMITER))
-    {
-        lng += sprintf(aBuffPtr+lng, "%s", ++aPathPtr);   return (aBuffPtr);
-    }
-
-    lng += sprintf(aBuffPtr+lng, "%s", aPathPtr);
-
-    return (aBuffPtr);  // may need more work
-}
-#endif // _CYGWIN
 
 
 //=======================================================================================

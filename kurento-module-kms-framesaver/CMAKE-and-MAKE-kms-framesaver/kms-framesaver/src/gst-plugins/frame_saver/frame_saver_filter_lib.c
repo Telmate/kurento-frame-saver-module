@@ -5,7 +5,7 @@
  * Purpose:     implements the API for the Frame_Saver_Filter_Library (aka FSL)
  * 
  * History:     1. 2016-10-14   JBendor     Created
- *              2. 2016-12-20   JBendor     Updated
+ *              2. 2016-11-24   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -15,10 +15,6 @@
 #include "frame_saver_filter_lib.h"
 #include "frame_saver_filter.h"
 #include <gst/gst.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif  // __cplusplus
 
 
 static guint s_GST_ver_major, s_GST_ver_minor, s_GST_ver_micro, s_GST_ver_nano;
@@ -67,7 +63,7 @@ API_LINKAGE const char * fsl_get_version()
 //
 // initializes the library --- returns 0 on success, else error
 //=======================================================================================
-API_LINKAGE int32_t fsl_initialize()
+API_LINKAGE int fsl_initialize()
 {
 #ifdef _IS_LIB_FOR_PLUGIN_
     #define _VERSION "FrameSaverPlugin: 1.0.0"
@@ -103,7 +99,7 @@ API_LINKAGE int32_t fsl_initialize()
 //
 // performs a test on the FSL library --- returns 0
 //=======================================================================================
-API_LINKAGE int32_t fsl_main_test(int32_t argc, char** argv)
+API_LINKAGE int fsl_main_test(int argc, char** argv)
 {
     printf( "%s%s", "\n", "fsl_main_test() started \n" );
 
@@ -119,8 +115,3 @@ API_LINKAGE int32_t fsl_main_test(int32_t argc, char** argv)
     
     return 0;
 }
-
-
-#ifdef __cplusplus
-}
-#endif  // __cplusplus

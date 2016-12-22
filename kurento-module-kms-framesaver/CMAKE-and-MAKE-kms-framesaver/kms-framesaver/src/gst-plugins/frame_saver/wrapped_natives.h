@@ -6,7 +6,7 @@
  *
  * History:     1. 2016-11-05   JBendor     created from base
  *              2. 2016-11-07   JBendor     updated copyright 
- *              3. 2016-12-20   JBendor     updated
+ *              3. 2016-12-14   JBendor     updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -44,7 +44,6 @@
     #include <stdlib.h>
     #include <string.h>
     #include <limits.h>
-	#include <direct.h>
     #include <sys/timeb.h>
     #include <sys/types.h>
     #include <sys/stat.h>
@@ -64,18 +63,7 @@
         #define S_IREAD   _S_IREAD
     #endif
 
-	#define MK_RW_DIR(path)     mkdir( (path) )
-	#define MK_RWX_DIR(path)    mkdir( (path) )
-
-	#define GET_CWD(buf,lng)    _getcwd( (buf),(lng) )
-
-	#define ABS_PATH(p,b,l)     _fullpath( (b), (p), (l) )
-
-	#ifndef PATH_MAX
-		#define PATH_MAX        (260)
-	#endif
-
-	#define PATH_DELIMITER      '\\'
+    #define PATH_SLASH_CHAR     '\\'
     #define PATH_SLASH_STR      "\\"
 
 #endif  // WIN32
@@ -88,7 +76,7 @@
 #endif
 
 
-#if defined _LINUX || defined _LINUX_ || defined __LINUX__ || defined __linux__ //|| defined __GNUC__
+#if defined _LINUX || defined _LINUX_ || defined __LINUX__ || defined __linux__ || defined __GNUC__
 
     #ifdef _PLATFORM_IS_KNOWN_
         #error "platform redefined"
@@ -126,9 +114,8 @@
     #define WINAPI
 
     #include <features.h>
-	#include <termios.h>
     #include <stdint.h>
-	#include <unistd.h>
+    #include <termios.h>
     #include <ctype.h>
     #include <stdio.h>
     #include <stdlib.h>
@@ -141,7 +128,6 @@
     #include <sys/timeb.h>
     #include <sys/types.h>
     #include <sys/stat.h>
-	#include <glib.h>
 
     typedef unsigned int        UINT;
     typedef uint8_t             BYTE;
@@ -162,21 +148,8 @@
 		#define S_IFMT   (S_IFDIR | S_IFREG | S_IREAD | S_IWRITE)
     #endif
 
-
-	extern char * realpath (const char * path_ptr, char * buff_ptr);
-
-	#define MK_RW_DIR(path)     g_mkdir_with_parents( (path), (S_IRWXU | S_IRWXG) )
-	#define MK_RWX_DIR(path)    g_mkdir_with_parents( (path), ALLPERMS )
-
-	#define GET_CWD(buf,lng)    getcwd( (buf), (lng) )
-
-	#define ABS_PATH(p,b,l)     realpath( (p), (b) )
-
-	#ifndef PATH_MAX
-		#define PATH_MAX        (260)
-	#endif
-
-	#define PATH_DELIMITER      '/'
+    #define MAX_PATH            250
+    #define PATH_SLASH_CHAR     '/'
     #define PATH_SLASH_STR      "/"
 
 #endif  // _LINUX_ 
