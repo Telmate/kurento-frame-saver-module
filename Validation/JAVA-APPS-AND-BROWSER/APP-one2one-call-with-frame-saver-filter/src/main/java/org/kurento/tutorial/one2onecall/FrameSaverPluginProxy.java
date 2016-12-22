@@ -3,7 +3,7 @@
  * File:        FrameSaverPluginProxy.c
  * 
  * History:     1. 2016-11-28   JBendor     Created
- *              5. 2016-12-15   JBendor     Updated
+ *              5. 2016-12-22   JBendor     Updated
  *
  * Description: Implements a proxy for a Kurento module: FrameSaverVideoFilterPlugin
  *
@@ -16,9 +16,6 @@ package org.kurento.tutorial.one2onecall;
 
 import org.kurento.client.MediaElement;
 import org.kurento.client.MediaPipeline;
-
-import org.kurento.module.pointerdetectix.WindowParam;
-import org.kurento.module.pointerdetectix.PointerDetectixFilter;
 import org.kurento.module.framesavervideofilter.FrameSaverVideoFilter;
 
 import org.slf4j.Logger;
@@ -34,65 +31,31 @@ public class FrameSaverPluginProxy
                                           "path=auto"              // working folder (frames will be stored in sub-folders)
                                         };  
     
-    private static final String KNOWN_FILTERS[] = { "FrameSaver", "PointerDetectix" };
+    private static final Logger     TheLogger = LoggerFactory.getLogger(FrameSaverPluginProxy.class);
     
-    private static final String SELECTED_FILTER = KNOWN_FILTERS[0];
+    private MediaPipeline           mMediaPipeline = null;
     
-    private static final Logger TheLogger = LoggerFactory.getLogger(FrameSaverPluginProxy.class);
-    
-    private static MediaPipeline           TheMediaPipeline = null;
-    
-    private static FrameSaverPluginProxy   TheFrameSaverProxy   = null;
-    
-    private static FrameSaverVideoFilter   TheFramesSaverFilter = null;
-    
-    private static PointerDetectixFilter   ThePointerDetectix = null;
+    private FrameSaverVideoFilter   mFramesSaverFilter = null;
     
     
-    private FrameSaverPluginProxy()     // private c'tor --- singleton class
-    {
-        return;     
-    }
-
-    
-    public static FrameSaverPluginProxy newInstance(MediaPipeline aPipeline)
+    public FrameSaverPluginProxy(MediaPipeline aPipeline)
     {
         TheLogger.info("FrameSaverPluginProxy.newInstance(%s) \n", (aPipeline != null)  ? "aPipeline" : "NULL" );
 
-        if ( (TheFrameSaverProxy != null) || (aPipeline == null) )
-        {
-            return TheFrameSaverProxy;
-        }
-        
-        TheMediaPipeline = aPipeline;
-
-        TheFrameSaverProxy = new FrameSaverPluginProxy();
-               
         try
         { 
-            if (SELECTED_FILTER.contains("Point"))
-            {            
-                ThePointerDetectix = new PointerDetectixFilter.Builder(aPipeline, new WindowParam(5, 5, 30, 30)).build();
+            mFramesSaverFilter = new FrameSaverVideoFilter.Builder(aPipeline).build();
 
-                TheLogger.info("ThePointerDetectix:    {} CREATED", (ThePointerDetectix != null)  ? "WAS" : "NOT" );
-            }
-            else if (SELECTED_FILTER.contains("Frame"))
-            {
-                TheFramesSaverFilter = new FrameSaverVideoFilter.Builder(aPipeline).build();
+            mMediaPipeline = aPipeline;
 
-                TheLogger.info("TheFramesSaverFilter:    {} CREATED", (TheFramesSaverFilter != null)  ? "WAS" : "NOT" );
-            }
-            else
-            {
-                TheLogger.info("FILTER NOT CREATED --- UNKNOWN FILTER TYPE" );
-            }
+            TheLogger.info("FramesSaver {} CREATED", (mFramesSaverFilter != null)  ? "WAS" : "NOT" );
         }
         catch (Exception ex)
         {
-            TheLogger.info( "EXCEPTION: " + ex.getMessage() );           
+            TheLogger.info( "FramesSaver EXCEPTION: " + ex.getMessage() );           
         }
 
-        return TheFrameSaverProxy;
+        return;
     }
     
     
@@ -102,19 +65,13 @@ public class FrameSaverPluginProxy
         
         try
         {
-            if (TheFramesSaverFilter != null) 
+            if (mFramesSaverFilter != null) 
             {
-                aFromElement.connect(TheFramesSaverFilter);
-                TheFramesSaverFilter.connect(aIntoElement);
-                TheLogger.info( "CONNECTED:   aFromElement-->>--TheFramesSaverFilter-->>--aIntoElement" );           
-                String element_names = TheFramesSaverFilter.getElementsNamesList().replaceAll("\t",",");
-                TheLogger.info("TheFramesSaverFilter.ElementsNames: ({}) \r\n", element_names);
-            }
-            else if (ThePointerDetectix != null)
-            {
-                aFromElement.connect(ThePointerDetectix);
-                ThePointerDetectix.connect(aIntoElement);
-                TheLogger.info( "CONNECTED:   aFromElement-->>--ThePointerDetectix-->>--aIntoElement" );           
+                aFromElement.connect(mFramesSaverFilter);
+                mFramesSaverFilter.connect(aIntoElement);
+                TheLogger.info( "CONNECTED:   aFromElement-->>--mFramesSaverFilter-->>--aIntoElement" );           
+                String element_names = mFramesSaverFilter.getElementsNamesList().replaceAll("\t",",");
+                TheLogger.info("mFramesSaverFilter.ElementsNames: ({}) \r\n", element_names);
             }
             else
             {
@@ -122,9 +79,9 @@ public class FrameSaverPluginProxy
                 TheLogger.info( "CONNECTED:   aFromElement-->>--aIntoElement" );           
             }
 
-            if (TheMediaPipeline == null)   // always false --- disabled
+            if (mMediaPipeline == null)   // always false --- disabled
             {
-                TheLogger.info("PipelineTopology CONNECTED \r\n {} \r\n ------ \r\n", TheMediaPipeline.getGstreamerDot());
+                TheLogger.info("PipelineTopology CONNECTED \r\n {} \r\n ------ \r\n", mMediaPipeline.getGstreamerDot());
             }
         }
         catch(Exception ex)
@@ -139,7 +96,7 @@ public class FrameSaverPluginProxy
     
     public boolean isUsable()
     {
-        return (TheFramesSaverFilter != null) || (ThePointerDetectix != null);
+        return (mFramesSaverFilter != null);
     }
     
 
@@ -148,13 +105,9 @@ public class FrameSaverPluginProxy
         String element_names = "?";
         
         
-        if (TheFramesSaverFilter != null) 
+        if (mFramesSaverFilter != null) 
         {
-            element_names = TheFramesSaverFilter.getElementsNamesList();
-        }       
-        else if (ThePointerDetectix != null) 
-        {
-            element_names = ThePointerDetectix.getElementsNamesList();
+            element_names = mFramesSaverFilter.getElementsNamesList();
         }       
 
         return element_names;
@@ -165,17 +118,11 @@ public class FrameSaverPluginProxy
     {
         boolean is_ok = false;
         
-        if (TheFramesSaverFilter != null) 
+        if (mFramesSaverFilter != null) 
         {
-            is_ok = TheFramesSaverFilter.setParam(aName, aValue);
+            is_ok = mFramesSaverFilter.setParam(aName, aValue);
 
             TheLogger.info("FrameSaverPluginProxy.setOneParam: name={}  value={}  ok={}", aName, aValue, is_ok);
-        }       
-        else if (ThePointerDetectix != null) 
-        {
-            is_ok = ThePointerDetectix.setParam(aName, aValue);
-
-            TheLogger.info("ThePointerDetectix.setOneParam: name={}  value={}  ok={}", aName, aValue, is_ok);
         }       
 
         return is_ok;
@@ -190,6 +137,7 @@ public class FrameSaverPluginProxy
         {
             return false;               
         }
+        
         
         if (aParamsArray == null)
         {
@@ -230,7 +178,7 @@ public class FrameSaverPluginProxy
         
         if ( (element_names == null) || element_names.isEmpty() )
         {
-            TheLogger.info("ERROR! TheFramesSaverFilter.getElementsNamesList()");
+            TheLogger.info("ERROR! mFramesSaverFilter.getElementsNamesList()");
             
             return false;            
         }
@@ -247,16 +195,4 @@ public class FrameSaverPluginProxy
         return is_ok;        // TODO
     }
     
-    
-    public boolean startPlaying()
-    {
-        boolean is_ok = isUsable();
-        
-        if (is_ok)
-        { 
-            is_ok = TheFramesSaverFilter.startPipelinePlaying();
-        }
-        
-        return is_ok; 
-    }
 }

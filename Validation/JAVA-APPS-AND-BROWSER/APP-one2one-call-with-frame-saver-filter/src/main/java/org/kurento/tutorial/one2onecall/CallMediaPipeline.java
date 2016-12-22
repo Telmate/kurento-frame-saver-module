@@ -61,7 +61,7 @@ public class CallMediaPipeline {
   
   private boolean connect_Caller_To_Callee_pass_thru_1st_Frame_Saver() 
   {      
-      mFrameSaverProxy1_ToCalleEE = FrameSaverPluginProxy.newInstance(pipeline);
+      mFrameSaverProxy1_ToCalleEE = new FrameSaverPluginProxy(pipeline);
       
       boolean is_ok = (callerWebRtcEp != null) && (calleeWebRtcEp != null) && (mFrameSaverProxy1_ToCalleEE != null);
 
@@ -94,7 +94,7 @@ public class CallMediaPipeline {
 
   private boolean connect_Callee_To_Caller_pass_thru_2nd_Frame_Saver() 
   {      
-      mFrameSaverProxy2_ToCalleRR = FrameSaverPluginProxy.newInstance(pipeline);
+      mFrameSaverProxy2_ToCalleRR = new FrameSaverPluginProxy(pipeline);
       
       boolean is_ok = (callerWebRtcEp != null) && (calleeWebRtcEp != null) && (mFrameSaverProxy2_ToCalleRR != null);
 
