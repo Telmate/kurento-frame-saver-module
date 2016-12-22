@@ -1,4 +1,4 @@
-/*
+ /*
  * (C) Copyright 2015 Kurento (http://kurento.org/)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,9 +58,8 @@ public class PlayerHandler extends TextWebSocketHandler {
 
   @Autowired
   private KurentoClient kurento;
-
-  private FrameSaverPluginProxy mFrameSaverProxy;
   
+  private  FrameSaverPluginProxy mFrameSaverProxy = null;
 
   private final Logger log = LoggerFactory.getLogger(PlayerHandler.class);
   private final Gson gson = new GsonBuilder().create();
@@ -76,14 +75,19 @@ public class PlayerHandler extends TextWebSocketHandler {
       switch (jsonMessage.get("id").getAsString()) {
         case "start":
           start(session, jsonMessage);
+          mFrameSaverProxy.setOneParam("snap", "2000,4,2");
           break;
         case "stop":
+          mFrameSaverProxy.setOneParam("wait", "0");
           stop(sessionId);
           break;
         case "pause":
+          mFrameSaverProxy.setOneParam("wait", "0");
           pause(sessionId);
           break;
         case "resume":
+          mFrameSaverProxy.setOneParam("snap", "1000,8,2");
+          mFrameSaverProxy.setOneParam("wait", "5");
           resume(session);
           break;
         case "doSeek":
@@ -106,95 +110,114 @@ public class PlayerHandler extends TextWebSocketHandler {
   }
 
   private void start(final WebSocketSession session, JsonObject jsonMessage) {
+      String videourl = jsonMessage.get("videourl").getAsString();
+      log.info("Video-URL is {} --- Session-ID is {}", videourl, session.getId());
 
-    String videourl = jsonMessage.get("videourl").getAsString();
-    log.info("Video-URL is {} --- Session-ID is {}", videourl, session.getId());
+      // create the Media pipeline --- no video source or sink yet, but initial state is PLAYING
+      MediaPipeline pipeline = kurento.createMediaPipeline();
 
-    // create the Media pipeline --- no video source or sink yet, but initial state is PLAYING
-    MediaPipeline pipeline = kurento.createMediaPipeline();
+      // add to pipeline two Media Elements (WebRtcEndpoint, PlayerEndpoint)
+      WebRtcEndpoint webRtcEndpoint = new WebRtcEndpoint.Builder(pipeline).build();
+      final PlayerEndpoint playerEndpoint = new PlayerEndpoint.Builder(pipeline, videourl).build();
 
-    // add to pipeline two Media Elements (WebRtcEndpoint, PlayerEndpoint)
-    WebRtcEndpoint webRtcEndpoint = new WebRtcEndpoint.Builder(pipeline).build();
-    final PlayerEndpoint playerEndpoint = new PlayerEndpoint.Builder(pipeline, videourl).build();
+      // Create and Update User Session
+      final UserSession user = new UserSession();
+      user.setMediaPipeline(pipeline);
+      user.setWebRtcEndpoint(webRtcEndpoint);
+      user.setPlayerEndpoint(playerEndpoint);
+      users.put(session.getId(), user);
 
-    // Create and Update User Session
-    final UserSession user = new UserSession();
-    user.setMediaPipeline(pipeline);
-    user.setWebRtcEndpoint(webRtcEndpoint);
-    user.setPlayerEndpoint(playerEndpoint);
-    users.put(session.getId(), user);
-    
-    // add FrameSaverVideoFilter to pipeline --- pipeline state changes from PLAYING to READY  
-    mFrameSaverProxy = FrameSaverPluginProxy.newInstance(pipeline);
-    log.info("mFrameSaverProxy isUsable={}",  mFrameSaverProxy.isUsable() );
+      // 2. WebRtcEndpoint
+      // ICE candidates
+      webRtcEndpoint.addIceCandidateFoundListener(new EventListener<IceCandidateFoundEvent>() {
 
-    playerEndpoint.connect(webRtcEndpoint);
-
-    // 2. WebRtcEndpoint
-    // ICE candidates
-    webRtcEndpoint.addIceCandidateFoundListener(new EventListener<IceCandidateFoundEvent>() {
-
-      @Override
-      public void onEvent(IceCandidateFoundEvent event) {
-        JsonObject response = new JsonObject();
-        response.addProperty("id", "iceCandidate");
-        response.add("candidate", JsonUtils.toJsonObject(event.getCandidate()));
-        try {
-          synchronized (session) {
-            session.sendMessage(new TextMessage(response.toString()));
-          }
-        } catch (IOException e) {
-          log.debug(e.getMessage());
-        }
-      }
-    });
-
-    String sdpOffer = jsonMessage.get("sdpOffer").getAsString();
-    String sdpAnswer = webRtcEndpoint.processOffer(sdpOffer);
-
-    JsonObject response = new JsonObject();
-    response.addProperty("id", "startResponse");
-    response.addProperty("sdpAnswer", sdpAnswer);
-    sendMessage(session, response.toString());
-
-    webRtcEndpoint.addMediaStateChangedListener(new EventListener<MediaStateChangedEvent>() {
-      @Override
-      public void onEvent(MediaStateChangedEvent event) {
-
-        if (event.getNewState() == MediaState.CONNECTED) {
-          VideoInfo videoInfo = playerEndpoint.getVideoInfo();
-
+        @Override
+        public void onEvent(IceCandidateFoundEvent event) {
           JsonObject response = new JsonObject();
-          response.addProperty("id", "videoInfo");
-          response.addProperty("isSeekable", videoInfo.getIsSeekable());
-          response.addProperty("initSeekable", videoInfo.getSeekableInit());
-          response.addProperty("endSeekable", videoInfo.getSeekableEnd());
-          response.addProperty("videoDuration", videoInfo.getDuration());
-          sendMessage(session, response.toString());
+          response.addProperty("id", "iceCandidate");
+          response.add("candidate", JsonUtils.toJsonObject(event.getCandidate()));
+          try {
+            synchronized (session) {
+              session.sendMessage(new TextMessage(response.toString()));
+            }
+          } catch (IOException e) {
+            log.debug(e.getMessage());
+          }
         }
+      });
+
+      String sdpOffer = jsonMessage.get("sdpOffer").getAsString();
+      String sdpAnswer = webRtcEndpoint.processOffer(sdpOffer);
+
+      JsonObject response = new JsonObject();
+      response.addProperty("id", "startResponse");
+      response.addProperty("sdpAnswer", sdpAnswer);
+      sendMessage(session, response.toString());
+
+      webRtcEndpoint.addMediaStateChangedListener(new EventListener<MediaStateChangedEvent>() {
+        @Override
+        public void onEvent(MediaStateChangedEvent event) {
+
+          if (event.getNewState() == MediaState.CONNECTED) {
+            VideoInfo videoInfo = playerEndpoint.getVideoInfo();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("id", "videoInfo");
+            response.addProperty("isSeekable", videoInfo.getIsSeekable());
+            response.addProperty("initSeekable", videoInfo.getSeekableInit());
+            response.addProperty("endSeekable", videoInfo.getSeekableEnd());
+            response.addProperty("videoDuration", videoInfo.getDuration());
+            sendMessage(session, response.toString());
+          }
+        }
+      });
+
+      webRtcEndpoint.gatherCandidates();
+
+      // 3. PlayEndpoint
+      playerEndpoint.addErrorListener(new EventListener<ErrorEvent>() {
+        @Override
+        public void onEvent(ErrorEvent event) {
+          log.info("ErrorEvent: {}", event.getDescription());
+          sendPlayEnd(session);
+        }
+      });
+
+      playerEndpoint.addEndOfStreamListener(new EventListener<EndOfStreamEvent>() {
+        @Override
+        public void onEvent(EndOfStreamEvent event) {
+          log.info("EndOfStreamEvent: {}", event.getTimestamp());
+          sendPlayEnd(session);
+        }
+      });
+      
+      connect_Player_To_Viewer_pass_thru_Frame_Saver();
+
+      playerEndpoint.play();
+  }
+  
+  private boolean connect_Player_To_Viewer_pass_thru_Frame_Saver()
+  {     
+      mFrameSaverProxy = new FrameSaverPluginProxy(pipeline);
+      
+      boolean is_frame_saver_valid = mFrameSaverProxy.setParams(null);
+
+      if (is_frame_saver_valid)
+      {
+          is_frame_saver_valid = mFrameSaverProxy.setOneParam("path", "/tmp/FrameSaver_Player_To_Viewer");
       }
-    });
 
-    webRtcEndpoint.gatherCandidates();
-
-    // 3. PlayEndpoint
-    playerEndpoint.addErrorListener(new EventListener<ErrorEvent>() {
-      @Override
-      public void onEvent(ErrorEvent event) {
-        log.info("ErrorEvent: {}", event.getDescription());
-        sendPlayEnd(session);
+      if (is_frame_saver_valid)
+      {
+          is_frame_saver_valid = mFrameSaverProxy.connectWith(playerEndpoint, webRtcEndpoint);
       }
-    });
-
-    playerEndpoint.addEndOfStreamListener(new EventListener<EndOfStreamEvent>() {
-      @Override
-      public void onEvent(EndOfStreamEvent event) {
-        log.info("EndOfStreamEvent: {}", event.getTimestamp());
-        sendPlayEnd(session);
+      
+      if (! is_frame_saver_valid)
+      {
+          playerEndpoint.connect(webRtcEndpoint);         
       }
-    });
-
-    playerEndpoint.play();
+      
+      return is_frame_saver_valid; 
   }
 
   private void pause(String sessionId) {
@@ -223,7 +246,7 @@ public class PlayerHandler extends TextWebSocketHandler {
   }
 
   private void stop(String sessionId) {
-    UserSession user = users.remove(sessionId);
+      UserSession user = users.remove(sessionId);
 
     if (user != null) {
       user.release();

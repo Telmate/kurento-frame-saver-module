@@ -191,9 +191,21 @@ public class PlayerHandler extends TextWebSocketHandler {
         }
       });
       
-      mFrameSaverProxy = FrameSaverPluginProxy.newInstance(pipeline);
+      connect_Player_To_Viewer_pass_thru_Frame_Saver();
+
+      playerEndpoint.play();
+  }
+  
+  private boolean connect_Player_To_Viewer_pass_thru_Frame_Saver()
+  {     
+      mFrameSaverProxy = new FrameSaverPluginProxy(pipeline);
       
       boolean is_frame_saver_valid = mFrameSaverProxy.setParams(null);
+
+      if (is_frame_saver_valid)
+      {
+          is_frame_saver_valid = mFrameSaverProxy.setOneParam("path", "/tmp/FrameSaver_Player_To_Viewer");
+      }
 
       if (is_frame_saver_valid)
       {
@@ -202,20 +214,16 @@ public class PlayerHandler extends TextWebSocketHandler {
       
       if (! is_frame_saver_valid)
       {
-          playerEndpoint.connect(webRtcEndpoint);     // original one-way direct-connection         
+          playerEndpoint.connect(webRtcEndpoint);         
       }
-
-      playerEndpoint.play();
+      
+      return is_frame_saver_valid; 
   }
 
   private void pause(String sessionId) {
     UserSession user = users.get(sessionId);
 
-    //? log.info("PipelineTopology B4PAUSE \r\n {} \r\n -------------------- \r\n", user.getMediaPipeline().getGstreamerDot());          
-
     if (user != null) {
-        //log.info("PipelineTopology DURING PLAY: \r\n {} \r\n -------------------- \r\n", user.getMediaPipeline().getGstreamerDot());      
-        
       user.getPlayerEndpoint().pause();
     }
   }
