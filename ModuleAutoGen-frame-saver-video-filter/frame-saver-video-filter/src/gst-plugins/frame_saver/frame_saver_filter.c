@@ -6,7 +6,7 @@
  *              2. 2016-10-28   JBendor     Updated
  *              3. 2016-10-29   JBendor     Removed parameters code to new file
  *              4. 2016-11-04   JBendor     Support for making custom pipelines
- *              5. 2016-12-08   JBendor     Support the actual Gstreamer plugin
+ *              5. 2016-12-08   JBendor     Support Gstreamer Plugins
  *              6. 2016-12-21   JBendor     Updated
  *
  * Description: Uses the Gstreamer TEE to splice one video source into two sinks.
@@ -33,23 +33,21 @@
 #include <glib.h>
 #include <glib/gtypes.h>
 
+
 #if (GST_VERSION_MAJOR == 0)
     #error "GST_VERSION_MAJOR must not be 0"
 #endif
 
-#ifdef _NO_DBG_OUTPUT
-    #define do_DBG_print(txt)
-#else
-    #define do_DBG_print(txt)  g_print((txt))
-#endif
+#define _DO_DBG_TRACE
+#define _DO_BUS_TRACE
+
+#define PREFIX_FORMAT           "FrameSaver.%u --- "
+#define INFINIT_NANOS           (NANOS_PER_DAY + 9);
+#define NUM_APP_SINK_BUFFERS    (2)
 
 #define CAPS_FOR_AUTO_SOURCE    "video/x-raw, width=(int)500, height=(int)200" //, framerate=(fraction)1/2"
 #define CAPS_FOR_VIEW_SINKER    "video/x-raw, width=(int)500, height=(int)200"
 #define CAPS_FOR_SNAP_SINKER    "video/x-raw, format=(string)RGB, bpp=(int)24"
-
-#define FSF_PREFIX              "frame_saver_filter --- "
-#define INFINIT_NANOS           (NANOS_PER_DAY + 9);
-#define NUM_APP_SINK_BUFFERS    (2)
 
 
 //=======================================================================================
@@ -68,45 +66,6 @@ typedef enum
     e_ERROR_PIPELINE_TEE_PARAMS = 7
 
 } PIPELINE_MAKER_ERROR_e;
-
-
-typedef struct
-{
-    GMainLoop   * main_loop_ptr;        // Main-Event-Loop --- manages all events
-
-    GstBus      * bus_ptr;              // bus transfers messages from/to pipeline
-
-    GstCaps     * source_caps_ptr,      // for Source-to-Sink1 in default pipeline
-                * sinker_caps_ptr;      // for TEE-to-Queue2-to-Sink2 (or appsink)
-
-    GstElement  * pipeline_ptr,
-                * vid_sourcer_ptr,
-                * video_sink1_ptr,
-                * video_sink2_ptr,
-                * vid_convert_ptr,
-                * cvt_element_ptr,
-                * tee_element_ptr,
-                * Q_1_element_ptr,
-                * Q_2_element_ptr,
-                * real_plugin_ptr;
-
-    GstClock    * sys_clock_ptr;
-
-    GstClockTime start_play_time_ns;    // timestamp of pipeline startup
-    GstClockTime wait_state_ends_ns;    // timestamp for a TEE insertion
-    GstClockTime frame_snap_wait_ns;    // wait time for next frame snap
-
-    guint   num_snap_signals,           // count of signals to snap frames
-            num_saved_frames,           // count of frames saved as files
-            num_saver_errors,           // count of frames saver's errors
-            num_stream_frames,          // count of stream input frames
-            num_stream_errors;          // count of stream input errors
-
-    GstAppSinkCallbacks appsink_callbacks;
-
-    gchar   work_folder_path[PATH_MAX + 1];
-
-} FlowSniffer_t;
 
 
 typedef enum 
@@ -135,7 +94,7 @@ typedef enum
 } SPLICER_STATE_e;
 
 
-typedef struct
+typedef struct _FlowSplicer_t
 {
     SPLICER_STATE_e status;
 
@@ -143,14 +102,12 @@ typedef struct
 
     SplicerParams_t params;
 
-    FlowSniffer_t * frame_saver_filter;
-
     GstCaps       * ptr_all_from_caps,
                   * ptr_all_into_caps;
 
-    GstPad        * ptr_from_pad;   // producer-out-pad feeds consumer-inp-pad --- never NULL
-    GstPad        * ptr_into_pad;   // consumer-inp-pad feeds consumer-out-pad --- never NULL
-    GstPad        * ptr_next_pad;   // consumer-out-pad feeds next-element-inp-pad -- NULL OK
+    GstPad        * ptr_from_pad;           // producer-out-pad feeds consumer-inp-pad --- never NULL
+    GstPad        * ptr_into_pad;           // consumer-inp-pad feeds consumer-out-pad --- never NULL
+    GstPad        * ptr_next_pad;           // consumer-out-pad feeds next-element-inp-pad -- NULL OK
 
     GstElement    * ptr_from_element;
     GstElement    * ptr_into_element;
@@ -162,22 +119,154 @@ typedef struct
 } FlowSplicer_t;
 
 
-static FlowSniffer_t    mySniffer = { NULL };
+typedef struct _FramesSaver_t
+{
+    gint          instance_ID;              // ZERO indicates structure is empty
 
-static FlowSplicer_t    mySplicer = { e_SPLICER_STATE_NONE, G_QUEUE_INIT };
+    GstElement  * parent_pipeline_ptr,      // NULL indicates pipline is unknown
+                * attached_plugin_ptr;      // NULL indicates no plugin attached
+
+    GstElement  * vid_sourcer_ptr,
+                * video_sink1_ptr,
+                * video_sink2_ptr,
+                * vid_convert_ptr,
+                * cvt_element_ptr,
+                * tee_element_ptr,
+                * Q_1_element_ptr,
+                * Q_2_element_ptr;
+
+    GstBus      * bus_ptr;                  // Bus transfers messages from/to pipeline
+
+    GstCaps     * source_caps_ptr,          // for Source-to-Sink1 in default pipeline
+                * sinker_caps_ptr;          // for TEE-to-Queue2-to-Sink2 (or appsink)
+
+    guint           num_snap_signals,       // count of signals to snap frames
+                    num_saved_frames,       // count of frames saved as files
+                    num_saver_errors,       // count of frames saver's errors
+                    num_stream_frames,      // count of stream input frames
+                    num_stream_errors;      // count of stream input errors
+
+    GstClockTime    frame_snap_wait_ns;     // wait time for next frame snap --- 0 is infinite
+    GstClockTime    wait_state_ends_ns;     // timestamp for a TEE insertion --- 0 is infinite
+
+    GstAppSinkCallbacks appsink_callbacks;
+
+    FlowSplicer_t       flow_splicer_info;
+
+    gchar               work_folder_path[PATH_MAX + 1];
+
+} FramesSaver_t;
+
+
+#define MAX_NUM_PLUGINS (4)
+
+static FramesSaver_t    The_FramesSavers_Array[ MAX_NUM_PLUGINS ] = { { 0, NULL, NULL } };
+
+static const int        MUTEX_TIMEOUT_MS = 10;
+
+static void          *  The_Mutex_Handle = NULL;
+
+static GMainLoop     *  The_MainLoop_Ptr = NULL;
+
+static GstClock      *  The_SysClock_Ptr = NULL;
+
+static GstClockTime    The_LaunchTime_ns = 0;
+
+static gint            The_Folders_Count = 0;
+
+static gint            The_Plugins_Count = -1;
 
 
 //=======================================================================================
-// synopsis: result = do_save_frame_buffer(aBufferPtr, aCapsPtr, aStatePtr)
+// synopsis: splicer_ptr = do_get_splicer_ptr(aSaverPtr)
+//
+// returns pointer to structure: FlowSplicer_t
+//=======================================================================================
+static void do_DBG_print(const gchar * aNoticePtr, FramesSaver_t * aSaverPtr)
+{
+	#ifndef _NO_DBG_TRACE
+		g_print(PREFIX_FORMAT "%s", (aSaverPtr ? aSaverPtr->instance_ID : 0), aNoticePtr);
+	#endif
+
+	return;
+}
+
+//=======================================================================================
+// synopsis: splicer_ptr = do_get_splicer_ptr(aSaverPtr)
+//
+// returns pointer to structure: FlowSplicer_t
+//=======================================================================================
+static FlowSplicer_t * do_get_splicer_ptr( FramesSaver_t * aSaverPtr )
+{
+    return & aSaverPtr->flow_splicer_info;
+}
+
+
+//=======================================================================================
+// synopsis: result = do_initialize_static_resources()
+//
+// initializes the necessary resources --- returns 0 on success
+//=======================================================================================
+static int do_initialize_static_resources()
+{
+    if ( (The_SysClock_Ptr == NULL) || (The_Plugins_Count < 0) )    // once only or RESET
+    {
+        The_SysClock_Ptr  = gst_system_clock_obtain();
+
+        The_LaunchTime_ns = gst_clock_get_time( The_SysClock_Ptr );
+    }
+
+    memset( The_FramesSavers_Array, 0, sizeof(The_FramesSavers_Array) );
+
+    The_Plugins_Count = 0;
+    The_Folders_Count = 0;
+
+    if (nativeCreateMutex(&The_Mutex_Handle) != 0)
+    {
+        The_Mutex_Handle = NULL;    // create failed
+    }
+
+    return ( (The_Mutex_Handle != NULL) ? 0 : -1 );
+}
+
+
+//=======================================================================================
+// synopsis: result = do_find_plugin_index(aPluginPtr)
+//
+// returns index in array of known plugins --- returns -1 iff not in the array
+//=======================================================================================
+static int do_find_plugin_index(const void * aPluginPtr)
+{
+    int index = 0;
+
+    // possibly --- once only or RESET --- initialize resources
+    if ( (The_Mutex_Handle == NULL) || (The_Plugins_Count < 0) )
+    {
+        do_initialize_static_resources();
+
+        return -1;
+    }
+
+    while ( (index < MAX_NUM_PLUGINS) && (The_FramesSavers_Array[index].attached_plugin_ptr != aPluginPtr) )
+    {
+        ++index;   // next
+    }
+
+    return ( (index < MAX_NUM_PLUGINS) && (aPluginPtr != NULL) ) ? index : -1;
+}
+
+
+//=======================================================================================
+// synopsis: result = do_save_frame_buffer(aBufferPtr, aCapsPtr, aSaverPtr)
 //
 // snaps and saves a frame --- returns GST_FLOW_OK on success, else GST_FLOW_ERROR
 //=======================================================================================
 static gint do_save_frame_buffer(GstBuffer     * aBufferPtr,
                                  const char    * aCapsPtr,
-                                 FlowSniffer_t * aStatePtr)
+                                 FramesSaver_t * aSaverPtr)
 {
     /* 
-    * NOTE-1: frame height can depend on the pixel-aspect-ratio of the source.
+    * NOTE-1: image height can depend on the pixel-aspect-ratio of the source.
     *
     * NOTE-2: stride of video buffers is rounded to the nearest multiple of 4.
     */
@@ -202,19 +291,19 @@ static gint do_save_frame_buffer(GstBuffer     * aBufferPtr,
 
     if ( (errs != 0) || (rows < 1) || (cols < 1) )
     {
-        aStatePtr->num_saver_errors += 1;
+        aSaverPtr->num_saver_errors += 1;
         return GST_FLOW_ERROR;  // invalid attributes
     }
 
     if ( (interlace != NULL) && (strstr(interlace, "progressive") == NULL) )
     {
-        aStatePtr->num_saver_errors += 1;
+        aSaverPtr->num_saver_errors += 1;
         return GST_FLOW_ERROR;  // only "progressive" is allowed
     }
 
     if (TRUE != gst_buffer_map(aBufferPtr, &map, GST_MAP_READ))
     {
-        aStatePtr->num_saver_errors += 1;
+        aSaverPtr->num_saver_errors += 1;
         return GST_FLOW_ERROR;
     }
 
@@ -223,11 +312,11 @@ static gint do_save_frame_buffer(GstBuffer     * aBufferPtr,
     int pix_size = data_lng / num_pixs;
     int   stride = GST_ROUND_UP_4(cols * pix_size);         // bytes per row
 
-    GstClockTime now = gst_clock_get_time (aStatePtr->sys_clock_ptr);
+    GstClockTime now = gst_clock_get_time (The_SysClock_Ptr);
 
-    guint elapsed_ms = (guint) ((now - mySniffer.start_play_time_ns) / NANOS_PER_MILLISEC);
+    guint elapsed_ms = (guint) ((now - The_LaunchTime_ns) / NANOS_PER_MILLISEC);
 
-    aStatePtr->num_saved_frames += 1;
+    aSaverPtr->num_saved_frames += 1;
     
     if ( strncmp(sz_image_format, "BGR", 3) == 0 )
     {
@@ -238,19 +327,19 @@ static gint do_save_frame_buffer(GstBuffer     * aBufferPtr,
 
     sprintf(sz_image_path, 
             "%s%c%s_%dx%dx%d.@%04u_%03u.#%u.png",             // "f:/telmate/junk/"
-            aStatePtr->work_folder_path, PATH_DELIMITER,
+            aSaverPtr->work_folder_path, PATH_DELIMITER,
             (format_is_I420 ? "I420_RGB" : sz_image_format), 
             cols, 
             rows,
             (format_is_I420 ? 24 : bits),
             elapsed_ms / 1000,
             elapsed_ms % 1000,
-            aStatePtr->num_saved_frames);
+            aSaverPtr->num_saved_frames);
 
     errs = save_frame_as_PNG(sz_image_path, sz_image_format, map.data, data_lng, stride, cols, rows);
 
-    #ifndef _NO_DBG_OUTPUT
-    	g_print(FSF_PREFIX "playtime=%u ... Saved=(%s), Error=(%d) \n",
+    #ifndef _NO_DBG_TRACE
+    	g_print(PREFIX_FORMAT "playtime=%u ... Saved=(%s), Error=(%d) \n", aSaverPtr->instance_ID,
     			elapsed_ms,
 				strrchr(sz_image_path, PATH_DELIMITER) + 1,
 				errs);
@@ -260,7 +349,7 @@ static gint do_save_frame_buffer(GstBuffer     * aBufferPtr,
 
     if (errs != 0)
     {
-        aStatePtr->num_saver_errors += 1;
+        aSaverPtr->num_saver_errors += 1;
     }
 
     return (errs == 0) ? GST_FLOW_OK : GST_FLOW_OK;
@@ -275,19 +364,22 @@ static gint do_save_frame_buffer(GstBuffer     * aBufferPtr,
 static GstFlowReturn do_appsink_callback_for_new_frame(GstAppSink * aAppSinkPtr, 
                                                        gpointer     aContextPtr) 
 {
-    GstFlowReturn flow_result = GST_FLOW_OK;
+    GstFlowReturn   flow_result = GST_FLOW_OK;
 
-    FlowSniffer_t * ptr_state = (FlowSniffer_t *) aContextPtr;
+    FramesSaver_t *   saver_ptr = (FramesSaver_t *) aContextPtr;
 
-    GstSample    * sample_ptr = gst_app_sink_pull_sample(aAppSinkPtr);
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( saver_ptr );
 
-    GstCaps      *   caps_ptr = sample_ptr ? gst_sample_get_caps(sample_ptr) : NULL;
+    GstSample     *  sample_ptr = gst_app_sink_pull_sample(aAppSinkPtr);
 
-    GstBuffer    * buffer_ptr = sample_ptr ? gst_sample_get_buffer(sample_ptr) : NULL;
+    GstCaps       *    caps_ptr = sample_ptr ? gst_sample_get_caps(sample_ptr) : NULL;
 
-    if ( (buffer_ptr == NULL) || (ptr_state != &mySniffer) || (caps_ptr == NULL) )
+    GstBuffer     *  buffer_ptr = sample_ptr ? gst_sample_get_buffer(sample_ptr) : NULL;
+
+    // verify valid conditions
+    if ( (buffer_ptr == NULL) || (caps_ptr == NULL) || (saver_ptr == NULL) )
     {
-        ptr_state->num_stream_errors += 1;
+        saver_ptr->num_stream_errors += 1;
 
         gst_sample_unref(sample_ptr);
 
@@ -296,17 +388,17 @@ static GstFlowReturn do_appsink_callback_for_new_frame(GstAppSink * aAppSinkPtr,
         return GST_FLOW_ERROR;
     }
 
-    ptr_state->num_stream_frames += 1;
+    saver_ptr->num_stream_frames += 1;
 
-    if (mySplicer.params.one_snap_ms > 0)
+    if (splicer_ptr->params.one_snap_ms > 0)
     {
-        guint total_done = ptr_state->num_saver_errors + ptr_state->num_saved_frames;
+        guint total_done = saver_ptr->num_saver_errors + saver_ptr->num_saved_frames;
 
-        if (ptr_state->num_snap_signals > total_done)
+        if (saver_ptr->num_snap_signals > total_done)
         {
             gchar * psz_caps = gst_caps_to_string(caps_ptr);
 
-            flow_result = do_save_frame_buffer(buffer_ptr, psz_caps, ptr_state);
+            flow_result = do_save_frame_buffer(buffer_ptr, psz_caps, saver_ptr);
 
             g_free(psz_caps);
         }
@@ -329,8 +421,14 @@ static GstPadProbeReturn do_appsink_callback_probe_inp_pad_BUF(GstPad          *
                                                                GstPadProbeInfo * aInfoPtr,
                                                                gpointer          aCtxPtr)
 {
-    GstBuffer   * buffer_ptr = GST_PAD_PROBE_INFO_BUFFER(aInfoPtr);
-    GstEvent    *  event_ptr = GST_PAD_PROBE_INFO_DATA(aInfoPtr);
+    FramesSaver_t *   saver_ptr = (FramesSaver_t *) aCtxPtr;
+
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( saver_ptr );
+
+    GstBuffer    * buffer_ptr = GST_PAD_PROBE_INFO_BUFFER(aInfoPtr);
+
+    GstEvent     *  event_ptr = GST_PAD_PROBE_INFO_DATA(aInfoPtr);
+
     GstEventType  event_type = GST_EVENT_TYPE(event_ptr);
 
     if ( (buffer_ptr == NULL) || (event_type == GST_EVENT_UNKNOWN) )
@@ -339,24 +437,24 @@ static GstPadProbeReturn do_appsink_callback_probe_inp_pad_BUF(GstPad          *
     }
 
 #ifdef _USE_APPSINK_CALLBACKS_
-    if ( mySniffer.real_plugin_ptr == NULL )
+    if ( saver_ptr->attached_plugin_ptr == NULL )
     {
         // GST_DEBUG_OBJECT(aPadPtr, "appsink-inp-pad --- BUF event !!! ");
         return GST_PAD_PROBE_OK;
     }
 #endif
 
-    mySniffer.num_stream_frames += 1;
+    saver_ptr->num_stream_frames += 1;
 
     // note: "buffer" here --- "sample" in do_appsink_callback_for_new_frame()
-    if ( (mySplicer.params.one_snap_ms > 0) &&
-         (mySniffer.num_snap_signals > mySniffer.num_saved_frames) )
+    if ( (splicer_ptr->params.one_snap_ms > 0) &&
+         (saver_ptr->num_snap_signals > saver_ptr->num_saved_frames) )
     {
         GstCaps * caps_ptr = gst_pad_get_current_caps(aPadPtr);
 
         gchar   * psz_caps = gst_caps_to_string(caps_ptr);
 
-        do_save_frame_buffer( buffer_ptr, psz_caps, &mySniffer );
+        do_save_frame_buffer( buffer_ptr, psz_caps, saver_ptr );
 
         gst_caps_unref(caps_ptr);
 
@@ -392,39 +490,29 @@ static GstPadProbeReturn do_appsink_callback_probe_inp_pad_EOS(GstPad          *
 
 
 //=======================================================================================
-// synopsis: error = do_create_folder_for_saved_frames(elapsedPlaytimeMillis)
-//
-// creates folder with unique name for saved frames --- returns 0 on success
-//=======================================================================================
-static int do_create_folder_for_saved_frames(uint32_t elapsedPlaytimeMillis)
-{
-}
-
-
-//=======================================================================================
-// synopsis: is_ok = do_appsink_trigger_next_frame_snap(elapsedPlaytimeMillis)
+// synopsis: is_ok = do_appsink_trigger_next_frame_snap(aSaverPtr, elapsedPlaytimeMillis)
 //
 // triggers frame snaps --- returns TRUE iff more snaps are allowed
 //=======================================================================================
-static gboolean do_appsink_trigger_next_frame_snap(uint32_t elapsedPlaytimeMillis)
+static gboolean do_appsink_trigger_next_frame_snap(FramesSaver_t * aSaverPtr, uint32_t elapsedPlaytimeMillis)
 {
-    static guint The_Folders_Counter = 0;
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( aSaverPtr );
 
-    GstClockTime next_snap_nanos = NANOS_PER_MILLISEC * mySplicer.params.one_snap_ms;
+    GstClockTime next_snap_nanos = NANOS_PER_MILLISEC *splicer_ptr->params.one_snap_ms;
 
     // establish a desired time for next frame snap
-    mySniffer.frame_snap_wait_ns += next_snap_nanos;
+    aSaverPtr->frame_snap_wait_ns += next_snap_nanos;
 
     // increment the number of snap-signals --- create new folder on first snap
-    if (++mySniffer.num_snap_signals == 1)
+    if (++aSaverPtr->num_snap_signals == 1)
     {
         time_t now = time(NULL);
 
         struct tm * tm_ptr = localtime(&now);
 
-        int length = (int) strlen(mySniffer.work_folder_path);
+        int length = (int) strlen(aSaverPtr->work_folder_path);
 
-        sprintf( &mySniffer.work_folder_path[length],
+        sprintf( &aSaverPtr->work_folder_path[length],
                  "%cIMAGES_%04d%02d%02d_%02d%02d%02d_%d",
                  PATH_DELIMITER,
                  tm_ptr->tm_year + 1900,
@@ -433,63 +521,63 @@ static gboolean do_appsink_trigger_next_frame_snap(uint32_t elapsedPlaytimeMilli
                  tm_ptr->tm_hour,
                  tm_ptr->tm_min,
                  tm_ptr->tm_sec,
-                 ++The_Folders_Counter );
+                 ++The_Folders_Count );
 
-        int error = MK_RWX_DIR(mySniffer.work_folder_path);
+        int error = MK_RWX_DIR(aSaverPtr->work_folder_path);
 
         if (error == 0)
         {
-            g_print(FSF_PREFIX "playtime=%u %s (%s) \n", 
+            g_print(PREFIX_FORMAT "playtime=%u %s (%s) \n", aSaverPtr->instance_ID,
                     elapsedPlaytimeMillis,
                     "... New Folder",
-                    &mySniffer.work_folder_path[0]);
+                    &aSaverPtr->work_folder_path[0]);
         }
         else
         {
-            g_print(FSF_PREFIX "playtime=%u %s (%s) NOT created --- error=(%d) \n", 
+            g_print(PREFIX_FORMAT "playtime=%u %s (%s) NOT created --- error=(%d) \n", aSaverPtr->instance_ID,
                     elapsedPlaytimeMillis,
                     "... New Folder",
-                    &mySniffer.work_folder_path[0], error);
+                    &aSaverPtr->work_folder_path[0], error);
 
-            mySniffer.work_folder_path[length] = 0;
+            aSaverPtr->work_folder_path[length] = 0;
 
-            mySniffer.num_snap_signals = 0;
+            aSaverPtr->num_snap_signals = 0;
         }
 
         next_snap_nanos += NANOS_PER_MILLISEC * elapsedPlaytimeMillis;
 
-        mySniffer.frame_snap_wait_ns = next_snap_nanos;
+        aSaverPtr->frame_snap_wait_ns = next_snap_nanos;
     }
 
     gboolean is_more_snaps_ok = TRUE;
 
-    if ((mySplicer.params.max_num_snaps_saved > 0) &&
-        (mySplicer.params.max_num_snaps_saved <= mySniffer.num_saved_frames))
+    if ((splicer_ptr->params.max_num_snaps_saved > 0) &&
+        (splicer_ptr->params.max_num_snaps_saved <= aSaverPtr->num_saved_frames))
     {
-        g_print(FSF_PREFIX "playtime=%u ... #SAVED=%u ... Reached-Limit \n", 
+        g_print(PREFIX_FORMAT "playtime=%u ... #SAVED=%u ... Reached-Limit \n", aSaverPtr->instance_ID,
                 elapsedPlaytimeMillis,
-                mySplicer.params.max_num_snaps_saved);
+                splicer_ptr->params.max_num_snaps_saved);
 
          is_more_snaps_ok = FALSE;
     }
-    else if ((mySplicer.params.max_num_failed_snap > 0) &&
-             (mySplicer.params.max_num_failed_snap <= mySniffer.num_saver_errors))
+    else if ((splicer_ptr->params.max_num_failed_snap > 0) &&
+             (splicer_ptr->params.max_num_failed_snap <= aSaverPtr->num_saver_errors))
     {
-        g_print(FSF_PREFIX "playtime=%u ... #FAILS=%u ... Reached-Limit \n", 
+        g_print(PREFIX_FORMAT "playtime=%u ... #FAILS=%u ... Reached-Limit \n", aSaverPtr->instance_ID,
                 elapsedPlaytimeMillis,
-                mySplicer.params.max_num_failed_snap);
+                splicer_ptr->params.max_num_failed_snap);
 
          is_more_snaps_ok = FALSE;
     }
-    else if ((mySniffer.real_plugin_ptr != NULL) && (mySplicer.params.max_wait_ms > 0))
+    else if ((aSaverPtr->attached_plugin_ptr != NULL) && (splicer_ptr->params.max_wait_ms > 0))
     {
-        g_print(FSF_PREFIX "playtime=%u ... #snaps=%u ... #saved=%u ... errors=%u,%u ... frames=%u\n",
+        g_print(PREFIX_FORMAT "playtime=%u ... #snaps=%u ... #saved=%u ... errors=%u,%u ... frames=%u\n", aSaverPtr->instance_ID,
                 elapsedPlaytimeMillis,
-                mySniffer.num_snap_signals,
-                mySniffer.num_saved_frames,
-                mySniffer.num_saver_errors,
-                mySniffer.num_stream_errors,
-                mySniffer.num_stream_frames);
+                aSaverPtr->num_snap_signals,
+                aSaverPtr->num_saved_frames,
+                aSaverPtr->num_saver_errors,
+                aSaverPtr->num_stream_errors,
+                aSaverPtr->num_stream_frames);
     }
 
     return is_more_snaps_ok;
@@ -497,26 +585,26 @@ static gboolean do_appsink_trigger_next_frame_snap(uint32_t elapsedPlaytimeMilli
 
 
 //=======================================================================================
-// synopsis: appsink_ptr = do_appsink_create(aNamePtr, aNumBuffers)
+// synopsis: appsink_ptr = do_appsink_create(aSaverPtr, aNamePtr, aNumBuffers)
 //
 // creates & configures the appsink for frame snaps --- returns element pointer
 //=======================================================================================
-static GstElement* do_appsink_create(const char * aNamePtr, int aNumBuffers)
+static GstElement* do_appsink_create(FramesSaver_t * aSaverPtr, const char * aNamePtr, int aNumBuffers)
 {
-    do_DBG_print("@@  do_appsink_create \n");
+    do_DBG_print("do_appsink_create \n", aSaverPtr);
 
     GstElement * appsink_ptr = gst_element_factory_make("appsink", aNamePtr);
 
-    mySniffer.appsink_callbacks.eos         = NULL;
-    mySniffer.appsink_callbacks.new_preroll = NULL;
-    mySniffer.appsink_callbacks.new_sample  = do_appsink_callback_for_new_frame;
+    aSaverPtr->appsink_callbacks.eos         = NULL;
+    aSaverPtr->appsink_callbacks.new_preroll = NULL;
+    aSaverPtr->appsink_callbacks.new_sample  = do_appsink_callback_for_new_frame;
 
 #ifdef _USE_APPSINK_CALLBACKS_
 
     gst_app_sink_set_callbacks(GST_APP_SINK(appsink_ptr),
-                               &mySniffer.appsink_callbacks,
-                               &mySniffer, // pointer_to_context_of_the_callback
-                               NULL);      // pointer_to_destroy_notify_callback
+                               &aSaverPtr->appsink_callbacks,
+                               aSaverPtr,       // pointer_to_context_of_the_callback
+                               NULL);           // pointer_to_destroy_notify_callback
 
     gst_app_sink_set_drop(GST_APP_SINK(appsink_ptr), TRUE);
 
@@ -534,14 +622,14 @@ static GstElement* do_appsink_create(const char * aNamePtr, int aNumBuffers)
     gulong probe_EOS = gst_pad_add_probe( ptr_inp_pad,
                                           flags,
                                           do_appsink_callback_probe_inp_pad_EOS,
-                                          &mySniffer,
+                                          aSaverPtr,
                                           NULL );
 
     // install consumer-inp-pad-probe for BUFFER event
     gulong probe_BUF = gst_pad_add_probe( ptr_inp_pad,
                                           GST_PAD_PROBE_TYPE_BUFFER,
                                           do_appsink_callback_probe_inp_pad_BUF,
-                                          &mySniffer,
+                                          aSaverPtr,
                                           NULL );
 
     return ( (probe_EOS && probe_BUF) ? appsink_ptr : appsink_ptr );
@@ -557,6 +645,8 @@ static gboolean do_splicer_negotiate_pads_caps(GstPad    * aPadPtr,
                                                GstObject * aCtxPtr, 
                                                GstQuery  * aQueryPtr)
 {
+    FlowSplicer_t * splicer_ptr = (FlowSplicer_t *) aCtxPtr;
+
     gint query_id = GST_QUERY_TYPE(aQueryPtr);
 
     if (query_id != GST_QUERY_CAPS) 
@@ -564,14 +654,14 @@ static gboolean do_splicer_negotiate_pads_caps(GstPad    * aPadPtr,
         return gst_pad_query_default(aPadPtr, aCtxPtr, aQueryPtr);
     }
 
-    if (aCtxPtr != (GstObject *) &mySplicer)
+    if (aCtxPtr != (GstObject *) &splicer_ptr)
     {
         return FALSE;
     }
 
-    gboolean  peer_is_from = (aPadPtr == mySplicer.ptr_into_pad);
+    gboolean  peer_is_from = (aPadPtr == splicer_ptr->ptr_into_pad);
 
-    GstCaps * ptr_all_caps = peer_is_from ? mySplicer.ptr_all_from_caps : mySplicer.ptr_all_into_caps;
+    GstCaps * ptr_all_caps = peer_is_from ? splicer_ptr->ptr_all_from_caps : splicer_ptr->ptr_all_into_caps;
 
     GstCaps * ptr_query_caps;    
 
@@ -626,15 +716,17 @@ static gboolean do_callback_for_consumer_INP_pad_events(GstPad    * aPadPtr,
                                                         GstObject * aCtxPtr, 
                                                         GstEvent  * aEventPtr)
 {
+    FlowSplicer_t * splicer_ptr = (FlowSplicer_t *) aCtxPtr;
+
     gboolean is_ok = FALSE;
 
     gint  event_id = GST_EVENT_TYPE(aEventPtr);
 
     if (event_id == GST_EVENT_CAPS)
     {
-        GstQuery * ptr_query = gst_query_new_caps (mySplicer.ptr_all_from_caps);
+        GstQuery * ptr_query = gst_query_new_caps (splicer_ptr->ptr_all_from_caps);
 
-        is_ok = do_splicer_negotiate_pads_caps(aPadPtr, (GstObject*) &mySplicer, ptr_query);
+        is_ok = do_splicer_negotiate_pads_caps(aPadPtr, (GstObject*) splicer_ptr, ptr_query);
 
         gst_query_unref(ptr_query);
     }
@@ -656,7 +748,7 @@ static GstPadProbeReturn do_splicer_callback_for_consumer_inp_pad(GstPad        
                                                                   GstPadProbeInfo * aInfoPtr, 
                                                                   gpointer          aCtxPtr)
 {
-    FlowSplicer_t * splicer_ptr = aCtxPtr;
+    FlowSplicer_t * splicer_ptr = (FlowSplicer_t *) aCtxPtr;
 
     GstEvent* event_data_ptr = GST_PAD_PROBE_INFO_DATA(aInfoPtr);
 
@@ -677,7 +769,7 @@ static GstPadProbeReturn do_splicer_callback_for_consumer_inp_pad(GstPad        
     // possibly --- send EOS onto the consumer OUT pad --- possibly redundant
     if (ptr_out_pad != NULL)
     {
-        // gst_pad_send_event( ptr_out_pad, gst_event_new_eos() );
+        //? gst_pad_send_event( ptr_out_pad, gst_event_new_eos() );
         gst_object_unref(ptr_out_pad);
     }
 
@@ -697,7 +789,7 @@ static GstPadProbeReturn do_callback_for_splicer_producer_pad(GstPad          * 
                                                               GstPadProbeInfo * aInfoPtr, 
                                                               gpointer          aCtxPtr)
 {
-    FlowSplicer_t * splicer_ptr = aCtxPtr;
+    FlowSplicer_t * splicer_ptr = (FlowSplicer_t *) aCtxPtr;
 
     gulong  probe_info_id = GST_PAD_PROBE_INFO_ID(aInfoPtr);
 
@@ -726,13 +818,13 @@ static GstPadProbeReturn do_callback_for_splicer_producer_pad(GstPad          * 
 
 
 //=======================================================================================
-// synopsis: is_ok = do_splicer_unlink_two_elements()
+// synopsis: is_ok = do_splicer_unlink_two_elements(aSaverPtr)
 //
 // safely unlinks two inter-linked elements --- returns TRUE on success, else rrror
 //=======================================================================================
-static gboolean do_splicer_unlink_two_elements()
+static gboolean do_splicer_unlink_two_elements(FramesSaver_t * aSaverPtr)
 {
-    #define DESIRED_EFFECTS  "videoflip, edgetv" // TODO --- maybe
+    #define DESIRED_EFFECTS  "videoflip, edgetv"    // TO-DO --- maybe
 
     static gchar * Options_Effects_Ptr = NULL;
 
@@ -742,22 +834,25 @@ static gboolean do_splicer_unlink_two_elements()
         { NULL }
     };
 
-    mySplicer.status = e_SPLICER_STATE_FAIL;
+
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( aSaverPtr );
+
+    splicer_ptr->status = e_SPLICER_STATE_FAIL;
 
     // verify existence of the elements to be spliced by a TEE
-    if ( (mySplicer.ptr_from_element == NULL) || (mySplicer.ptr_into_element == NULL) )
+    if ( (splicer_ptr->ptr_from_element == NULL) || (splicer_ptr->ptr_into_element == NULL) )
     {
         return FALSE;
     }
 
     // verify existence of the desired pads
-    if ( (mySplicer.ptr_from_pad == NULL) || (mySplicer.ptr_into_pad == NULL) )
+    if ( (splicer_ptr->ptr_from_pad == NULL) || (splicer_ptr->ptr_into_pad == NULL) )
     {
         return FALSE;
     }
 
-    // get desired effects/elements for probes --- TODO maybe someday
-    if (mySplicer.pp_effects_names != NULL)
+    // get desired effects/elements for probes --- TO-DO maybe someday
+    if (splicer_ptr->pp_effects_names != NULL)
     {
         GOptionContext * ptr_options_ctx = g_option_context_new("");
 
@@ -772,21 +867,22 @@ static gboolean do_splicer_unlink_two_elements()
             Options_Effects_Ptr = DESIRED_EFFECTS;
         }
 
-        mySplicer.pp_effects_names = g_strsplit( Options_Effects_Ptr, ",", -1 );
+        splicer_ptr->pp_effects_names = g_strsplit( Options_Effects_Ptr, ",", -1 );
     }
 
-    if (mySplicer.pp_effects_names != NULL)
+    if (splicer_ptr->pp_effects_names != NULL)
     {
         int index = -1;
-        while ( mySplicer.pp_effects_names[++index] != NULL )
+
+        while ( splicer_ptr->pp_effects_names[++index] != NULL )
         {
-            const gchar * psz_effect_name = mySplicer.pp_effects_names[index];
+            const gchar * psz_effect_name = splicer_ptr->pp_effects_names[index];
 
             GstElement  * ptr_new_effect = gst_element_factory_make(psz_effect_name, NULL);
 
             if (ptr_new_effect != NULL)
             {
-                g_queue_push_tail( &mySplicer.effects_queue, ptr_new_effect );
+                g_queue_push_tail( &splicer_ptr->effects_queue, ptr_new_effect );
 
                 g_print("Added (%s) to Unlinker-Effects-Queue \n", psz_effect_name);
             }
@@ -798,18 +894,17 @@ static gboolean do_splicer_unlink_two_elements()
     }
 
     // start the safe unlinking procedure
-    mySplicer.status             = e_SPLICER_STATE_BUSY;
-    mySplicer.frame_saver_filter = &mySniffer; 
-    mySplicer.ptr_snaps_pipeline = mySniffer.pipeline_ptr;
+    splicer_ptr->status             = e_SPLICER_STATE_BUSY;
+    splicer_ptr->ptr_snaps_pipeline = aSaverPtr->parent_pipeline_ptr;
 
     // get the first queued effect --- possibly none
-    mySplicer.ptr_current_effect = g_queue_pop_head( &mySplicer.effects_queue );
+    splicer_ptr->ptr_current_effect = g_queue_pop_head( &splicer_ptr->effects_queue );
 
     // apply probe to 'producer' pad --- stop data flow into consumer element
-    gst_pad_add_probe(mySplicer.ptr_from_pad, 
+    gst_pad_add_probe(splicer_ptr->ptr_from_pad,
                       GST_PAD_PROBE_TYPE_BLOCK_DOWNSTREAM, 
                       do_callback_for_splicer_producer_pad, 
-                      &mySplicer, 
+                      splicer_ptr,
                       NULL);
 
     return TRUE;   // success --- safe unlinking procedure is now in progress
@@ -821,14 +916,14 @@ static gboolean do_splicer_unlink_two_elements()
 //
 // obtains the internal pads of a TEE --- returns 1 on success, else rrror
 //=======================================================================================
-static gint do_splicer_configure_TEE_pads()
+static gint do_splicer_configure_TEE_pads(FramesSaver_t * aSaverPtr)
 {
     GstPad  * tee_Q1_pad_ptr, 
             * tee_Q2_pad_ptr,
             * queue1_pad_ptr, 
             * queue2_pad_ptr;
 
-    GstElementClass * class_ptr = GST_ELEMENT_GET_CLASS(mySniffer.tee_element_ptr);
+    GstElementClass * class_ptr = GST_ELEMENT_GET_CLASS(aSaverPtr->tee_element_ptr);
 
     GstPadTemplate  * pad_template_ptr = gst_element_class_get_pad_template(class_ptr, "src_%u");
 
@@ -838,23 +933,23 @@ static gint do_splicer_configure_TEE_pads()
         return 0;
     }
 
-    tee_Q1_pad_ptr = gst_element_request_pad(mySniffer.tee_element_ptr, 
+    tee_Q1_pad_ptr = gst_element_request_pad(aSaverPtr->tee_element_ptr,
                                              pad_template_ptr, 
                                              NULL, 
                                              NULL);
 
     // g_print("Got request pad (%s) for tee-branch-Q1 \n", gst_pad_get_name(tee_Q1_pad_ptr));
 
-    queue1_pad_ptr = gst_element_get_static_pad(mySniffer.Q_1_element_ptr, "sink");
+    queue1_pad_ptr = gst_element_get_static_pad(aSaverPtr->Q_1_element_ptr, "sink");
 
-    tee_Q2_pad_ptr = gst_element_request_pad(mySniffer.tee_element_ptr, 
+    tee_Q2_pad_ptr = gst_element_request_pad(aSaverPtr->tee_element_ptr,
                                              pad_template_ptr, 
                                              NULL, 
                                              NULL);
 
     // g_print("Got request pad (%s) for tee-branch-Q2 \n", gst_pad_get_name(tee_Q2_pad_ptr));
 
-    queue2_pad_ptr = gst_element_get_static_pad(mySniffer.Q_2_element_ptr, "sink");
+    queue2_pad_ptr = gst_element_get_static_pad(aSaverPtr->Q_2_element_ptr, "sink");
 
     if (gst_pad_link(tee_Q1_pad_ptr, queue1_pad_ptr) != GST_PAD_LINK_OK)
     {
@@ -876,30 +971,30 @@ static gint do_splicer_configure_TEE_pads()
 
 
 //=======================================================================================
-// synopsis: result = do_pipeline_cleanup()
+// synopsis: result = do_frame_saver_element_cleanup()
 //
 // inserts TEE into the pipeline --- returns 0 on always
 //=======================================================================================
-static gint do_pipeline_cleanup()
+static gint do_frame_saver_element_cleanup(FramesSaver_t * aSaverPtr)
 {
-    if (mySniffer.main_loop_ptr != NULL)
+    if (The_MainLoop_Ptr != NULL)
     {
-        g_main_loop_quit(mySniffer.main_loop_ptr);
+        g_main_loop_quit(The_MainLoop_Ptr);
 
-        gst_object_unref(GST_OBJECT(mySniffer.pipeline_ptr));
+        gst_object_unref(GST_OBJECT(aSaverPtr->parent_pipeline_ptr));
 
-        g_main_loop_unref(mySniffer.main_loop_ptr);
+        g_main_loop_unref(The_MainLoop_Ptr);
 
-        mySniffer.pipeline_ptr = NULL;
+        aSaverPtr->parent_pipeline_ptr = NULL;
 
-        mySniffer.main_loop_ptr = NULL;
+        The_MainLoop_Ptr = NULL;
     }
 
-    if (mySniffer.pipeline_ptr != NULL)
+    if (aSaverPtr->parent_pipeline_ptr != NULL)
     {
-        gst_object_unref(mySniffer.pipeline_ptr);
+        gst_object_unref(aSaverPtr->parent_pipeline_ptr);
 
-        mySniffer.pipeline_ptr = NULL;
+        aSaverPtr->parent_pipeline_ptr = NULL;
     }
 
     return 0;
@@ -920,39 +1015,43 @@ static gboolean do_pipeline_callback_for_bus_messages(GstBus     * aBusPtr,
     GError    * ptr_err = NULL;
     gchar     * ptr_dbg = NULL;
 
+    FramesSaver_t  * saver_ptr = (FramesSaver_t *) aCtxPtr;
+
+    int saver_ID = saver_ptr ? saver_ptr->instance_ID : 0;
+
     int msg_type = GST_MESSAGE_TYPE(aMsgPtr);
 
-    GMainLoop * ptr_main_looper = aCtxPtr;
-
-    if (mySniffer.main_loop_ptr != ptr_main_looper)
-    {
-        return FALSE;   // impossible
-    }
+#ifdef _NO_BUS_TRACE
+	if (saver_ID >= 0)	// condition is always TRUE
+	{
+		return FALSE;	// FALSE result prevents being called again
+	}
+#endif
 
     switch (msg_type)
     {
     case GST_MESSAGE_ERROR:
         gst_message_parse_error(aMsgPtr, &ptr_err, &ptr_dbg);
-        g_print("   bus_msg=ERROR --- %s", ptr_err->message);
+        g_print(PREFIX_FORMAT "bus_msg=ERROR --- %s", saver_ID, ptr_err->message);
         gst_object_default_error(aMsgPtr->src, ptr_err, ptr_dbg);
         g_clear_error(&ptr_err);
         g_error_free(ptr_err);
         g_free(ptr_dbg);
-        g_main_loop_quit(ptr_main_looper);
+        g_main_loop_quit(The_MainLoop_Ptr);
         break;
 
     case GST_MESSAGE_APPLICATION:
         gst_struct_ptr = gst_message_get_structure(aMsgPtr);
         if (gst_structure_has_name(gst_struct_ptr, "turn_off"))
         {
-            g_print("   bus_msg=OFF \n");
-            g_main_loop_quit(ptr_main_looper);
+        	g_print(PREFIX_FORMAT "bus_msg=OFF \n", saver_ID);
+            g_main_loop_quit(The_MainLoop_Ptr);
         }
         break;
 
     case GST_MESSAGE_EOS:
-        g_print("   bus_msg=EOS \n");
-        g_main_loop_quit(ptr_main_looper);
+    	g_print(PREFIX_FORMAT "bus_msg=EOS \n", saver_ID);
+        g_main_loop_quit(The_MainLoop_Ptr);
         break;
 
     default:
@@ -965,7 +1064,7 @@ static gboolean do_pipeline_callback_for_bus_messages(GstBus     * aBusPtr,
 
         gst_message_parse_state_changed(aMsgPtr, &old_state, &new_state, &pending_state);
         
-        g_print("   bus_msg=STATE --- old=%i  new=%i  pending=%i. \n", old_state, new_state, pending_state);
+        g_print(PREFIX_FORMAT "bus_msg=STATE --- old=%i  new=%i  pending=%i. \n", saver_ID, old_state, new_state, pending_state);
     }
     else
     {
@@ -973,7 +1072,7 @@ static gboolean do_pipeline_callback_for_bus_messages(GstBus     * aBusPtr,
 
         int msg_time = (int) aMsgPtr->timestamp;
 
-        g_print("   bus_msg=OTHER --- name=(%s) time=%i  type=%i  \n", psz_msg_type_name, msg_time, msg_type);
+        g_print(PREFIX_FORMAT "bus_msg=OTHER --- name=(%s) time=%i  type=%i  \n", saver_ID, psz_msg_type_name, msg_time, msg_type);
     }
 
     return TRUE;
@@ -985,11 +1084,13 @@ static gboolean do_pipeline_callback_for_bus_messages(GstBus     * aBusPtr,
 //
 // inserts TEE into the pipeline --- returns 0 on done, 1 on busy, else error
 //=======================================================================================
-static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
+static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer(FramesSaver_t * aSaverPtr)
 {
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( aSaverPtr );
+
     GstState pipeline_state = GST_STATE_NULL;
 
-    gboolean is_TEE_in_pipe = (gst_element_get_parent(mySniffer.tee_element_ptr) != NULL);
+    gboolean is_TEE_in_pipe = (gst_element_get_parent(aSaverPtr->tee_element_ptr) != NULL);
 
     gboolean   is_linked_ok = FALSE;
 
@@ -999,37 +1100,37 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
         return e_TEE_INSERT_ENDED;
     }
 
-    gst_element_get_state(mySniffer.pipeline_ptr, &pipeline_state, NULL, 0);
+    gst_element_get_state(aSaverPtr->parent_pipeline_ptr, &pipeline_state, NULL, 0);
 
     // dynamic unlinking is needed when the pipeline is PLAYING
     if (pipeline_state != GST_STATE_NULL)
     {
         // possibly --- start new unlinking procedure
-        if ((mySplicer.status == e_SPLICER_STATE_NONE) ||
-            (mySplicer.status == e_SPLICER_STATE_USED) )
+        if ((splicer_ptr->status == e_SPLICER_STATE_NONE) ||
+            (splicer_ptr->status == e_SPLICER_STATE_USED) )
         {
-            do_splicer_unlink_two_elements();   // affects "mySplicer.status"
+            do_splicer_unlink_two_elements( aSaverPtr );   // affects "splicer_ptr->status"
         }
 
         // possibly --- failed to unlink elements
-        if (mySplicer.status == e_SPLICER_STATE_FAIL)
+        if (splicer_ptr->status == e_SPLICER_STATE_FAIL)
         {
             return e_TEE_INSERT_ERROR;
         }
 
         // possibly --- wait for end of unlinking procedure
-        if (mySplicer.status == e_SPLICER_STATE_BUSY)
+        if (splicer_ptr->status == e_SPLICER_STATE_BUSY)
         {
             return e_TEE_INSERT_WAITS;
         }
 
         // suspend the producer and consumer elements
-        GstStateChangeReturn rv1 = gst_element_set_state(mySplicer.ptr_from_element, GST_STATE_PAUSED);
-        GstStateChangeReturn rv2 = gst_element_set_state(mySplicer.ptr_into_element, GST_STATE_PAUSED);
-        GstStateChangeReturn rv3 = gst_element_set_state(mySniffer.pipeline_ptr,     GST_STATE_PAUSED);
+        GstStateChangeReturn rv1 = gst_element_set_state(splicer_ptr->ptr_from_element,  GST_STATE_PAUSED);
+        GstStateChangeReturn rv2 = gst_element_set_state(splicer_ptr->ptr_into_element,  GST_STATE_PAUSED);
+        GstStateChangeReturn rv3 = gst_element_set_state(aSaverPtr->parent_pipeline_ptr, GST_STATE_PAUSED);
 
         // possibly --- the unlinking procedure failed
-        if (mySplicer.status != e_SPLICER_STATE_DONE)
+        if (splicer_ptr->status != e_SPLICER_STATE_DONE)
         {
             return e_TEE_INSERT_ERROR + ((rv1 && rv2 && rv3) ? 0 : 0);  // rv's only for Debug
         }
@@ -1037,7 +1138,7 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
 
     if (pipeline_state != GST_STATE_NULL)
     {
-        if (! gst_pad_unlink(mySplicer.ptr_from_pad, mySplicer.ptr_into_pad))
+        if (! gst_pad_unlink(splicer_ptr->ptr_from_pad, splicer_ptr->ptr_into_pad))
         {
             g_warning("Unable to unlink pads of connected pipeline elements \n");       
             return e_FAIL_UNLINK_PADS;
@@ -1045,26 +1146,26 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
     }
 
     // now we can safely unlink the pipe where the TEE must be inserted
-    gst_element_unlink(mySplicer.ptr_from_element, mySplicer.ptr_into_element);
+    gst_element_unlink(splicer_ptr->ptr_from_element, splicer_ptr->ptr_into_element);
 
     // add necessary splicing elements to pipeline
-    gst_bin_add_many(GST_BIN(mySniffer.pipeline_ptr),
-                     mySniffer.tee_element_ptr,
-                     mySniffer.Q_1_element_ptr,
-                     mySniffer.Q_2_element_ptr,
-                     mySniffer.cvt_element_ptr,
-                     mySniffer.video_sink2_ptr,
+    gst_bin_add_many(GST_BIN(aSaverPtr->parent_pipeline_ptr),
+                     aSaverPtr->tee_element_ptr,
+                     aSaverPtr->Q_1_element_ptr,
+                     aSaverPtr->Q_2_element_ptr,
+                     aSaverPtr->cvt_element_ptr,
+                     aSaverPtr->video_sink2_ptr,
                      NULL);
 
-    if (do_splicer_configure_TEE_pads() != 1)
+    if (do_splicer_configure_TEE_pads(aSaverPtr) != 1)
     {
         return e_FAIL_TEE_IN_PADS;
     }
 
     // link elements pads: PRODUCER.OUT pad to TEE.INP pad
-    if ( TRUE != gst_element_link_pads(mySplicer.ptr_from_element, 
-                                       mySplicer.params.producer_out_pad_name,
-                                       mySniffer.tee_element_ptr, 
+    if ( TRUE != gst_element_link_pads(splicer_ptr->ptr_from_element,
+                                       splicer_ptr->params.producer_out_pad_name,
+                                       aSaverPtr->tee_element_ptr,
                                        "sink") )
     {
         g_warning("Unable to link pads: PRODUCER.OUT --> TEE.SINK \n");       
@@ -1072,14 +1173,14 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
     }
 
     // get the producer's caps
-    GstCaps * ptr_linker_caps = gst_pad_query_caps(mySplicer.ptr_from_pad, 
-                                                   mySplicer.ptr_all_from_caps);
+    GstCaps * ptr_linker_caps = gst_pad_query_caps(splicer_ptr->ptr_from_pad,
+                                                   splicer_ptr->ptr_all_from_caps);
 
     // link elements: T-QUE-1 to CONSUMER
     if ( ptr_linker_caps != NULL )
     {
-        is_linked_ok = gst_element_link_filtered(mySniffer.Q_1_element_ptr,
-                                                 mySplicer.ptr_into_element,
+        is_linked_ok = gst_element_link_filtered(aSaverPtr->Q_1_element_ptr,
+                                                 splicer_ptr->ptr_into_element,
                                                  ptr_linker_caps); 
         if (! is_linked_ok)
         {
@@ -1089,14 +1190,14 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
     }
     else    // link T-QUE-1 using negotiated caps when producer caps is null
     {
-        gst_pad_set_event_function(mySplicer.ptr_into_pad, do_callback_for_consumer_INP_pad_events);
+        gst_pad_set_event_function(splicer_ptr->ptr_into_pad, do_callback_for_consumer_INP_pad_events);
 
         g_warning("linking pads with negotiated CAPS: T-QUE-1.OUT --> CONSUMER.INP \n"); 
 
-        is_linked_ok = gst_element_link_pads(mySniffer.Q_1_element_ptr, 
+        is_linked_ok = gst_element_link_pads(aSaverPtr->Q_1_element_ptr,
                                              "src",
-                                             mySplicer.ptr_into_element,
-                                             mySplicer.params.consumer_inp_pad_name);
+                                             splicer_ptr->ptr_into_element,
+                                             splicer_ptr->params.consumer_inp_pad_name);
         if (! is_linked_ok)
         {
             g_warning("Unable to link pads: T-QUE-1.OUT --> CONSUMER.INP \n"); 
@@ -1105,21 +1206,21 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
     }
 
 #ifndef _NOT_USING_SINKER_CAPS_
-    ptr_linker_caps = mySniffer.sinker_caps_ptr;
+    ptr_linker_caps = aSaverPtr->sinker_caps_ptr;
 #endif
 
     if (ptr_linker_caps == NULL)
     {
-        ptr_linker_caps = mySniffer.sinker_caps_ptr;
+        ptr_linker_caps = aSaverPtr->sinker_caps_ptr;
     }
 
     // link elements: T-QUE-2 to SINK2 
-    is_linked_ok = gst_element_link_many(mySniffer.Q_2_element_ptr, 
-                                         mySniffer.cvt_element_ptr,
+    is_linked_ok = gst_element_link_many(aSaverPtr->Q_2_element_ptr,
+                                         aSaverPtr->cvt_element_ptr,
                                          NULL);
 
-    is_linked_ok &= gst_element_link_filtered(mySniffer.cvt_element_ptr,
-                                              mySniffer.video_sink2_ptr, 
+    is_linked_ok &= gst_element_link_filtered(aSaverPtr->cvt_element_ptr,
+                                              aSaverPtr->video_sink2_ptr,
                                               ptr_linker_caps);
 
     if (! is_linked_ok)
@@ -1137,50 +1238,51 @@ static e_TEE_INSERT_STATE_e  do_pipeline_insert_TEE_splicer()
 //
 // runs the pipeline --- return TRUE on success, else error
 //=======================================================================================
-gboolean do_pipeline_validate_splicer_parameters()
+gboolean do_pipeline_validate_splicer_parameters(FramesSaver_t * aSaverPtr)
 {
-    do_DBG_print("@@  do_pipeline_validate_splicer_parameters \n");
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( aSaverPtr );
 
-    mySplicer.ptr_from_element = gst_bin_get_by_name(GST_BIN(mySniffer.pipeline_ptr), 
-                                                     mySplicer.params.producer_name);
+    do_DBG_print("do_pipeline_validate_splicer_parameters \n", aSaverPtr);
 
-    if ( mySplicer.ptr_from_element == NULL )
+    splicer_ptr->ptr_from_element = gst_bin_get_by_name(GST_BIN(aSaverPtr->parent_pipeline_ptr), splicer_ptr->params.producer_name);
+
+    if ( splicer_ptr->ptr_from_element == NULL )
     {
-        g_warning("pipeline missing PRODUCER element (%s) \n", mySplicer.params.producer_name);
+        g_warning("pipeline missing PRODUCER element (%s) \n", splicer_ptr->params.producer_name);
         return FALSE;
     }
 
-    mySplicer.ptr_into_element = gst_bin_get_by_name(GST_BIN(mySniffer.pipeline_ptr), 
-                                                     mySplicer.params.consumer_name);
+    splicer_ptr->ptr_into_element = gst_bin_get_by_name(GST_BIN(aSaverPtr->parent_pipeline_ptr),
+                                                     splicer_ptr->params.consumer_name);
 
-    if ( mySplicer.ptr_into_element == NULL )
+    if ( splicer_ptr->ptr_into_element == NULL )
     {
-        g_warning("pipeline missing CONSUMER element (%s) \n", mySplicer.params.consumer_name);
+        g_warning("pipeline missing CONSUMER element (%s) \n", splicer_ptr->params.consumer_name);
         return FALSE;
     }
 
     // a source pad produces data consumed by a sink pad of the next downstream element
-    mySplicer.ptr_from_pad = gst_element_get_static_pad(mySplicer.ptr_from_element, 
-                                                        mySplicer.params.producer_out_pad_name);
+    splicer_ptr->ptr_from_pad = gst_element_get_static_pad(splicer_ptr->ptr_from_element,
+                                                        splicer_ptr->params.producer_out_pad_name);
 
-    if ( mySplicer.ptr_from_pad == NULL )
+    if ( splicer_ptr->ptr_from_pad == NULL )
     {
-        g_warning("pipeline missing PRODUCER output pad (%s) \n", mySplicer.params.producer_out_pad_name);
+        g_warning("pipeline missing PRODUCER output pad (%s) \n", splicer_ptr->params.producer_out_pad_name);
         return FALSE;
     }
 
-    mySplicer.ptr_into_pad = gst_element_get_static_pad(mySplicer.ptr_into_element, 
-                                                        mySplicer.params.consumer_inp_pad_name);
+    splicer_ptr->ptr_into_pad = gst_element_get_static_pad(splicer_ptr->ptr_into_element,
+                                                        splicer_ptr->params.consumer_inp_pad_name);
 
-    if ( mySplicer.ptr_into_pad == NULL )
+    if ( splicer_ptr->ptr_into_pad == NULL )
     {
-        g_warning("pipeline missing CONSUMER input pad (%s) \n", mySplicer.params.consumer_inp_pad_name);
+        g_warning("pipeline missing CONSUMER input pad (%s) \n", splicer_ptr->params.consumer_inp_pad_name);
         return FALSE;
     }
 
-    mySplicer.ptr_all_from_caps = gst_pad_get_allowed_caps(mySplicer.ptr_from_pad);
+    splicer_ptr->ptr_all_from_caps = gst_pad_get_allowed_caps(splicer_ptr->ptr_from_pad);
 
-    mySplicer.ptr_all_into_caps = gst_pad_get_allowed_caps(mySplicer.ptr_into_pad);
+    splicer_ptr->ptr_all_into_caps = gst_pad_get_allowed_caps(splicer_ptr->ptr_into_pad);
 
     return TRUE;
 }
@@ -1193,26 +1295,30 @@ gboolean do_pipeline_validate_splicer_parameters()
 //=======================================================================================
 static gboolean do_pipeline_callback_for_idle_time(gpointer aCtxPtr)
 {
-    GstClockTime  now_nanos = gst_clock_get_time( mySniffer.sys_clock_ptr );
+    FramesSaver_t   * saver_ptr = (FramesSaver_t *) aCtxPtr;
 
-    GstClockTime elapsed_ns = now_nanos - mySniffer.start_play_time_ns;
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( saver_ptr );
+
+    GstClockTime  now_nanos = gst_clock_get_time( The_SysClock_Ptr );
+
+    GstClockTime elapsed_ns = now_nanos - The_LaunchTime_ns;
 
     uint32_t    playtime_ms = (uint32_t) (elapsed_ns / NANOS_PER_MILLISEC);
 
 
     // possibly --- TEE was inserted or is not wanted
-    if ( (mySniffer.wait_state_ends_ns == 0) || (mySniffer.tee_element_ptr == NULL) )
+    if ( (saver_ptr->wait_state_ends_ns == 0) || (saver_ptr->tee_element_ptr == NULL) )
     {
-        if (elapsed_ns > mySniffer.frame_snap_wait_ns)
+        if (elapsed_ns > saver_ptr->frame_snap_wait_ns)
         {
-            gboolean more_ok = do_appsink_trigger_next_frame_snap(playtime_ms);
+            gboolean more_ok = do_appsink_trigger_next_frame_snap( saver_ptr, playtime_ms );
 
             // possibly --- disable snaps --- effectively "infinit" wait time
             if (! more_ok)
             {
-                mySniffer.num_snap_signals = mySniffer.num_saved_frames;
+                saver_ptr->num_snap_signals = saver_ptr->num_saved_frames;
 
-                mySniffer.frame_snap_wait_ns += INFINIT_NANOS;
+                saver_ptr->frame_snap_wait_ns += INFINIT_NANOS;
             }
         }
 
@@ -1220,37 +1326,37 @@ static gboolean do_pipeline_callback_for_idle_time(gpointer aCtxPtr)
     }
 
     // possibly --- try-or-retry to insert TEE into pipeline
-    if ( mySniffer.wait_state_ends_ns < now_nanos )
+    if ( saver_ptr->wait_state_ends_ns < now_nanos )
     {
-        if ((mySplicer.status == e_SPLICER_STATE_NONE) || (mySplicer.status == e_SPLICER_STATE_USED) )
+        if ((splicer_ptr->status == e_SPLICER_STATE_NONE) || (splicer_ptr->status == e_SPLICER_STATE_USED) )
         {
-            g_print(FSF_PREFIX "playtime=%u %s", playtime_ms, "... Starting TEE insertion \n");
+            g_print(PREFIX_FORMAT "playtime=%u %s", saver_ptr->instance_ID, playtime_ms, "... Starting TEE insertion \n");
         }
 
-        e_TEE_INSERT_STATE_e  status = do_pipeline_insert_TEE_splicer();
+        e_TEE_INSERT_STATE_e  status = do_pipeline_insert_TEE_splicer( saver_ptr );
 
         if (status == e_TEE_INSERT_ENDED)    // TEE inserted into pipeline
         {
-            mySniffer.wait_state_ends_ns = 0;
+            saver_ptr->wait_state_ends_ns = 0;
 
-            gst_element_set_state( mySniffer.pipeline_ptr,     GST_STATE_PLAYING );
-            gst_element_set_state( mySniffer.video_sink2_ptr,  GST_STATE_PLAYING );
-            gst_element_set_state( mySplicer.ptr_from_element, GST_STATE_PLAYING );
-            gst_element_set_state( mySplicer.ptr_into_element, GST_STATE_PLAYING );
+            gst_element_set_state( saver_ptr->parent_pipeline_ptr, GST_STATE_PLAYING );
+            gst_element_set_state( saver_ptr->video_sink2_ptr,     GST_STATE_PLAYING );
+            gst_element_set_state( splicer_ptr->ptr_from_element,  GST_STATE_PLAYING );
+            gst_element_set_state( splicer_ptr->ptr_into_element,  GST_STATE_PLAYING );
 
-            g_print(FSF_PREFIX "playtime=%u %s", playtime_ms, "... Finished TEE insertion\n");
+            g_print(PREFIX_FORMAT "playtime=%u %s", saver_ptr->instance_ID, playtime_ms, "... Finished TEE insertion\n");
         }
         else if (status != e_TEE_INSERT_WAITS)    // failed --- Retry later
         {
-            mySniffer.wait_state_ends_ns = now_nanos + (NANOS_PER_MILLISEC * mySplicer.params.one_tick_ms * 10);
+            saver_ptr->wait_state_ends_ns = now_nanos + (NANOS_PER_MILLISEC * splicer_ptr->params.one_tick_ms * 10);
 
-            g_print(FSF_PREFIX "playtime=%u %s", playtime_ms, "... Failed TEE insertion\n");
+            g_print(PREFIX_FORMAT "playtime=%u %s", saver_ptr->instance_ID, playtime_ms, "... Failed TEE insertion\n");
 
-            gst_element_set_state( mySniffer.pipeline_ptr, GST_STATE_READY );
+            gst_element_set_state( saver_ptr->parent_pipeline_ptr, GST_STATE_READY );
         }
         else // NOTE: here we could report the typical intervals between "idle" callbacks
         {
-            // g_print(FSF_PREFIX "playtime=%u %s", playtime_ms, " ... TEE insertion is ONGOING \n");
+            // g_print(PREFIX_FORMAT "playtime=%u %s", saver_ptr->instance_ID, playtime_ms, " ... TEE insertion is ONGOING \n");
         }
 
         return TRUE;
@@ -1267,37 +1373,41 @@ static gboolean do_pipeline_callback_for_idle_time(gpointer aCtxPtr)
 //=======================================================================================
 static gboolean do_pipeline_callback_for_timer_tick(gpointer aCtxPtr)
 {
-    GstClockTime  now_nanos = gst_clock_get_time( mySniffer.sys_clock_ptr );
+    FramesSaver_t   * saver_ptr = (FramesSaver_t *) aCtxPtr;
 
-    GstClockTime elapsed_ns = now_nanos - mySniffer.start_play_time_ns;
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( saver_ptr );
+
+    GstClockTime  now_nanos = gst_clock_get_time( The_SysClock_Ptr );
+
+    GstClockTime elapsed_ns = now_nanos - The_LaunchTime_ns;
 
     uint32_t    playtime_ms = (uint32_t) (elapsed_ns / NANOS_PER_MILLISEC);
 
 
-    if (now_nanos < mySniffer.wait_state_ends_ns)   // idle waiting state
+    if (now_nanos < saver_ptr->wait_state_ends_ns)   // idle waiting state
     {
-        g_print(FSF_PREFIX "playtime=%u ... idle-wait \n", playtime_ms);
+        g_print(PREFIX_FORMAT "playtime=%u ... idle-wait \n", saver_ptr->instance_ID, playtime_ms);
     }
-    else if (mySplicer.params.one_snap_ms == 0)     // not doing frame snaps
+    else if (splicer_ptr->params.one_snap_ms == 0)     // not doing frame snaps
     {
-        g_print(FSF_PREFIX "playtime=%u \n", playtime_ms);
+        g_print(PREFIX_FORMAT "playtime=%u \n", saver_ptr->instance_ID, playtime_ms);
     }
 
     // possibly --- it's time to shutdown the pipeline being tested
-    if ( playtime_ms > mySplicer.params.max_play_ms )
+    if ( playtime_ms > splicer_ptr->params.max_play_ms )
     {
-        g_print(FSF_PREFIX "playtime=%u ... play-ends \n", playtime_ms);
+        g_print(PREFIX_FORMAT "playtime=%u ... play-ends \n", saver_ptr->instance_ID, playtime_ms);
 
-        if (gst_element_get_parent(mySniffer.vid_sourcer_ptr) != NULL)  // default pipeline
+        if (gst_element_get_parent(saver_ptr->vid_sourcer_ptr) != NULL)  // default pipeline
         {
-            gst_element_send_event ( mySniffer.vid_sourcer_ptr, gst_event_new_eos() );
+            gst_element_send_event ( saver_ptr->vid_sourcer_ptr, gst_event_new_eos() );
 
-            gst_element_set_state( mySniffer.vid_sourcer_ptr, GST_STATE_READY );
+            gst_element_set_state( saver_ptr->vid_sourcer_ptr, GST_STATE_READY );
         }
 
-        gst_element_set_state( mySniffer.pipeline_ptr, GST_STATE_NULL );
+        gst_element_set_state( saver_ptr->parent_pipeline_ptr, GST_STATE_NULL );
 
-        do_pipeline_cleanup();
+        do_frame_saver_element_cleanup( saver_ptr );
 
         return FALSE;
     }    
@@ -1307,43 +1417,47 @@ static gboolean do_pipeline_callback_for_timer_tick(gpointer aCtxPtr)
 
 
 //=======================================================================================
-// synopsis: result = do_pipeline_create_splicer_elements()
+// synopsis: result = do_frame_saver_create_splicer_elements(aSaverPtr)
 //
 // creates the pipeline's spicer elements --- return 0 on success, else error
 //=======================================================================================
-static PIPELINE_MAKER_ERROR_e do_pipeline_create_splicer_elements()
+static PIPELINE_MAKER_ERROR_e do_frame_saver_create_splicer_elements(FramesSaver_t * aSaverPtr)
 {
-    do_DBG_print("@@  do_pipeline_create_splicer_elements \n");
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( aSaverPtr );
 
-    if (do_pipeline_validate_splicer_parameters() != TRUE)
+    do_DBG_print("do_frame_saver_create_splicer_elements \n", aSaverPtr);
+
+    if (do_pipeline_validate_splicer_parameters(aSaverPtr) != TRUE)
     {
         return e_ERROR_PIPELINE_TEE_PARAMS;
     }
 
     // create the splicer's elements
-    mySniffer.tee_element_ptr = gst_element_factory_make("tee",          "FSL_TEE");
-    mySniffer.Q_1_element_ptr = gst_element_factory_make("queue",        "FSL_T_QUEUE_1");
-    mySniffer.Q_2_element_ptr = gst_element_factory_make("queue",        "FSL_T_QUEUE_2");
-    mySniffer.cvt_element_ptr = gst_element_factory_make("videoconvert", "FSL_T_VID_CVT");
+    aSaverPtr->tee_element_ptr = gst_element_factory_make("tee",          "FSL_TEE");
+    aSaverPtr->Q_1_element_ptr = gst_element_factory_make("queue",        "FSL_T_QUEUE_1");
+    aSaverPtr->Q_2_element_ptr = gst_element_factory_make("queue",        "FSL_T_QUEUE_2");
+    aSaverPtr->cvt_element_ptr = gst_element_factory_make("videoconvert", "FSL_T_VID_CVT");
 
     // possibly --- create the appsink to snap and save frames
-    if (mySplicer.params.one_snap_ms > 0)
+    if (splicer_ptr->params.one_snap_ms > 0)
     {
-        mySniffer.sinker_caps_ptr = gst_caps_from_string(CAPS_FOR_SNAP_SINKER);
-        mySniffer.video_sink2_ptr = do_appsink_create("FSL_T_APP_SINK", NUM_APP_SINK_BUFFERS);
+        aSaverPtr->sinker_caps_ptr = gst_caps_from_string(CAPS_FOR_SNAP_SINKER);
+
+        aSaverPtr->video_sink2_ptr = do_appsink_create( aSaverPtr, "FSL_T_APP_SINK", NUM_APP_SINK_BUFFERS );
     }
     else
     {
-        mySniffer.sinker_caps_ptr = gst_caps_from_string(CAPS_FOR_VIEW_SINKER);
-        mySniffer.video_sink2_ptr = gst_element_factory_make("autovideosink", "FSL_T_VID_SINK");
+        aSaverPtr->sinker_caps_ptr = gst_caps_from_string(CAPS_FOR_VIEW_SINKER);
+
+        aSaverPtr->video_sink2_ptr = gst_element_factory_make("autovideosink", "FSL_T_VID_SINK");
     }
 
-    int flags = (mySniffer.tee_element_ptr ? 0 : 0x0010) +
-                (mySniffer.Q_1_element_ptr ? 0 : 0x0020) +
-                (mySniffer.Q_2_element_ptr ? 0 : 0x0040) +
-                (mySniffer.cvt_element_ptr ? 0 : 0x0100) +
-                (mySniffer.video_sink2_ptr ? 0 : 0x0200) +
-                (mySniffer.sinker_caps_ptr ? 0 : 0x0400) ;
+    int flags = (aSaverPtr->tee_element_ptr ? 0 : 0x0010) +
+                (aSaverPtr->Q_1_element_ptr ? 0 : 0x0020) +
+                (aSaverPtr->Q_2_element_ptr ? 0 : 0x0040) +
+                (aSaverPtr->cvt_element_ptr ? 0 : 0x0100) +
+                (aSaverPtr->video_sink2_ptr ? 0 : 0x0200) +
+                (aSaverPtr->sinker_caps_ptr ? 0 : 0x0400) ;
 
     if (flags != 0)
     {
@@ -1356,24 +1470,24 @@ static PIPELINE_MAKER_ERROR_e do_pipeline_create_splicer_elements()
 
 
 //=======================================================================================
-// synopsis: result = do_pipeline_create_default_elements()
+// synopsis: result = do_pipeline_create_default_elements(aSaverPtr)
 //
 // creates elements for default pipeline --- return 0 on success, else error
 //=======================================================================================
-static PIPELINE_MAKER_ERROR_e do_pipeline_create_default_elements()
+static PIPELINE_MAKER_ERROR_e do_pipeline_create_default_elements(FramesSaver_t * aSaverPtr)
 {
-    do_DBG_print("@@  do_pipeline_create_default_elements \n");
+    do_DBG_print("do_pipeline_create_default_elements \n", aSaverPtr);
 
     // create the elements of the default pipeline
-    mySniffer.source_caps_ptr = gst_caps_from_string(CAPS_FOR_AUTO_SOURCE);
-    mySniffer.vid_sourcer_ptr = gst_element_factory_make("videotestsrc",  DEFAULT_VID_SRC_NAME);
-    mySniffer.vid_convert_ptr = gst_element_factory_make("videoconvert",  DEFAULT_VID_CVT_NAME);
-    mySniffer.video_sink1_ptr = gst_element_factory_make("autovideosink", "auto_video_sink_0");
+    aSaverPtr->source_caps_ptr = gst_caps_from_string(CAPS_FOR_AUTO_SOURCE);
+    aSaverPtr->vid_sourcer_ptr = gst_element_factory_make("videotestsrc",  DEFAULT_VID_SRC_NAME);
+    aSaverPtr->vid_convert_ptr = gst_element_factory_make("videoconvert",  DEFAULT_VID_CVT_NAME);
+    aSaverPtr->video_sink1_ptr = gst_element_factory_make("autovideosink", "auto_video_sink_0");
 
-    int flags = (mySniffer.vid_sourcer_ptr ? 0 : 0x001) +   // only used for default pipeline
-                (mySniffer.video_sink1_ptr ? 0 : 0x002) +   // only used for default pipeline
-                (mySniffer.vid_convert_ptr ? 0 : 0x004) +
-                (mySniffer.source_caps_ptr ? 0 : 0x008) ;
+    int flags = (aSaverPtr->vid_sourcer_ptr ? 0 : 0x001) +   // only used for default pipeline
+                (aSaverPtr->video_sink1_ptr ? 0 : 0x002) +   // only used for default pipeline
+                (aSaverPtr->vid_convert_ptr ? 0 : 0x004) +
+                (aSaverPtr->source_caps_ptr ? 0 : 0x008) ;
 
     if (flags != 0)
     {
@@ -1381,23 +1495,23 @@ static PIPELINE_MAKER_ERROR_e do_pipeline_create_default_elements()
         return e_FAILED_MAKE_WORK_ELEMENTS;
     }
 
-    g_object_set(G_OBJECT(mySniffer.vid_sourcer_ptr), "is-live", TRUE, NULL);
+    g_object_set(G_OBJECT(aSaverPtr->vid_sourcer_ptr), "is-live", TRUE, NULL);
 
-    gst_bin_add_many(GST_BIN(mySniffer.pipeline_ptr),
-                     mySniffer.vid_sourcer_ptr ,
-                     mySniffer.vid_convert_ptr,
-                     mySniffer.video_sink1_ptr,
+    gst_bin_add_many(GST_BIN(aSaverPtr->parent_pipeline_ptr),
+                     aSaverPtr->vid_sourcer_ptr ,
+                     aSaverPtr->vid_convert_ptr,
+                     aSaverPtr->video_sink1_ptr,
                      NULL);
 
     // link elements: SRC to CVT
-    gboolean is_link_1_ok = gst_element_link_many(mySniffer.vid_sourcer_ptr,
-                                                  mySniffer.vid_convert_ptr,
+    gboolean is_link_1_ok = gst_element_link_many(aSaverPtr->vid_sourcer_ptr,
+                                                  aSaverPtr->vid_convert_ptr,
                                                   NULL);
 
     // link elements: CVT with CAPS to SINK1
-    gboolean is_link_2_ok = gst_element_link_filtered(mySniffer.vid_convert_ptr,
-                                                      mySniffer.video_sink1_ptr,
-                                                      mySniffer.source_caps_ptr);
+    gboolean is_link_2_ok = gst_element_link_filtered(aSaverPtr->vid_convert_ptr,
+                                                      aSaverPtr->video_sink1_ptr,
+                                                      aSaverPtr->source_caps_ptr);
 
     if ( (! is_link_1_ok) || (! is_link_2_ok) )
     {
@@ -1414,19 +1528,21 @@ static PIPELINE_MAKER_ERROR_e do_pipeline_create_default_elements()
 //
 // creates the pipeline --- return 0 on success, else error
 //=======================================================================================
-static PIPELINE_MAKER_ERROR_e do_pipeline_create_instance()
+static PIPELINE_MAKER_ERROR_e do_pipeline_create_instance(FramesSaver_t * aSaverPtr)
 {
-    do_DBG_print("@@  do_pipeline_create_instance \n");
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( aSaverPtr );
+
+    do_DBG_print("do_pipeline_create_instance \n", aSaverPtr);
 
     PIPELINE_MAKER_ERROR_e e_result = e_PIPELINE_MAKER_ERROR_NONE;
 
-    gboolean is_custom = (strchr(mySplicer.params.pipeline_spec, '!') != NULL);
+    gboolean is_custom = (strchr(splicer_ptr->params.pipeline_spec, '!') != NULL);
 
     if ( is_custom )
     {
         GError * error_ptr = NULL;
 
-        mySniffer.pipeline_ptr = gst_parse_launch(mySplicer.params.pipeline_spec, &error_ptr);
+        aSaverPtr->parent_pipeline_ptr = gst_parse_launch(splicer_ptr->params.pipeline_spec, &error_ptr);
 
         if (error_ptr != NULL)
         {
@@ -1434,184 +1550,137 @@ static PIPELINE_MAKER_ERROR_e do_pipeline_create_instance()
             return e_PIPELINE_PARSER_HAS_ERROR;
         }
 
-        if (gst_object_set_name(GST_OBJECT(mySniffer.pipeline_ptr), mySplicer.params.pipeline_name) != TRUE)
+        if (gst_object_set_name(GST_OBJECT(aSaverPtr->parent_pipeline_ptr), splicer_ptr->params.pipeline_name) != TRUE)
         {
-            g_warning("Failed naming custom pipeline (%s) \n", mySplicer.params.pipeline_name);
+            g_warning("Failed naming custom pipeline (%s) \n", splicer_ptr->params.pipeline_name);
             return e_FAILED_MAKE_PIPELINE_NAME;
         }
     }
     else
     {
-        mySniffer.pipeline_ptr = gst_pipeline_new(mySplicer.params.pipeline_name);
+        aSaverPtr->parent_pipeline_ptr = gst_pipeline_new(splicer_ptr->params.pipeline_name);
 
-        if (! mySniffer.pipeline_ptr)
+        if (! aSaverPtr->parent_pipeline_ptr)
         {
-            g_warning("Failed creating pipeline named (%s) \n", mySplicer.params.pipeline_name);
+            g_warning("Failed creating pipeline named (%s) \n", splicer_ptr->params.pipeline_name);
             return e_FAILED_MAKE_MINI_PIPELINE;
         }
     }
 
-    if (gst_element_set_state(mySniffer.pipeline_ptr, GST_STATE_NULL) != GST_STATE_CHANGE_SUCCESS)
+    if (gst_element_set_state(aSaverPtr->parent_pipeline_ptr, GST_STATE_NULL) != GST_STATE_CHANGE_SUCCESS)
     {
         g_warning("Failed setting new pipeline state to NULL \n");
         return e_FAILED_SET_PIPELINE_STATE;
     }
 
-    mySniffer.bus_ptr = gst_pipeline_get_bus(GST_PIPELINE(mySniffer.pipeline_ptr));
+    aSaverPtr->bus_ptr = gst_pipeline_get_bus(GST_PIPELINE(aSaverPtr->parent_pipeline_ptr));
 
-    if (! mySniffer.bus_ptr)
+    if (! aSaverPtr->bus_ptr)
     {
         g_warning("Failed obtaining the pipeline's bus \n");
         return e_FAILED_FETCH_PIPELINE_BUS;
     }
 
-    gst_bus_add_watch(mySniffer.bus_ptr, do_pipeline_callback_for_bus_messages, NULL);
-    gst_object_unref(mySniffer.bus_ptr);
-    mySniffer.bus_ptr = NULL;
+    gst_bus_add_watch(aSaverPtr->bus_ptr, do_pipeline_callback_for_bus_messages, NULL);
+    gst_object_unref(aSaverPtr->bus_ptr);
+    aSaverPtr->bus_ptr = NULL;
 
     // possibly --- configure the default pipeline
     if (! is_custom)
     {
-        e_result = do_pipeline_create_default_elements();
+        e_result = do_pipeline_create_default_elements( aSaverPtr );
     }
 
     if (e_result == e_PIPELINE_MAKER_ERROR_NONE)
     {
-        e_result = do_pipeline_create_splicer_elements();
+        e_result = do_frame_saver_create_splicer_elements( aSaverPtr );
     }
 
     return e_result;
 }
 
 
-
 //=======================================================================================
-// synopsis: is_ok = do_prepare_to_play( canSplicePipeline )
+// synopsis: is_ok = do_prepare_to_play( aSaverPtr, canSplicePipeline )
 //
 // prepares to run the main loop the pipeline --- return TRUE on success, else error
 //=======================================================================================
-static gboolean do_prepare_to_play( gboolean canSplicePipeline )
+static gboolean do_prepare_to_play( FramesSaver_t * aSaverPtr, gboolean canSplicePipeline )
 {
-    do_DBG_print("@@  do_prepare_to_play \n");
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( aSaverPtr );
 
     GstClockTime some_nanos = (NANOS_PER_MILLISEC * MIN_TICKS_MILLISEC) / 10;
-    GstClockTime play_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_play_ms) + some_nanos;
-    GstClockTime wait_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_wait_ms) + some_nanos;
-    GstClockTime now_nanos;
+    GstClockTime play_nanos = (NANOS_PER_MILLISEC * splicer_ptr->params.max_play_ms) + some_nanos;
+    GstClockTime wait_nanos = (NANOS_PER_MILLISEC * splicer_ptr->params.max_wait_ms) + some_nanos;
+    GstClockTime  now_nanos = gst_clock_get_time( The_SysClock_Ptr );
 
-    strcpy(mySniffer.work_folder_path, mySplicer.params.folder_path);
+    do_DBG_print("do_prepare_to_play \n", aSaverPtr);
 
-    mySniffer.sys_clock_ptr = gst_system_clock_obtain();
+    strcpy(aSaverPtr->work_folder_path, splicer_ptr->params.folder_path);
 
-    now_nanos = gst_clock_get_time(mySniffer.sys_clock_ptr);
+    aSaverPtr->wait_state_ends_ns = (splicer_ptr->params.max_wait_ms < 1) ? 0 : wait_nanos + now_nanos;
+    aSaverPtr->frame_snap_wait_ns = (splicer_ptr->params.one_snap_ms > 0) ? 0 : play_nanos + INFINIT_NANOS;
 
-    mySniffer.start_play_time_ns = now_nanos;
-    mySniffer.wait_state_ends_ns = (mySplicer.params.max_wait_ms < 1) ? 0 : wait_nanos + now_nanos;
-    mySniffer.frame_snap_wait_ns = (mySplicer.params.one_snap_ms > 0) ? 0 : play_nanos + INFINIT_NANOS;
+    aSaverPtr->num_stream_frames = 0;
+    aSaverPtr->num_stream_errors = 0;
 
-    mySniffer.num_stream_frames = 0;
-    mySniffer.num_stream_errors = 0;
-
-    mySniffer.num_saver_errors = 0;
-    mySniffer.num_saved_frames = 0;
-    mySniffer.num_snap_signals = 0;
+    aSaverPtr->num_saver_errors = 0;
+    aSaverPtr->num_saved_frames = 0;
+    aSaverPtr->num_snap_signals = 0;
 
     if ( canSplicePipeline )
     {
-        if (mySniffer.tee_element_ptr == NULL) 
+        if (aSaverPtr->tee_element_ptr == NULL)
         {
-            do_pipeline_create_splicer_elements();
+            do_frame_saver_create_splicer_elements( aSaverPtr );
         }
     }
 
-    g_idle_add( do_pipeline_callback_for_idle_time, &mySniffer );
+    g_idle_add( do_pipeline_callback_for_idle_time, aSaverPtr );
 
     return TRUE;
 }
 
 
 //=======================================================================================
-// synopsis: is_ok = do_pipeline_test_run_main_loop()
+// synopsis: is_ok = do_pipeline_test_run_main_loop(aSaverPtr)
 //
 // runs the main-loop and plays the pipeline --- return TRUE on success, else error
 //=======================================================================================
-static gboolean do_pipeline_test_run_main_loop()
+static gboolean do_pipeline_test_run_main_loop(FramesSaver_t * aSaverPtr)
 {
-    if (mySniffer.sys_clock_ptr == NULL)
-    {
-        do_prepare_to_play( TRUE );
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr( aSaverPtr );
 
-        // possibly --- insert the TEE now, before pipeline starts playing
-        if (mySplicer.params.max_wait_ms <= 0)
+    do_prepare_to_play( aSaverPtr, TRUE );
+
+    // possibly --- insert the TEE now, before pipeline starts playing
+    if (splicer_ptr->params.max_wait_ms <= 0)
+    {
+        if (do_pipeline_insert_TEE_splicer(aSaverPtr) != e_TEE_INSERT_ENDED)
         {
-            if (do_pipeline_insert_TEE_splicer() != e_TEE_INSERT_ENDED)
-            {
-                return FALSE;
-            }
+            return FALSE;
         }
     }
 
-    do_DBG_print("@@  do_pipeline_test_run_main_loop \n");
+    do_DBG_print("do_pipeline_test_run_main_loop \n", aSaverPtr);
 
-    mySniffer.main_loop_ptr = g_main_loop_new(NULL, FALSE);
+    The_MainLoop_Ptr = g_main_loop_new(NULL, FALSE);
 
-    if (gst_element_set_state(mySniffer.pipeline_ptr, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE)
+    if (gst_element_set_state(aSaverPtr->parent_pipeline_ptr, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE)
     {
         g_warning("Failed setting pipeline state to PLAYING \n");
         return FALSE;
     }
 
-    g_print(FSF_PREFIX "PLAYING \n");
+    g_print(PREFIX_FORMAT "PLAYING \n", aSaverPtr->instance_ID);
 
-    g_timeout_add(mySplicer.params.one_tick_ms, do_pipeline_callback_for_timer_tick, &mySniffer);
+    g_timeout_add(splicer_ptr->params.one_tick_ms, do_pipeline_callback_for_timer_tick, aSaverPtr);
 
-    g_main_loop_run(mySniffer.main_loop_ptr);
+    g_main_loop_run(The_MainLoop_Ptr);
 
-    g_print(FSF_PREFIX "EXITING \n");
+    g_print(PREFIX_FORMAT "EXITING \n", aSaverPtr->instance_ID);
 
     return TRUE;
-}
-
-
-static void *  myMutexHandlePtr = NULL;
-static void *  myKnownPlugins[100];
-static int     myPluginsCount = -1;
-
-#define MAX_NUM_KNOWN_PLUGINS  ( sizeof(myKnownPlugins) / sizeof(gpointer) )
-#define LOCK_MUTEX_TIMEOUT_MS  (10)
-
-
-//=======================================================================================
-// synopsis: result = Frame_Saver_Filter_Lookup(aPluginPtr)
-//
-// returns index in array of known plugins --- returns -1 iff not in the array
-//=======================================================================================
-int Frame_Saver_Filter_Lookup(const void * aPluginPtr)
-{
-    int index = -1;
-
-    // possibly --- first time here --- initalize mutex and array
-    if (myMutexHandlePtr == NULL)
-    {
-        if (nativeCreateMutex(&myMutexHandlePtr) != 0)
-        {
-            myMutexHandlePtr = NULL;    // failed to created mutex
-        }
-
-        memset( myKnownPlugins, 0, sizeof(myKnownPlugins) );
-
-        myPluginsCount = 0;
-
-        return -1;
-    }
-
-    // array always has NULL sentinel --- it's optimized for lookup
-    while ( (myKnownPlugins[++index] != NULL) && (myKnownPlugins[index] != aPluginPtr) )
-    {
-        ; // loop to next
-    }
-
-    return (myKnownPlugins[index] == NULL) ? -1 : index;
 }
 
 
@@ -1622,66 +1691,75 @@ int Frame_Saver_Filter_Lookup(const void * aPluginPtr)
 //=======================================================================================
 int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
 {
-    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+    int index = do_find_plugin_index(aPluginPtr);     // -1 if not found
 
     // verify validity of plugin element
     if (aPluginPtr == NULL)
     {
-        do_DBG_print("@@  Attach_GST --- ERROR ---- aPluginPtr \n");
+        do_DBG_print("Attach_GST --- ERROR ---- PluginPtr is NULL \n", NULL);
         return -1;
     }
 
-    // possibly --- plugin is not new --- unexpected, but allowed
+    FramesSaver_t * a_saver_ptr = &The_FramesSavers_Array[index];
+
+    // possibly --- plugin is known --- allowed
     if (index >= 0)
     {
-        do_DBG_print("@@  Attach_GST --- KNOWN \n");
+        do_DBG_print("Attach_GST --- KNOWN \n", a_saver_ptr);
         return 0;
     }
     
-    if (! myMutexHandlePtr)
+    if (! The_Mutex_Handle)
     {
-        do_DBG_print("@@  Attach_GST --- ERROR ---- myMutexHandlePtr \n");
-        return -3;  // mutex does not exist
+        do_DBG_print("Attach_GST --- ERROR ---- The_Mutex_Handle \n", a_saver_ptr);
+        return -2;  // mutex does not exist
     }
 
-    if (nativeTryLockMutex(myMutexHandlePtr, LOCK_MUTEX_TIMEOUT_MS) != 0)
+    if (nativeTryLockMutex(The_Mutex_Handle, MUTEX_TIMEOUT_MS) != 0)
     {
-        do_DBG_print("@@  Attach_GST --- ERROR ---- LOCK_MUTEX_TIMEOUT_MS \n");
-        return -2;  // failed to acquire mutex
+        do_DBG_print("Attach_GST --- ERROR ---- MUTEX_TIMEOUT_MS \n", a_saver_ptr);
+        return -3;  // failed to acquire mutex
     }
 
-    // find the NULL sentinel ---- it always exists
-    for (index = 0;  myKnownPlugins[index] != NULL;  ++index)
+    // establish the starting index for finding the first unused slot
+    index = (The_Plugins_Count < MAX_NUM_PLUGINS) ? -1 : MAX_NUM_PLUGINS;
+
+    // find the first unused slot in the array
+    while ( (++index < MAX_NUM_PLUGINS) && (The_FramesSavers_Array[index].instance_ID > 0) )
     {
-        ; // loop to next
+        ; // next
     }
 
-    if (mySniffer.real_plugin_ptr != NULL)
+    FramesSaver_t *   saver_ptr = &The_FramesSavers_Array[index];
+
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr(saver_ptr);
+
+    if ( index >= MAX_NUM_PLUGINS )
     {
-        do_DBG_print("@@  Attach_GST --- ERROR --- MULTI \n");   // TODO: allow many
+        do_DBG_print("Attach_GST --- ERROR --- REACHED-LIMIT \n", saver_ptr);
     }
-    else if (index >= MAX_NUM_KNOWN_PLUGINS - 1)
+    else if ( saver_ptr->attached_plugin_ptr != NULL )
     {
-        do_DBG_print("@@  Attach_GST --- ERROR --- LIMIT \n");
+        do_DBG_print("Attach_GST --- ERROR --- ENTRY-IS-USED \n", saver_ptr);
     }
-    else
+    else    // mark the slot as being used --- TO-DO: find-pipeline-as-root-parent
     {
-        ++myPluginsCount;
+        ++The_Plugins_Count;
 
-        myKnownPlugins[index] = aPluginPtr;
+        saver_ptr->attached_plugin_ptr = aPluginPtr;
 
-        mySniffer.real_plugin_ptr = aPluginPtr;
+        saver_ptr->parent_pipeline_ptr = (GstElement *) gst_element_get_parent(aPluginPtr);
 
-        mySniffer.pipeline_ptr = (GstElement *) gst_element_get_parent(aPluginPtr); // TODO: find-root
+        saver_ptr->instance_ID = index + 1;
 
-        frame_saver_params_initialize( &mySplicer.params );
+        frame_saver_params_initialize( &splicer_ptr->params );
 
-        do_DBG_print("@@  Attach_GST --- SUCCESS \n");
+        do_DBG_print("Attach_GST --- SUCCESS \n", saver_ptr);
     }
 
-    nativeReleaseMutex(myMutexHandlePtr);
+    nativeReleaseMutex(The_Mutex_Handle);
 
-    return (myKnownPlugins[index] == NULL) ? -1 : 0;
+    return (saver_ptr->attached_plugin_ptr == aPluginPtr) ? 0 : -1;
 }
 
 
@@ -1692,55 +1770,49 @@ int Frame_Saver_Filter_Attach(GstElement * aPluginPtr)
 //=======================================================================================
 int Frame_Saver_Filter_Detach(GstElement * aPluginPtr)
 {
-    if (! myMutexHandlePtr)
+    if (! The_Mutex_Handle)
     {
-        do_DBG_print("@@  Detach_GST --- ERROR ---- myMutexHandlePtr \n");
-        return -3;  // mutex does not exist
+        do_DBG_print("Detach_GST --- ERROR ---- The_Mutex_Handle \n", NULL);
+        return -2;  // mutex does not exist
     }
 
-    if (nativeTryLockMutex(myMutexHandlePtr, LOCK_MUTEX_TIMEOUT_MS) != 0)
+    if (nativeTryLockMutex(The_Mutex_Handle, MUTEX_TIMEOUT_MS) != 0)
     {
-        do_DBG_print("@@  Detach_GST --- ERROR ---- LOCK_MUTEX_TIMEOUT_MS \n");
-        return -2;  // failed to acquire mutex
+        do_DBG_print("Detach_GST --- ERROR ---- MUTEX_TIMEOUT_MS \n", NULL);
+        return -3;  // failed to acquire mutex
     }
 
-    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+    int index = do_find_plugin_index(aPluginPtr);     // -1 if not found
 
     // possibly --- plugin is unknown
     if (index < 0)
     {
-        nativeReleaseMutex(myMutexHandlePtr);
+        nativeReleaseMutex(The_Mutex_Handle);
 
-        do_DBG_print("@@  Detach_GST --- UNKNOWN \n");
+        do_DBG_print("Detach_GST --- UNKNOWN \n", NULL);
 
         return -1;
     }
 
-    index = Frame_Saver_Filter_Lookup(aPluginPtr); 
+    FramesSaver_t * saver_ptr = &The_FramesSavers_Array[index];
 
-    do_DBG_print("@@  Detach_GST --- SUCCESS \n");
+    // mark the slot as empty and unused
+    saver_ptr->attached_plugin_ptr = NULL;
+    saver_ptr->parent_pipeline_ptr = NULL;
+    saver_ptr->instance_ID         = 0;
 
-    // keep array items compacted --- the sentinel is always the first NULL
-    while (myKnownPlugins[++index] != NULL)
+    do_DBG_print("Detach_GST --- SUCCESS \n", saver_ptr);
+
+    // release and/or delete mutex
+    if ( --The_Plugins_Count == 0 )
     {
-        myKnownPlugins[index - 1] = myKnownPlugins[index]; 
-    }
-
-    myKnownPlugins[index] = NULL;
-
-    mySniffer.real_plugin_ptr = NULL;
-
-    if ( --myPluginsCount == 0 )
-    {
-        void * ptr_mutex = myMutexHandlePtr;
-
-        myMutexHandlePtr = NULL;
-
+        void * ptr_mutex = The_Mutex_Handle;
+        The_Mutex_Handle = NULL;
         nativeDeleteMutex(ptr_mutex);
     }
     else
     {
-        nativeReleaseMutex(myMutexHandlePtr);
+        nativeReleaseMutex(The_Mutex_Handle);
     }
 
     return 0;
@@ -1758,20 +1830,24 @@ int Frame_Saver_Filter_Receive_Buffer(GstElement * aPluginPtr,
 {
     int result = (int) GST_FLOW_ERROR;
 
-    int  index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+    int  index = do_find_plugin_index(aPluginPtr);     // -1 if not found
 
     if (index < 0)
     {
         return result;
     }
 
-    mySniffer.num_stream_frames += 1;
+    FramesSaver_t *   saver_ptr = &The_FramesSavers_Array[index];
 
-    if (mySplicer.params.one_snap_ms > 0)
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr(saver_ptr);
+
+    saver_ptr->num_stream_frames += 1;
+
+    if (splicer_ptr->params.one_snap_ms > 0)
     {
-        if (mySniffer.num_snap_signals > mySniffer.num_saved_frames)
+        if (saver_ptr->num_snap_signals > saver_ptr->num_saved_frames)
         {
-            result = do_save_frame_buffer( (GstBuffer *) aBufferPtr, aCapsTextPtr, &mySniffer );
+            result = do_save_frame_buffer( (GstBuffer *) aBufferPtr, aCapsTextPtr, saver_ptr );
         }
     }
 
@@ -1786,19 +1862,23 @@ int Frame_Saver_Filter_Receive_Buffer(GstElement * aPluginPtr,
 //=======================================================================================
 int Frame_Saver_Filter_Transition(GstElement * aPluginPtr, GstStateChange aTransition)
 {
-    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+    int index = do_find_plugin_index(aPluginPtr);     // -1 if not found
 
     if (index >= 0)
     {
-        do_DBG_print("@@  Transition \n");
+        FramesSaver_t *   saver_ptr = &The_FramesSavers_Array[index];
+
+        FlowSplicer_t * splicer_ptr = do_get_splicer_ptr(saver_ptr);
+
+        do_DBG_print("Transition \n", saver_ptr);
 
         if (aTransition == GST_STATE_CHANGE_NULL_TO_READY)
         {
             char report[MAX_PARAMS_SPECS_LNG];
 
-            frame_saver_params_write_to_buffer( &mySplicer.params, report, sizeof(report) );
+            frame_saver_params_write_to_buffer( &splicer_ptr->params, report, sizeof(report) );
 
-            do_prepare_to_play(FALSE);
+            do_prepare_to_play( saver_ptr, FALSE );
 
             g_print(report);
         }
@@ -1821,7 +1901,7 @@ int Frame_Saver_Filter_Set_Params(GstElement  * aPluginPtr,
 
     char params_specs[MAX_PARAMS_SPECS_LNG];
 
-    int index = Frame_Saver_Filter_Lookup(aPluginPtr);     // -1 if not found
+    int index = do_find_plugin_index(aPluginPtr);     // -1 if not found
 
     int error = 0;
 
@@ -1837,35 +1917,39 @@ int Frame_Saver_Filter_Set_Params(GstElement  * aPluginPtr,
         return -2;
     }
 
+    FramesSaver_t *   saver_ptr = &The_FramesSavers_Array[index];
+
+    FlowSplicer_t * splicer_ptr = do_get_splicer_ptr(saver_ptr);
+
     if (strncmp(aNewValuePtr, "wait=", 5) == 0)
     {
-        gboolean was_paused = (mySplicer.params.max_wait_ms == 0);
+        gboolean was_paused = (splicer_ptr->params.max_wait_ms == 0);
 
-        if (frame_saver_params_parse_from_text(&mySplicer.params, params_specs) == TRUE)
+        if (frame_saver_params_parse_from_text(&splicer_ptr->params, params_specs) == TRUE)
         {
-            sprintf(aDstValuePtr, "wait=%u", mySplicer.params.max_wait_ms);
+            sprintf(aDstValuePtr, "wait=%u", splicer_ptr->params.max_wait_ms);
 
-            if ( (mySplicer.params.max_wait_ms == 0) && (! was_paused) )
+            if ( (splicer_ptr->params.max_wait_ms == 0) && (! was_paused) )
             {
-                mySniffer.wait_state_ends_ns = 0;
+                saver_ptr->wait_state_ends_ns = 0;
 
-                mySniffer.frame_snap_wait_ns += INFINIT_NANOS;
+                saver_ptr->frame_snap_wait_ns += INFINIT_NANOS;
 
                 psz_note = "note=(PAUSED)";
             }
-            else if ( (mySniffer.sys_clock_ptr != NULL) && was_paused )
+            else if ( (The_SysClock_Ptr != NULL) && was_paused )
             {
-                GstClockTime  now_nanos = gst_clock_get_time(mySniffer.sys_clock_ptr);
+                GstClockTime  now_nanos = gst_clock_get_time(The_SysClock_Ptr);
 
-                GstClockTime elapsed_ns = now_nanos - mySniffer.start_play_time_ns;
+                GstClockTime elapsed_ns = now_nanos - The_LaunchTime_ns;
 
-                GstClockTime wait_nanos = (NANOS_PER_MILLISEC * mySplicer.params.max_wait_ms);
+                GstClockTime wait_nanos = (NANOS_PER_MILLISEC * splicer_ptr->params.max_wait_ms);
 
-                GstClockTime next_nanos = NANOS_PER_MILLISEC * mySplicer.params.one_snap_ms;
+                GstClockTime next_nanos = NANOS_PER_MILLISEC * splicer_ptr->params.one_snap_ms;
 
-                mySniffer.wait_state_ends_ns = wait_nanos + now_nanos;
+                saver_ptr->wait_state_ends_ns = wait_nanos + now_nanos;
 
-                mySniffer.frame_snap_wait_ns = elapsed_ns + next_nanos;
+                saver_ptr->frame_snap_wait_ns = elapsed_ns + next_nanos;
 
                 psz_note = "note=(RESUMED)";
             }
@@ -1877,9 +1961,9 @@ int Frame_Saver_Filter_Set_Params(GstElement  * aPluginPtr,
     }
     else if (strncmp(aNewValuePtr, "path=", 5) == 0)
     {
-        if (frame_saver_params_parse_from_text(&mySplicer.params, params_specs) == TRUE)
+        if (frame_saver_params_parse_from_text(&splicer_ptr->params, params_specs) == TRUE)
         {
-            sprintf(aDstValuePtr, "path=%s", mySplicer.params.folder_path);
+            sprintf(aDstValuePtr, "path=%s", splicer_ptr->params.folder_path);
         }
         else
         {
@@ -1888,21 +1972,21 @@ int Frame_Saver_Filter_Set_Params(GstElement  * aPluginPtr,
     }
     else if (strncmp(aNewValuePtr, "snap=", 5) == 0)
     {
-        if (frame_saver_params_parse_from_text(&mySplicer.params, params_specs) == TRUE)
+        if (frame_saver_params_parse_from_text(&splicer_ptr->params, params_specs) == TRUE)
         {
             sprintf(aDstValuePtr, "snap=%u,%u,%u",
-                    mySplicer.params.one_snap_ms,
-                    mySplicer.params.max_num_snaps_saved,
-                    mySplicer.params.max_num_failed_snap);
+                    splicer_ptr->params.one_snap_ms,
+                    splicer_ptr->params.max_num_snaps_saved,
+                    splicer_ptr->params.max_num_failed_snap);
 
-            mySniffer.num_saver_errors = 0;
-            mySniffer.num_saved_frames = 0;
-            mySniffer.num_snap_signals = 0;
+            saver_ptr->num_saver_errors = 0;
+            saver_ptr->num_saved_frames = 0;
+            saver_ptr->num_snap_signals = 0;
 
-            mySniffer.num_stream_frames = 0;
-            mySniffer.num_stream_errors = 0;
+            saver_ptr->num_stream_frames = 0;
+            saver_ptr->num_stream_errors = 0;
 
-            strcpy(mySniffer.work_folder_path, mySplicer.params.folder_path);
+            strcpy(saver_ptr->work_folder_path, splicer_ptr->params.folder_path);
         }
         else
         {
@@ -1911,12 +1995,12 @@ int Frame_Saver_Filter_Set_Params(GstElement  * aPluginPtr,
     }
     else if (strncmp(aNewValuePtr, "link=", 5) == 0)
     {
-        if (frame_saver_params_parse_from_text(&mySplicer.params, params_specs) == TRUE)
+        if (frame_saver_params_parse_from_text(&splicer_ptr->params, params_specs) == TRUE)
         {
             sprintf(aDstValuePtr, "link=%s,%s,%s",
-                    mySplicer.params.pipeline_name,
-                    mySplicer.params.producer_name,
-                    mySplicer.params.consumer_name);
+                    splicer_ptr->params.pipeline_name,
+                    splicer_ptr->params.producer_name,
+                    splicer_ptr->params.consumer_name);
         }
         else
         {
@@ -1925,12 +2009,12 @@ int Frame_Saver_Filter_Set_Params(GstElement  * aPluginPtr,
     }
     else if (strncmp(aNewValuePtr, "pads=", 5) == 0)
     {
-        if (frame_saver_params_parse_from_text(&mySplicer.params, params_specs) == TRUE)
+        if (frame_saver_params_parse_from_text(&splicer_ptr->params, params_specs) == TRUE)
         {
             sprintf(aDstValuePtr, "pads=%s,%s,%s",
-                    mySplicer.params.producer_out_pad_name,
-                    mySplicer.params.consumer_inp_pad_name,
-                    mySplicer.params.consumer_out_pad_name);
+                    splicer_ptr->params.producer_out_pad_name,
+                    splicer_ptr->params.consumer_inp_pad_name,
+                    splicer_ptr->params.consumer_out_pad_name);
         }
         else
         {
@@ -1938,7 +2022,7 @@ int Frame_Saver_Filter_Set_Params(GstElement  * aPluginPtr,
         }
     }
 
-    g_print("@@  Set_Params --- Error=%d --- NOW=(%s) %s \n", error, aDstValuePtr, psz_note);
+    g_print(PREFIX_FORMAT "Set_Params --- Error=%d --- NOW=(%s) %s \n", saver_ptr->instance_ID, error, aDstValuePtr, psz_note);
 
     return error;   // 0 is success
 }
@@ -1951,38 +2035,51 @@ int Frame_Saver_Filter_Set_Params(GstElement  * aPluginPtr,
 //=======================================================================================
 int frame_saver_filter_tester( int argc, char ** argv )
 {
-    int result = 0;
+    int result = do_initialize_static_resources();
+
+    if ( result != 0 )
+    {
+        g_print("frame_saver_filter_tester --- do_initialize_static_resources() --- FAILED \n");
+        return result;
+    }
 
     gst_init(NULL, NULL);
 
-    frame_saver_params_initialize( &mySplicer.params );
+    FramesSaver_t   *  saver_ptr = &The_FramesSavers_Array[0];
 
-    if (frame_saver_params_parse_from_array(&mySplicer.params, ++argv, --argc) != TRUE)
+    FlowSplicer_t  * splicer_ptr = do_get_splicer_ptr(saver_ptr);
+
+    SplicerParams_t * params_ptr = &splicer_ptr->params;
+
+    saver_ptr->instance_ID = 1;
+
+    frame_saver_params_initialize( params_ptr );
+
+    if (frame_saver_params_parse_from_array(params_ptr, ++argv, --argc) != TRUE)
     {
         g_print("\n");
-        result = 1;
-    }
-    else if (frame_saver_params_write_to_file(&mySplicer.params, stdout) != TRUE)
-    {
-        g_print("frame_saver_filter_tester --- failed reporting parameters used \n");
         result = 2;
+    }
+    else if (frame_saver_params_write_to_file(params_ptr, stdout) != TRUE)
+    {
+        g_print("frame_saver_filter_tester --- report parameters used --- FAILED \n");
+        result = 3;
     }
     else
     {
-        result = (int) do_pipeline_create_instance();  // 0 is success
+        result = (int) do_pipeline_create_instance(saver_ptr);  // 0 is success
 
         if (result != 0)
         {
-            g_print("frame_saver_filter_tester --- error (%d) creating pipeline \n", result);
+            g_print("frame_saver_filter_tester --- create pipeline --- ERRORS=(%d) \n", result);
         }
-        else if (do_pipeline_test_run_main_loop() != TRUE)
+        else if (do_pipeline_test_run_main_loop(saver_ptr) != TRUE)
         {
-            result = 3;
+            result =4;
         }
         
-        do_pipeline_cleanup();
+        do_frame_saver_element_cleanup( saver_ptr );
     }
 
     return result;   // returns 0 on success
 }
-

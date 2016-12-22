@@ -39,38 +39,18 @@ public class CallMediaPipeline {
 
   private static final Logger TheLogger = LoggerFactory.getLogger(CallMediaPipeline.class);  
 
-  private FrameSaverPluginProxy mFrameSaverProxy = null;
+  private FrameSaverPluginProxy mFrameSaverProxy1_ToCalleEE = null;
+  private FrameSaverPluginProxy mFrameSaverProxy2_ToCalleRR = null;
 
   public CallMediaPipeline(KurentoClient kurento) {
     try {
       this.pipeline = kurento.createMediaPipeline();
       this.callerWebRtcEp = new WebRtcEndpoint.Builder(pipeline).build();
       this.calleeWebRtcEp = new WebRtcEndpoint.Builder(pipeline).build();
-     
-      mFrameSaverProxy = FrameSaverPluginProxy.newInstance(pipeline);
       
-      boolean is_ok = (callerWebRtcEp != null) && (calleeWebRtcEp != null) && (mFrameSaverProxy != null);
-
-      TheLogger.info("CallMediaPipeline.c'tor --- (%s) \n", (is_ok  ? "OK" : "ERR") );
-
-      boolean is_frame_saver_valid = mFrameSaverProxy.setParams(null);
-
-      if (is_frame_saver_valid)
-      {
-          is_frame_saver_valid = mFrameSaverProxy.connectWith( callerWebRtcEp, calleeWebRtcEp );
-      }
-
-      if (is_frame_saver_valid)
-      {
-
-          mFrameSaverProxy.setOneParam("wait", "2000");
-      }
-      else
-      {
-          this.callerWebRtcEp.connect(this.calleeWebRtcEp);
-      }
+      connect_Caller_To_Callee_pass_thru_1st_Frame_Saver();
       
-      this.calleeWebRtcEp.connect(this.callerWebRtcEp);
+      connect_Callee_To_Caller_pass_thru_2nd_Frame_Saver();
       
     } catch (Throwable t) {
       if (this.pipeline != null) {
@@ -78,7 +58,72 @@ public class CallMediaPipeline {
       }
     }
   }
+  
+  private boolean connect_Caller_To_Callee_pass_thru_1st_Frame_Saver() 
+  {      
+      mFrameSaverProxy1_ToCalleEE = FrameSaverPluginProxy.newInstance(pipeline);
+      
+      boolean is_ok = (callerWebRtcEp != null) && (calleeWebRtcEp != null) && (mFrameSaverProxy1_ToCalleEE != null);
 
+      TheLogger.info("CallMediaPipeline.c'tor --- (%s) \n", (is_ok  ? "OK" : "ERR") );
+
+      boolean is_frame_saver_1_valid = mFrameSaverProxy1_ToCalleEE.setParams(null);
+
+      if (is_frame_saver_1_valid)
+      {
+          is_frame_saver_1_valid = mFrameSaverProxy1_ToCalleEE.setOneParam("path", "/tmp/FrameSaver1_Caller_To_Callee");
+      }
+
+      if (is_frame_saver_1_valid)
+      {
+          is_frame_saver_1_valid = mFrameSaverProxy1_ToCalleEE.connectWith( callerWebRtcEp, calleeWebRtcEp );
+      }
+
+      if (is_frame_saver_1_valid)
+      {
+
+          mFrameSaverProxy1_ToCalleEE.setOneParam("wait", "1000");
+      }
+      else
+      {
+          this.callerWebRtcEp.connect(this.calleeWebRtcEp);
+      }
+      
+      return is_frame_saver_1_valid;
+  }
+
+  private boolean connect_Callee_To_Caller_pass_thru_2nd_Frame_Saver() 
+  {      
+      mFrameSaverProxy2_ToCalleRR = FrameSaverPluginProxy.newInstance(pipeline);
+      
+      boolean is_ok = (callerWebRtcEp != null) && (calleeWebRtcEp != null) && (mFrameSaverProxy2_ToCalleRR != null);
+
+      TheLogger.info("CallMediaPipeline.c'tor --- (%s) \n", (is_ok  ? "OK" : "ERR") );
+
+      boolean is_frame_saver_2_valid = mFrameSaverProxy2_ToCalleRR.setParams(null);
+
+      if (is_frame_saver_2_valid)
+      {
+          is_frame_saver_2_valid = mFrameSaverProxy2_ToCalleRR.setOneParam("path", "/tmp/FrameSaver2_Callee_To_Caller");
+      }
+
+      if (is_frame_saver_2_valid)
+      {
+          is_frame_saver_2_valid = mFrameSaverProxy2_ToCalleRR.connectWith( calleeWebRtcEp, callerWebRtcEp );
+      }
+
+      if (is_frame_saver_2_valid)
+      {
+          mFrameSaverProxy2_ToCalleRR.setOneParam("wait", "1000");
+      }
+      else
+      {
+          this.calleeWebRtcEp.connect(this.callerWebRtcEp);
+      }
+      
+      return is_frame_saver_2_valid;
+  }
+  
   public String generateSdpAnswerForCaller(String sdpOffer) {
     return callerWebRtcEp.processOffer(sdpOffer);
   }

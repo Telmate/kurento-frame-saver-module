@@ -6,8 +6,8 @@
  * 
  * History:     1. 2016-10-29   JBendor     Created    
  *              2. 2016-11-04   JBendor     Updated 
- *              3. 2016-12-08   JBendor     Support the actual Gstreamer plugin
- *              4. 2016-12-15   JBendor     Updated
+ *              3. 2016-12-08   JBendor     Support Gstreamer Plugins
+ *              4. 2016-12-21   JBendor     Updated
  *
  * Copyright (c) 2016 TELMATE INC. All Rights Reserved. Proprietary and confidential.
  *               Unauthorized copying of this file is strictly prohibited.
@@ -18,22 +18,12 @@
 
 #define __Frame_Saver_Filter_H__
 
-#include "wrapped_natives.h"
-
 #include <gst/gst.h>
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
-
-
-//=======================================================================================
-// synopsis: result = Frame_Saver_Filter_Lookup(aPluginPtr)
-//
-// returns index in array of attached plugins --- returns -1 iff not found
-//=======================================================================================
-extern int Frame_Saver_Filter_Lookup(const void * aPluginPtr);
 
 
 //=======================================================================================
